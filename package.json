@@ -1,0 +1,10 @@
+{
+  "name": "diskingressos-hub-repasses",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hub de Repasses DiskIngressos — Financeiro e Produtor (Firebase RTDB diskingressos-62591)",
+  "scripts": {
+    "test": "node --test motorRepasse.test.js",
+    "set-role": "node setRole.js"
+  }
+}

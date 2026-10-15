@@ -1,0 +1,482 @@
+/**
+ * Hub de Repasses DiskIngressos — Cloud Functions v2 (PROMPT 3)
+ * Região: southamerica-east1 | Node 20 | Firebase Realtime Database (diskingressos-62591)
+ */
+
+const { onValueWritten } = require('firebase-functions/v2/database');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { setGlobalOptions } = require('firebase-functions/v2');
+const logger = require('firebase-functions/logger');
+const admin = require('firebase-admin');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const {
+  calcEvento,
+  calcConsolidado,
+  bordero_produtor,
+  calcTransferencia,
+  calcularRateioRepasse
+} = require(fs.existsSync(path.join(__dirname, 'motorRepasse.js')) ? './motorRepasse.js' : '../motorRepasse.js');
+
+setGlobalOptions({ region: 'southamerica-east1' });
+
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+
+const db = admin.database();
+
+function formatarDataHoraBR(date = new Date()) {
+  return date.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+}
+
+/**
+ * Função auxiliar interna que recalcula um evento específico e atualiza:
+ * 1) /borderos_produtor/{produtoraId}/{eventoId}
+ * 2) /borderos_produtor/{produtoraId}/_consolidado
+ */
+async function processarRecalculoProdutoraPorEvento(eventoId) {
+  if (!eventoId) return null;
+
+  const [evSnap, locaisSnap, despSnap, advSnap, antSnap] = await Promise.all([
+    db.ref(`/eventos/${eventoId}`).get(),
+    db.ref('/locais').get(),
+    db.ref('/despesas').get(),
+    db.ref('/advanced').get(),
+    db.ref('/antecipacoes').get()
+  ]);
+
+  if (!evSnap.exists()) {
+    logger.info(`[recalcularEvento] Evento ${eventoId} removido ou inexistente.`);
+    return null;
+  }
+
+  const evento = { id: eventoId, ...evSnap.val() };
+  const produtoraId = evento.produtoraId;
+  if (!produtoraId) return null;
+
+  await recalcularTodaProdutora(produtoraId, {
+    locais: locaisSnap.val() || {},
+    despesas: despSnap.val() || {},
+    advanced: advSnap.val() || {},
+    antecipacoes: antSnap.val() || {}
+  });
+}
+
+async function recalcularTodaProdutora(produtoraId, preloaded = null) {
+  const [
+    prodSnap,
+    eventosSnap,
+    eventosFinSnap,
+    negSnap,
+    locaisSnap,
+    despSnap,
+    advSnap,
+    antSnap,
+    cfgTransfSnap
+  ] = await Promise.all([
+    db.ref(`/produtoras/${produtoraId}`).get(),
+    db.ref('/eventos').orderByChild('produtoraId').equalTo(produtoraId).get(),
+    db.ref('/eventos_fin').get(),
+    db.ref('/negociacoes').get(),
+    preloaded ? Promise.resolve({ val: () => preloaded.locais }) : db.ref('/locais').get(),
+    preloaded ? Promise.resolve({ val: () => preloaded.despesas }) : db.ref('/despesas').get(),
+    preloaded ? Promise.resolve({ val: () => preloaded.advanced }) : db.ref('/advanced').get(),
+    preloaded ? Promise.resolve({ val: () => preloaded.antecipacoes }) : db.ref('/antecipacoes').get(),
+    db.ref('/config/transferencia').get()
+  ]);
+
+  const produtora = prodSnap.val() || {};
+  const eventosMap = eventosSnap.val() || {};
+  const eventosFinMap = eventosFinSnap.val() || {};
+  const negMap = negSnap.val() || {};
+  const locaisMap = locaisSnap.val() || {};
+  const despesasList = Object.values(despSnap.val() || {});
+  const advancedMap = advSnap.val() || {};
+  const advancedList = Object.entries(advancedMap)
+    .map(([id, a]) => ({ id, ...a }))
+    .filter(a => a.produtoraId === produtoraId);
+  const antecipacoesMap = antSnap.val() || {};
+  const antecipacoesList = Object.entries(antecipacoesMap)
+    .map(([id, a]) => ({ id, ...a }))
+    .filter(a => a.produtoraId === produtoraId);
+  const cfgTransferencia = cfgTransfSnap.val() || { pixValor: 0, tedValor: 10 };
+
+  const updates = {};
+  const eventosCalculados = [];
+
+  for (const [evId, evData] of Object.entries(eventosMap)) {
+    const ev = { id: evId, ...evData };
+    const fin = eventosFinMap[evId] || {};
+    const neg = negMap[evId] || {};
+    const loc = locaisMap[ev.localId] || {};
+    // Passa todas as despesas do evento (Pago + A pagar) para o motorRepasse.js aplicar a regra do evento
+    const despEv = despesasList.filter(d => d.eventoId === evId);
+    const advEv = advancedList.filter(a => a.escopo === evId);
+    const antEv = antecipacoesList.filter(a => a.eventoId === evId);
+
+    const calc = calcEvento(ev, fin, neg, despEv, advEv, antEv, loc);
+    const borderoLimpo = bordero_produtor(calc);
+
+    updates[`/borderos_produtor/${produtoraId}/${evId}`] = borderoLimpo;
+    eventosCalculados.push({
+      id: evId,
+      nome: ev.nome,
+      liberadoParaSolicitacao: Boolean(ev.liberadoParaSolicitacao),
+      regraVigente: fin.regra || {},
+      ...calc
+    });
+  }
+
+  const cons = calcConsolidado(produtora, eventosCalculados, advancedList);
+
+  updates[`/borderos_produtor/${produtoraId}/_consolidado`] = {
+    liberavelEventos: cons.liberavelEventos,
+    patrocinioProdutora: cons.patrocinioProdutora,
+    patrocinioDescricao: (produtora.patrocinio && produtora.patrocinio.descricao) || 'Patrocínio da produtora',
+    advConsolidado: cons.advConsolidado,
+    devedores: cons.devedores,
+    saldoDisponivel: cons.saldoDisponivel,
+    tarifaPix: Number(cfgTransferencia.pixValor || 0),
+    tarifaTed: Number(cfgTransferencia.tedValor !== undefined ? cfgTransferencia.tedValor : 10),
+    atualizadoEm: formatarDataHoraBR()
+  };
+
+  await db.ref().update(updates);
+  logger.info(`[recalcularTodaProdutora] Produtora ${produtoraId} recalculada com sucesso.`, {
+    saldoDisponivel: cons.saldoDisponivel
+  });
+
+  return {
+    produtora,
+    eventosCalculados,
+    cons,
+    advancedList,
+    antecipacoesList,
+    cfgTransferencia
+  };
+}
+
+// ============================================================================
+// 1. TRIGGERS recalcularEvento
+// ============================================================================
+exports.recalcularPorEvento = onValueWritten('/eventos/{id}', async (event) => {
+  await processarRecalculoProdutoraPorEvento(event.params.id);
+});
+
+exports.recalcularPorEventoFin = onValueWritten('/eventos_fin/{id}', async (event) => {
+  await processarRecalculoProdutoraPorEvento(event.params.id);
+});
+
+exports.recalcularPorNegociacao = onValueWritten('/negociacoes/{id}', async (event) => {
+  await processarRecalculoProdutoraPorEvento(event.params.id);
+});
+
+exports.recalcularPorDespesa = onValueWritten('/despesas/{id}', async (event) => {
+  const val = event.data.after.val() || event.data.before.val();
+  if (val && val.eventoId) {
+    await processarRecalculoProdutoraPorEvento(val.eventoId);
+  }
+});
+
+exports.recalcularPorAdvanced = onValueWritten('/advanced/{id}', async (event) => {
+  const val = event.data.after.val() || event.data.before.val();
+  if (val && val.produtoraId) {
+    await recalcularTodaProdutora(val.produtoraId);
+  }
+});
+
+exports.recalcularPorAntecipacao = onValueWritten('/antecipacoes/{id}', async (event) => {
+  const val = event.data.after.val() || event.data.before.val();
+  if (val && val.produtoraId) {
+    await recalcularTodaProdutora(val.produtoraId);
+  }
+});
+
+// ============================================================================
+// 2. CALLABLE solicitarRepasse (role: produtor)
+// ============================================================================
+exports.solicitarRepasse = onCall(async (request) => {
+  const auth = request.auth;
+  if (!auth || auth.token.role !== 'produtor' || !auth.token.produtoraId) {
+    throw new HttpsError('permission-denied', 'Apenas produtores autenticados podem solicitar repasse.');
+  }
+
+  const produtoraId = auth.token.produtoraId;
+  const { eventoIds, valor, forma, contaId } = request.data || {};
+
+  if (!Array.isArray(eventoIds) || eventoIds.length === 0) {
+    throw new HttpsError('invalid-argument', 'Selecione ao menos um evento liberado para solicitar o repasse.');
+  }
+  if (!['PIX', 'TED'].includes(forma)) {
+    throw new HttpsError('invalid-argument', 'A forma de pagamento deve ser exclusivamente PIX ou TED.');
+  }
+  const valorSolicitado = Number(valor || 0);
+  if (!Number.isFinite(valorSolicitado) || valorSolicitado <= 0) {
+    throw new HttpsError('invalid-argument', 'Informe um valor de repasse maior que zero.');
+  }
+
+  // Valida conta bancária Validada da própria produtora
+  const contaSnap = await db.ref(`/contas/${produtoraId}/${contaId}`).get();
+  if (!contaSnap.exists() || contaSnap.val().status !== 'Validada') {
+    throw new HttpsError('failed-precondition', 'A conta bancária selecionada não existe ou ainda não foi validada pelo Financeiro.');
+  }
+
+  // Recalcula no servidor antes de aceitar a solicitação
+  const { eventosCalculados, cons, cfgTransferencia } = await recalcularTodaProdutora(produtoraId);
+
+  for (const evId of eventoIds) {
+    const evCalc = eventosCalculados.find(e => e.id === evId);
+    if (!evCalc) {
+      throw new HttpsError('permission-denied', `O evento ${evId} não pertence à sua produtora.`);
+    }
+    if (!evCalc.liberadoParaSolicitacao || evCalc.liberavel <= 0) {
+      throw new HttpsError('failed-precondition', `O evento "${evCalc.nome}" não possui saldo liberado para solicitação.`);
+    }
+  }
+
+  const disponivelServidor = cons.disponivel(eventoIds);
+  if (valorSolicitado > disponivelServidor + 0.009) {
+    throw new HttpsError(
+      'failed-precondition',
+      `O valor solicitado (R$ ${valorSolicitado.toFixed(2)}) excede o saldo disponível recalculado no servidor (R$ ${disponivelServidor.toFixed(2)}).`
+    );
+  }
+
+  const transf = calcTransferencia(valorSolicitado, forma, cfgTransferencia);
+
+  const novoRepRef = db.ref('/repasses').push();
+  const payload = {
+    produtoraId,
+    eventoIds,
+    valorSolicitado: transf.valorBruto,
+    tarifaTransferencia: transf.tarifa,
+    valorLiquido: transf.valorLiquido,
+    forma: transf.forma,
+    contaId,
+    status: 'Solicitado',
+    solicitadoEm: formatarDataHoraBR()
+  };
+
+  await novoRepRef.set(payload);
+  logger.info(`[solicitarRepasse] Repasse ${novoRepRef.key} criado para ${produtoraId}`, payload);
+
+  return { id: novoRepRef.key, ...payload };
+});
+
+// ============================================================================
+// 3. CALLABLE decidirRepasse (role: financeiro)
+// ============================================================================
+exports.decidirRepasse = onCall(async (request) => {
+  const auth = request.auth;
+  if (!auth || auth.token.role !== 'financeiro') {
+    throw new HttpsError('permission-denied', 'Apenas usuários do perfil Financeiro podem aprovar ou recusar repasses.');
+  }
+
+  const { repasseId, acao, motivo, modoRateio, rateioManual, protocoloBancario, comprovanteUrl } = request.data || {};
+  if (!repasseId || !['aprovar', 'recusar', 'pagar'].includes(acao)) {
+    throw new HttpsError('invalid-argument', 'Parâmetros inválidos. Informe repasseId e acao ("aprovar", "recusar" ou "pagar").');
+  }
+
+  const repSnap = await db.ref(`/repasses/${repasseId}`).get();
+  if (!repSnap.exists()) {
+    throw new HttpsError('not-found', 'Solicitação de repasse não encontrada.');
+  }
+
+  const repasse = repSnap.val();
+  const usuarioEmail = auth.token.email || auth.uid;
+  const agora = formatarDataHoraBR();
+
+  if (acao === 'recusar') {
+    if (!motivo || String(motivo).trim().length < 3) {
+      throw new HttpsError('invalid-argument', 'Informe obrigatoriamente o motivo da recusa.');
+    }
+    const updRecusa = {
+      status: 'Recusado',
+      motivoRecusa: String(motivo).trim(),
+      decididoPor: usuarioEmail,
+      decididoEm: agora
+    };
+    await db.ref(`/repasses/${repasseId}`).update(updRecusa);
+    await db.ref('/auditoria').push({
+      dataHora: agora,
+      usuario: usuarioEmail,
+      modulo: 'Repasses',
+      eventoId: (repasse.eventoIds || []).join(', '),
+      acao: 'Recusa de Repasse',
+      resumo: `Repasse ${repasseId} recusado (${String(motivo).trim()})`
+    });
+    logger.info(`[decidirRepasse] Repasse ${repasseId} recusado por ${usuarioEmail}.`);
+    return { status: 'Recusado' };
+  }
+
+  // Caso o repasse já esteja Aprovado e a ação seja apenas liquidar ('pagar') anexando protocolo/comprovante
+  if (repasse.status === 'Aprovado' && acao === 'pagar') {
+    const updPago = {
+      status: 'Pago',
+      pagoPor: usuarioEmail,
+      pagoEm: agora,
+      protocoloBancario: String(protocoloBancario || repasse.protocoloBancario || '').trim(),
+      comprovanteUrl: String(comprovanteUrl || repasse.comprovanteUrl || '').trim()
+    };
+    await db.ref(`/repasses/${repasseId}`).update(updPago);
+    await db.ref('/auditoria').push({
+      dataHora: agora,
+      usuario: usuarioEmail,
+      modulo: 'Repasses',
+      eventoId: (repasse.eventoIds || []).join(', '),
+      acao: 'Liquidação Bancária (Pago)',
+      resumo: `Repasse ${repasseId} marcado como Pago. Protocolo: ${updPago.protocoloBancario || 'N/A'}`
+    });
+    return { status: 'Pago', protocoloBancario: updPago.protocoloBancario };
+  }
+
+  // Aprovar (ou Aprovar & Pagar direto): recalcula tudo NO MOMENTO da aprovação
+  const { eventosCalculados, cons, advancedList, antecipacoesList } = await recalcularTodaProdutora(repasse.produtoraId);
+  const selecionados = eventosCalculados.filter(e => (repasse.eventoIds || []).includes(e.id));
+  const disponivelAtual = cons.disponivel(repasse.eventoIds || []);
+
+  if (repasse.valorSolicitado > disponivelAtual + 0.009) {
+    const msgAutomatica = `Recusado automaticamente na validação: valor solicitado (R$ ${repasse.valorSolicitado.toFixed(2)}) maior que o disponível atual (R$ ${disponivelAtual.toFixed(2)}).`;
+    await db.ref(`/repasses/${repasseId}`).update({
+      status: 'Recusado',
+      motivoRecusa: msgAutomatica,
+      decididoPor: usuarioEmail,
+      decididoEm: agora
+    });
+    throw new HttpsError('failed-precondition', msgAutomatica);
+  }
+
+  // Rateio proporcional ou manual usando calcularRateioRepasse
+  const rateioRes = calcularRateioRepasse(
+    selecionados,
+    repasse.valorSolicitado,
+    modoRateio === 'manual' ? 'manual' : 'proporcional',
+    rateioManual || {}
+  );
+  if (!rateioRes.valido) {
+    throw new HttpsError('invalid-argument', rateioRes.erro || 'Rateio inválido.');
+  }
+
+  const updates = {};
+  const rateioEventos = rateioRes.rateio;
+
+  for (const evCalc of selecionados) {
+    const quota = Number(rateioEventos[evCalc.id] || 0);
+    updates[`/eventos/${evCalc.id}/jaRepassado`] = Math.round((evCalc.jaRepassado + quota) * 100) / 100;
+  }
+
+  // Marca advanced (consolidado ou dos eventos selecionados) e antecipações abatidas como abaterNoProximo = false
+  for (const adv of advancedList) {
+    if (adv.abaterNoProximo && (adv.escopo === 'consolidado' || (repasse.eventoIds || []).includes(adv.escopo))) {
+      updates[`/advanced/${adv.id}/abaterNoProximo`] = false;
+    }
+  }
+  for (const ant of antecipacoesList) {
+    if (ant.abaterNoProximo && (repasse.eventoIds || []).includes(ant.eventoId) && (ant.status === 'Aprovada' || ant.status === 'Paga')) {
+      updates[`/antecipacoes/${ant.id}/abaterNoProximo`] = false;
+    }
+  }
+
+  const memoriaCalculo = {
+    aprovadoPor: usuarioEmail,
+    aprovadoEm: agora,
+    disponivelNoMomento: disponivelAtual,
+    modoRateio: rateioRes.modo,
+    rateioAplicado: rateioEventos,
+    consolidadoSnapshot: {
+      liberavelEventos: cons.liberavelEventos,
+      patrocinioProdutora: cons.patrocinioProdutora,
+      advConsolidado: cons.advConsolidado,
+      devedores: cons.devedores
+    },
+    eventosSnapshot: selecionados
+  };
+
+  const statusFinal = acao === 'pagar' ? 'Pago' : 'Aprovado';
+  updates[`/repasses/${repasseId}/status`] = statusFinal;
+  updates[`/repasses/${repasseId}/decididoPor`] = usuarioEmail;
+  updates[`/repasses/${repasseId}/decididoEm`] = agora;
+  updates[`/repasses/${repasseId}/modoRateio`] = rateioRes.modo;
+  updates[`/repasses/${repasseId}/protocoloBancario`] = String(protocoloBancario || '').trim();
+  updates[`/repasses/${repasseId}/comprovanteUrl`] = String(comprovanteUrl || '').trim();
+  if (statusFinal === 'Pago') {
+    updates[`/repasses/${repasseId}/pagoPor`] = usuarioEmail;
+    updates[`/repasses/${repasseId}/pagoEm`] = agora;
+  }
+  updates[`/repasses/${repasseId}/memoriaCalculo`] = memoriaCalculo;
+
+  await db.ref().update(updates);
+  await db.ref('/auditoria').push({
+    dataHora: agora,
+    usuario: usuarioEmail,
+    modulo: 'Repasses',
+    eventoId: (repasse.eventoIds || []).join(', '),
+    acao: statusFinal === 'Pago' ? 'Aprovação e Pagamento de Repasse' : 'Aprovação de Repasse',
+    resumo: `Repasse ${repasseId} (${statusFinal}) — R$ ${Number(repasse.valorSolicitado).toFixed(2)} via ${repasse.forma} (rateio ${rateioRes.modo}).`
+  });
+  await recalcularTodaProdutora(repasse.produtoraId);
+
+  logger.info(`[decidirRepasse] Repasse ${repasseId} (${statusFinal}) por ${usuarioEmail}`, { rateioEventos });
+  return { status: statusFinal, memoriaCalculo };
+});
+
+// ============================================================================
+// 4. CALLABLE solicitarAntecipacao (role: produtor)
+// ============================================================================
+exports.solicitarAntecipacao = onCall(async (request) => {
+  const auth = request.auth;
+  if (!auth || auth.token.role !== 'produtor' || !auth.token.produtoraId) {
+    throw new HttpsError('permission-denied', 'Apenas produtores autenticados podem solicitar antecipação.');
+  }
+
+  const produtoraId = auth.token.produtoraId;
+  const { eventoId, valor } = request.data || {};
+  const valorSolicitado = Number(valor || 0);
+
+  if (!eventoId || !Number.isFinite(valorSolicitado) || valorSolicitado <= 0) {
+    throw new HttpsError('invalid-argument', 'Informe um evento válido e um valor de antecipação maior que zero.');
+  }
+
+  const [cfgSnap, recalc] = await Promise.all([
+    db.ref('/config/antecipacao').get(),
+    recalcularTodaProdutora(produtoraId)
+  ]);
+
+  const cfg = cfgSnap.val() || { pctLimite: 50, taxaPct: 2 };
+  const pctLimite = Number(cfg.pctLimite || 50);
+  const taxaPct = Number(cfg.taxaPct || 2);
+
+  const evCalc = recalc.eventosCalculados.find(e => e.id === eventoId);
+  if (!evCalc) {
+    throw new HttpsError('permission-denied', 'O evento informado não pertence à sua produtora.');
+  }
+
+  const jaAntecipadoEvento = recalc.antecipacoesList
+    .filter(a => a.eventoId === eventoId && a.status !== 'Recusada')
+    .reduce((acc, a) => acc + Number(a.valor || 0), 0);
+
+  const limiteDisponivel = Math.max(0, (evCalc.retido * (pctLimite / 100)) - jaAntecipadoEvento);
+  if (valorSolicitado > limiteDisponivel + 0.009) {
+    throw new HttpsError(
+      'failed-precondition',
+      `O valor solicitado (R$ ${valorSolicitado.toFixed(2)}) ultrapassa o limite disponível para antecipação neste evento (R$ ${limiteDisponivel.toFixed(2)}).`
+    );
+  }
+
+  const novaAntRef = db.ref('/antecipacoes').push();
+  const payload = {
+    produtoraId,
+    eventoId,
+    data: new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+    valor: Math.round(valorSolicitado * 100) / 100,
+    taxaPct,
+    abaterNoProximo: true,
+    status: 'Solicitada'
+  };
+
+  await novaAntRef.set(payload);
+  logger.info(`[solicitarAntecipacao] Antecipação ${novaAntRef.key} solicitada por ${produtoraId}`, payload);
+  return { id: novaAntRef.key, ...payload };
+});

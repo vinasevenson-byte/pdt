@@ -1,0 +1,112 @@
+{
+  "rules": {
+    ".read": "auth != null && auth.token.role === 'financeiro'",
+    ".write": "auth != null && auth.token.role === 'financeiro'",
+
+    "lancamentos": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+    "fechamentos": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+    "labels": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+
+    "config": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'",
+      "antecipacao": {
+        ".read": "auth != null"
+      }
+    },
+
+    "produtoras": {
+      "$produtoraId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId))",
+        ".write": "auth != null && auth.token.role === 'financeiro'"
+      }
+    },
+
+    "locais": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+
+    "eventos": {
+      "$eventoId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
+        ".write": "auth != null && auth.token.role === 'financeiro'"
+      }
+    },
+
+    "eventos_fin": {
+      "$eventoId": {
+        ".read": "auth != null && auth.token.role === 'financeiro'",
+        ".write": "auth != null && auth.token.role === 'financeiro'"
+      }
+    },
+
+    "negociacoes": {
+      "$eventoId": {
+        ".read": "auth != null && auth.token.role === 'financeiro'",
+        ".write": "auth != null && auth.token.role === 'financeiro'"
+      }
+    },
+
+    "despesas": {
+      "$despesaId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
+        ".write": "auth != null && auth.token.role === 'financeiro'"
+      }
+    },
+
+    "advanced": {
+      "$advId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
+        ".write": "auth != null && auth.token.role === 'financeiro'"
+      }
+    },
+
+    "antecipacoes": {
+      "$antId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
+        ".write": "auth != null && (auth.token.role === 'financeiro' || (!data.exists() && auth.token.role === 'produtor' && newData.child('produtoraId').val() === auth.token.produtoraId && newData.child('status').val() === 'Solicitada'))"
+      }
+    },
+
+    "contas": {
+      "$produtoraId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId))",
+        "$contaId": {
+          ".write": "auth != null && (auth.token.role === 'financeiro' || (!data.exists() && auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId && newData.child('status').val() === 'Pendente' && newData.child('padrao').val() === false))"
+        }
+      }
+    },
+
+    "repasses": {
+      "$repasseId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
+        ".write": "auth != null && (auth.token.role === 'financeiro' || (!data.exists() && auth.token.role === 'produtor' && newData.child('produtoraId').val() === auth.token.produtoraId && newData.child('status').val() === 'Solicitado' && (newData.child('forma').val() === 'PIX' || newData.child('forma').val() === 'TED') && !newData.child('memoriaCalculo').exists()))",
+        "memoriaCalculo": {
+          ".write": false
+        }
+      }
+    },
+
+    "borderos_produtor": {
+      "$produtoraId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId))",
+        ".write": false
+      }
+    },
+
+    "auditoria": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    }
+  }
+}

@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Hub de Repasses · DiskIngressos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue-900: #1e3a8a;
+    --blue-950: #172554;
+    --blue-100: #dbeafe;
+    --blue-50:  #eff6ff;
+    --orange-700:#c2410c;
+    --orange-500:#f97316;
+    --orange-100:#ffedd5;
+    --orange-50: #fff7ed;
+    --green-700:#15803d;
+    --green-100:#dcfce7;
+    --bg: #eef1f7;
+    --surface: #ffffff;
+    --line: #dde2ee;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --radius: 14px;
+    --shadow: 0 2px 6px rgba(15, 23, 42, .05), 0 8px 24px -12px rgba(30, 58, 138, .12);
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .topbar {
+    background: linear-gradient(90deg, var(--blue-950), var(--blue-900) 65%, #1d4ed8);
+    color: #fff;
+    padding: 16px 28px;
+    border-bottom: 3px solid var(--orange-500);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .logo {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: #fff; color: var(--blue-900);
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 16px;
+    box-shadow: 0 4px 10px rgba(0,0,0,.2);
+    position: relative;
+  }
+  .logo::after {
+    content: ""; position: absolute; right: -3px; bottom: -3px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--orange-500); border: 2px solid var(--blue-950);
+  }
+  .brand h1 { font-size: 17px; margin: 0; font-weight: 800; }
+  .brand small { color: #cbd5e1; font-size: 12px; display: block; margin-top: 2px; }
+  .container {
+    max-width: 1040px;
+    margin: 48px auto;
+    padding: 0 24px;
+    width: 100%;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 780px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+    width: fit-content;
+  }
+  .pill.blue { background: var(--blue-100); color: var(--blue-900); }
+  .pill.orange { background: var(--orange-100); color: var(--orange-700); }
+  .card h2 { margin: 8px 0 6px; font-size: 20px; font-weight: 800; }
+  .card p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+  .list { margin: 12px 0 0; padding-left: 18px; font-size: 12.5px; color: #334155; line-height: 1.7; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    text-decoration: none; font-weight: 800; font-size: 13.5px;
+    padding: 12px 18px; border-radius: 10px; transition: .15s;
+  }
+  .btn.blue { background: var(--blue-900); color: #fff; }
+  .btn.blue:hover { background: var(--blue-950); }
+  .btn.orange { background: var(--orange-700); color: #fff; }
+  .btn.orange:hover { background: #9a3412; }
+  .info-box {
+    margin-top: 24px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--blue-900);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    font-size: 12.5px;
+    color: #334155;
+    line-height: 1.6;
+  }
+  code {
+    font-family: var(--mono);
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 11.5px;
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">DI</div>
+      <div>
+        <h1>Hub de Repasses · DiskIngressos</h1>
+        <small>Projeto Firebase: diskingressos-62591 · Fuso America/Sao_Paulo</small>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <div class="card">
+        <div>
+          <span class="pill blue">Perfil 1 · Acesso Total</span>
+          <h2>Painel do Financeiro</h2>
+          <p>Configuração completa de eventos, travas por receita e capacidade vendida, taxas do Disk, retenções (ECAD, ISS, INPI, Alvará), descontos operacionais, créditos, negociações, advanced e aprovação de repasses.</p>
+          <ul class="list">
+            <li>8 abas operacionais + prévia ao vivo da memória de cálculo</li>
+            <li>Visão exclusiva de Bilheteria Bruta, Taxa Adm, Taxa Operacional e Conveniência</li>
+            <li>Publicação automática da projeção limpa em <code>/borderos_produtor</code></li>
+          </ul>
+        </div>
+        <a class="btn blue" href="financeiro.html">Abrir Painel do Financeiro →</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <span class="pill orange">Perfil 2 · Acesso Limitado</span>
+          <h2>Portal do Produtor</h2>
+          <p>Visão exclusiva da produtora com <strong>Borderô do Evento</strong> já líquido, acompanhamento de travas e faixas de capacidade, solicitação de repasses (PIX/TED), antecipações, contas bancárias e despesas.</p>
+          <ul class="list">
+            <li><strong>Regra de Ouro:</strong> zero exposição a taxas do Disk ou conveniência</li>
+            <li>Gráficos de composição do borderô, status do resultado e cascata</li>
+            <li>Sincronizado em tempo real com as alterações salvas no Financeiro</li>
+          </ul>
+        </div>
+        <a class="btn orange" href="produtor.html">Abrir Portal do Produtor →</a>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>Sincronização ao vivo:</strong> As telas <code>financeiro.html</code> e <code>produtor.html</code> compartilham a base de dados com os 3 eventos do roteiro de homologação (<strong>Polaquedo · R$ 240,00</strong>, <strong>Festival de Inverno · R$ 4.816,00</strong> e <strong>Noite de Stand-up · R$ 0,00</strong>, consolidado <strong>R$ 4.056,00</strong>). Qualquer alteração salva em <code>financeiro.html</code> recalcula e atualiza imediatamente o borderô exibido em <code>produtor.html</code>.
+    </div>
+  </main>
+</body>
+</html>

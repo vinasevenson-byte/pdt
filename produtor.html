@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiskIngressos · Hub de Repasses — Produtor (Acesso Limitado)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { margin: 0; background: #EEF1F7; font-family: 'Manrope', sans-serif; color: #0f1b3d; min-height: 100vh; box-sizing: border-box; }
+    * { box-sizing: border-box; }
+    a { color: #1e3a8a; }
+    a:hover { color: #142a66; }
+    .in { font: 500 16px 'IBM Plex Mono', monospace; color: #0f1b3d; background: #fff; border: 1px solid #c9cfdf; border-radius: 10px; padding: 12px 14px; min-height: 48px; box-sizing: border-box; width: 100%; }
+    .in:focus { outline: 2px solid #1e3a8a; outline-offset: 1px; border-color: #1e3a8a; }
+    .tx { font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 15px; }
+    .lb { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; color: #3d4766; text-transform: uppercase; letter-spacing: .04em; }
+    .card { background: #fff; border: 1px solid #dde2ee; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .h2 { margin: 0; font-size: 17px; font-weight: 800; color: #0f1b3d; }
+    .sub { font-size: 13px; color: #5a6584; }
+    .num { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+    .row { display: flex; justify-content: space-between;align-items: baseline; gap: 12px; font-size: 14px; color: #3d4766; padding: 5px 0; }
+    .pill { border: 1px solid #c9cfdf; background: #fff; color: #0f1b3d; border-radius: 10px; padding: 12px 18px; min-height: 48px; font: 700 14px 'Manrope', sans-serif; cursor: pointer; }
+    .pillOn { border: 2px solid #1e3a8a; background: #eef2ff; color: #1e3a8a; border-radius: 10px; padding: 12px 18px; min-height: 48px; font: 800 14px 'Manrope', sans-serif; cursor: pointer; }
+    .btn { border: 0; border-radius: 10px; padding: 12px 20px; min-height: 48px; font: 800 15px 'Manrope', sans-serif; cursor: pointer; }
+    .btn:disabled { background: #c9cfdf; color: #5a6584; cursor: not-allowed; }
+    .kpi { background: #fff; border: 1px solid #dde2ee; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
+    .kpi span:first-child { font-size: 12px; font-weight: 700; color: #5a6584; text-transform: uppercase; letter-spacing: .05em; }
+    .grp { font-size: 12px; font-weight: 800; color: #3d4766; letter-spacing: .08em; text-transform: uppercase; }
+    .mods { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+    .mod { display: flex; gap: 20px; align-items: flex-start; text-align: left; background: #fff; border: 1px solid #dde2ee; border-radius: 12px; padding: 24px; min-height: 150px; cursor: pointer; font-family: 'Manrope', sans-serif; width: 100%; box-sizing: border-box; }
+    .mod:hover { border-color: #1e3a8a; box-shadow: 0 4px 14px rgba(15,27,61,.08); }
+    .ic { width: 56px; height: 56px; border-radius: 12px; background: #e6ecfb; display: flex; align-items: center; justify-content: center; flex: none; color: #1e40af; }
+    .mtt { display: block; font-size: 19px; font-weight: 800; color: #0f1b3d; margin-bottom: 8px; }
+    .mtd { display: block; font-size: 14px; color: #4b5573; line-height: 1.5; }
+    .bdg { display: inline-block; margin-top: 12px; font-size: 12px; font-weight: 800; color: #065f46; background: #dcfce7; padding: 5px 10px; border-radius: 999px; }
+    .tab { border: 0; border-bottom: 3px solid transparent; background: transparent; color: #3d4766; padding: 14px 16px; min-height: 48px; font: 700 14px 'Manrope', sans-serif; cursor: pointer; }
+    .tabOn { border: 0; border-bottom: 3px solid #c2410c; background: transparent; color: #0f1b3d; padding: 14px 16px; min-height: 48px; font: 800 14px 'Manrope', sans-serif; cursor: pointer; }
+    #chart-tip { position: fixed; pointer-events: none; z-index: 9999; background: #0f1b3d; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; box-shadow: 0 6px 20px rgba(15, 27, 61, 0.25); display: none; }
+    @media (max-width: 768px) {
+      .wrap-p { padding: 16px !important; }
+      header { padding: 16px !important; }
+    }
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 27, 61, 0.55);
+      z-index: 5000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-bg.open { display: flex; }
+    .modal-card {
+      background: #fff;
+      border-radius: 14px;
+      max-width: 760px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 24px;
+      border: 1px solid #dde2ee;
+    }
+    @media print {
+      body { background: #fff !important; }
+      #app, #chart-tip { display: none !important; }
+      #modal-prod {
+        position: static !important;
+        background: #fff !important;
+        padding: 0 !important;
+        display: block !important;
+      }
+      .modal-card {
+        max-width: 100% !important;
+        max-height: none !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="chart-tip"></div>
+  <div id="app"></div>
+  <div id="modal-prod" class="modal-bg" onclick="if(event.target===this) window.fecharModalProd()">
+    <div class="modal-card" id="modal-prod-body"></div>
+  </div>
+
+  <!--
+    REGRA DE OURO (PROMPT 5):
+    - Lê exclusivamente /eventos (da produtora), /borderos_produtor/{produtoraId}, /despesas, /advanced, /antecipacoes, /contas e /repasses.
+  -->
+  <script type="module">
+    const STORAGE_KEY = 'diskingressos_rtdb_v1';
+    const PRODUTORA_ID = 'prod_exemplo';
+
+    // Cores fixas por significado — PROMPT 6
+    const CO = {
+      rep: '#2f55c4',
+      lib: '#0f8a5f',
+      ret: '#e0661b',
+      rtc: '#0891b2',
+      cus: '#c2307a',
+      tot: '#1e3a8a'
+    };
+
+    // Seed exclusivamente dos nós que o produtor tem permissão de leitura (caso aberto antes do financeiro.html)
+    const FALLBACK_PRODUCER_NODES = {
+      config: {
+        antecipacao: { pctLimite: 50, taxaPct: 2 },
+        transferencia: { pixValor: 0, tedValor: 10 }
+      },
+      produtoras: {
+        prod_exemplo: { nome: 'Produtora Exemplo Curitiba Ltda', cnpj: '14.890.321/0001-55' }
+      },
+      locais: {
+        loc_polaquedo: { nome: 'Espaço Cultural Polaquedo', cidade: 'Curitiba', uf: 'PR' },
+        loc_teatro: { nome: 'Teatro Guaíra', cidade: 'Curitiba', uf: 'PR' },
+        loc_comedy: { nome: 'Auditório Curitiba Comedy', cidade: 'Curitiba', uf: 'PR' }
+      },
+      eventos: {
+        polaquedo: { produtoraId: 'prod_exemplo', nome: 'Polaquedo', data: '03/10/2026', localId: 'loc_polaquedo', liberadoParaSolicitacao: true },
+        festival: { produtoraId: 'prod_exemplo', nome: 'Festival de Inverno', data: '22/11/2026', localId: 'loc_teatro', liberadoParaSolicitacao: true },
+        standup: { produtoraId: 'prod_exemplo', nome: 'Noite de Stand-up', data: '14/12/2026', localId: 'loc_comedy', liberadoParaSolicitacao: true }
+      },
+      borderos_produtor: {
+        prod_exemplo: {
+          _consolidado: {
+            liberavelEventos: 5056,
+            patrocinioProdutora: 1000,
+            patrocinioDescricao: 'Patrocínio master da temporada',
+            advConsolidado: 2000,
+            devedores: 0,
+            saldoDisponivel: 4056,
+            tarifaPix: 0,
+            tarifaTed: 10
+          },
+          polaquedo: {
+            borderoEvento: 5400,
+            despesas: 0,
+            retencoes: [
+              { nome: 'ISS', valor: 300, status: 'provisionado' },
+              { nome: 'ECAD', valor: 600, status: 'provisionado' },
+              { nome: 'Locação', valor: 2000, status: 'provisionado' },
+              { nome: 'Segurança', valor: 800, status: 'provisionado' }
+            ],
+            descontosOperacionais: [
+              { nome: 'Bilheteiros', qtd: 2, unit: 150, valor: 300 },
+              { nome: 'Validadores', qtd: 2, unit: 100, valor: 200 }
+            ],
+            resultado: 1200,
+            regraTexto: 'Faixa atual: 20% do resultado (capacidade vendida 30%). Vale o menor entre esse valor e 60% do resultado. Liberação de 100% em 06/10/2026 (D+2 dias úteis bancários).',
+            faixaAtual: { gatilhoPct: 30, liberaPct: 20 },
+            faixas: [{ gatilhoPct: 30, liberaPct: 20 }, { gatilhoPct: 50, liberaPct: 40 }, { gatilhoPct: 80, liberaPct: 70 }],
+            pctVendido: 30,
+            vendidosAtuais: 150,
+            capacidadeUsada: 500,
+            pctResultadoRegra: 60,
+            modoRegra: 'MIN',
+            proximaFaixa: { gatilhoPct: 50, liberaPct: 40, ingressosFaltantes: 100 },
+            liberaTotalDmais: 2,
+            dataLiberacaoTotal: '06/10/2026',
+            escolhido: 240,
+            rebate: 0,
+            patrocinio: 0,
+            jaRepassado: 0,
+            advEv: 0,
+            antEv: 0,
+            liberavel: 240,
+            retido: 960
+          },
+          festival: {
+            borderoEvento: 66240,
+            despesas: 2000,
+            retencoes: [
+              { nome: 'ISS', valor: 3600, status: 'provisionado' },
+              { nome: 'ECAD', valor: 7200, status: 'provisionado' },
+              { nome: 'Locação', valor: 15000, status: 'provisionado' },
+              { nome: 'Brigada', valor: 1500, status: 'provisionado' }
+            ],
+            descontosOperacionais: [
+              { nome: 'Bilheteiros', qtd: 4, unit: 150, valor: 600 },
+              { nome: 'Técnicos', qtd: 2, unit: 400, valor: 800 },
+              { nome: 'Validadores', qtd: 6, unit: 100, valor: 600 },
+              { nome: 'Hospedagem', qtd: 2, unit: 350, valor: 700 },
+              { nome: 'Deslocamento', qtd: 1, unit: 1200, valor: 1200 }
+            ],
+            resultado: 33040,
+            regraTexto: 'Faixa atual: 40% do resultado (capacidade vendida 60%). Vale o menor entre esse valor e 60% do resultado. Liberação de 100% em 24/11/2026 (D+2 dias úteis bancários).',
+            faixaAtual: { gatilhoPct: 50, liberaPct: 40 },
+            faixas: [{ gatilhoPct: 30, liberaPct: 20 }, { gatilhoPct: 50, liberaPct: 40 }, { gatilhoPct: 80, liberaPct: 70 }],
+            pctVendido: 60,
+            vendidosAtuais: 720,
+            capacidadeUsada: 1200,
+            pctResultadoRegra: 60,
+            modoRegra: 'MIN',
+            proximaFaixa: { gatilhoPct: 80, liberaPct: 70, ingressosFaltantes: 240 },
+            liberaTotalDmais: 2,
+            dataLiberacaoTotal: '24/11/2026',
+            escolhido: 13216,
+            rebate: 720,
+            patrocinio: 2000,
+            jaRepassado: 5000,
+            advEv: 0,
+            antEv: 6120,
+            liberavel: 4816,
+            retido: 19824
+          },
+          standup: {
+            borderoEvento: 3120,
+            despesas: 0,
+            retencoes: [
+              { nome: 'ISS', valor: 180, status: 'provisionado' },
+              { nome: 'Locação', valor: 1500, status: 'provisionado' }
+            ],
+            descontosOperacionais: [],
+            resultado: 1440,
+            regraTexto: 'Repasse liberado a partir de 30% da capacidade vendida. Hoje: 7,5%. Liberação de 100% em 16/12/2026 (D+2 dias úteis bancários).',
+            faixaAtual: null,
+            faixas: [{ gatilhoPct: 30, liberaPct: 20 }, { gatilhoPct: 50, liberaPct: 40 }, { gatilhoPct: 80, liberaPct: 70 }],
+            pctVendido: 7.5,
+            vendidosAtuais: 60,
+            capacidadeUsada: 800,
+            pctResultadoRegra: 60,
+            modoRegra: 'MIN',
+            proximaFaixa: { gatilhoPct: 30, liberaPct: 20, ingressosFaltantes: 180 },
+            liberaTotalDmais: 2,
+            dataLiberacaoTotal: '16/12/2026',
+            escolhido: 0,
+            rebate: 0,
+            patrocinio: 0,
+            jaRepassado: 0,
+            advEv: 0,
+            antEv: 0,
+            liberavel: 0,
+            retido: 1440
+          }
+        }
+      },
+      despesas: {
+        desp_1: { eventoId: 'festival', produtoraId: 'prod_exemplo', data: '02/10/2026', categoria: 'Material gráfico', fornecedor: 'Gráfica Curitiba', valor: 1200, status: 'Pago', nfCodigo: 'NF-e 000.418.220', comprovanteUrl: 'https://diskingressos.com.br/comprovantes/nf-418220-grafica.pdf' },
+        desp_2: { eventoId: 'festival', produtoraId: 'prod_exemplo', data: '06/10/2026', categoria: 'Som e luz extra', fornecedor: 'AudioSul Locação', valor: 800, status: 'Pago', nfCodigo: 'NFS-e 2026/8891', comprovanteUrl: 'https://diskingressos.com.br/comprovantes/nfse-8891-audiosul.pdf' },
+        desp_3: { eventoId: 'polaquedo', produtoraId: 'prod_exemplo', data: '12/10/2026', categoria: 'Camarim', fornecedor: 'Buffet Eventos PR', valor: 500, status: 'A pagar', nfCodigo: 'Orçamento #991', comprovanteUrl: '' }
+      },
+      advanced: {
+        adv_1: { produtoraId: 'prod_exemplo', data: '01/10/2026', descricao: 'Adiantamento contratual de turnê', valor: 2000, escopo: 'consolidado', abaterNoProximo: true }
+      },
+      antecipacoes: {
+        ant_1: { produtoraId: 'prod_exemplo', eventoId: 'festival', data: '10/10/2026', valor: 6000, taxaPct: 2, abaterNoProximo: true, status: 'Aprovada' }
+      },
+      contas: {
+        prod_exemplo: {
+          c1: { banco: '341 · Itaú Unibanco', agencia: '0392', conta: '44910-8', pix: '14.890.321/0001-55 (CNPJ)', titular: 'Produtora Exemplo Curitiba Ltda', status: 'Validada', padrao: true },
+          c2: { banco: '756 · Sicoob Sul', agencia: '4102', conta: '88210-3', pix: 'financeiro@produtoraexemplo.com.br', titular: 'Produtora Exemplo Curitiba Ltda', status: 'Pendente', padrao: false }
+        }
+      },
+      repasses: {
+        rep_hist_1: {
+          produtoraId: 'prod_exemplo', eventoIds: ['festival'], valorSolicitado: 5000, tarifaTransferencia: 10, valorLiquido: 4990, forma: 'TED', contaId: 'c1',
+          status: 'Pago', protocoloBancario: 'TED-ITAU-20261005-994812', comprovanteUrl: 'https://diskingressos.com.br/comprovantes/ted-994812.pdf', solicitadoEm: '05/10/2026 14:15'
+        }
+      }
+    };
+
+    // Lê APENAS os nós permitidos ao produtor
+    function loadProducerAllowedView() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const full = raw ? JSON.parse(raw) : FALLBACK_PRODUCER_NODES;
+        return {
+          config: full.config || FALLBACK_PRODUCER_NODES.config,
+          produtora: (full.produtoras && full.produtoras[PRODUTORA_ID]) || FALLBACK_PRODUCER_NODES.produtoras.prod_exemplo,
+          locais: full.locais || FALLBACK_PRODUCER_NODES.locais,
+          eventos: Object.fromEntries(
+            Object.entries(full.eventos || FALLBACK_PRODUCER_NODES.eventos).filter(([, ev]) => ev.produtoraId === PRODUTORA_ID)
+          ),
+          borderos: (full.borderos_produtor && full.borderos_produtor[PRODUTORA_ID]) || FALLBACK_PRODUCER_NODES.borderos_produtor.prod_exemplo,
+          despesas: Object.fromEntries(
+            Object.entries(full.despesas || FALLBACK_PRODUCER_NODES.despesas).filter(([, d]) => d.produtoraId === PRODUTORA_ID)
+          ),
+          advanced: Object.fromEntries(
+            Object.entries(full.advanced || FALLBACK_PRODUCER_NODES.advanced).filter(([, a]) => a.produtoraId === PRODUTORA_ID)
+          ),
+          antecipacoes: Object.fromEntries(
+            Object.entries(full.antecipacoes || FALLBACK_PRODUCER_NODES.antecipacoes).filter(([, a]) => a.produtoraId === PRODUTORA_ID)
+          ),
+          contas: (full.contas && full.contas[PRODUTORA_ID]) || FALLBACK_PRODUCER_NODES.contas.prod_exemplo,
+          repasses: Object.fromEntries(
+            Object.entries(full.repasses || FALLBACK_PRODUCER_NODES.repasses).filter(([, r]) => r.produtoraId === PRODUTORA_ID)
+          )
+        };
+      } catch (e) {
+        return loadProducerAllowedView();
+      }
+    }
+
+    function persistProducerWrite(mutatorFn) {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const full = raw ? JSON.parse(raw) : structuredClone(FALLBACK_PRODUCER_NODES);
+      mutatorFn(full);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(full));
+    }
+
+    function num(v) {
+      const s = String(v == null ? '' : v).trim().replace(/\./g, '').replace(',', '.');
+      const n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    }
+    function BRL(v) {
+      return (v < -0.004 ? '− ' : '') + 'R$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function P(v) {
+      return Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%';
+    }
+
+    function stack(segs) {
+      const tot = segs.reduce((t, g) => t + Math.max(0, g.v), 0) || 1;
+      return segs.filter(g => g.v > 0.004).map(g => ({
+        label: g.label,
+        cor: g.cor,
+        vTxt: BRL(g.v),
+        pTxt: P((g.v / tot) * 100),
+        f: (g.v / tot).toFixed(4)
+      }));
+    }
+    function ariaOf(segs) {
+      return segs.map(g => `${g.label} ${g.vTxt}`).join(', ');
+    }
+    function donut(segs, centerLabel, centerV) {
+      const tot = segs.reduce((t, g) => t + Math.max(0, g.v), 0);
+      let acc = 0;
+      const parts = [];
+      const out = segs.filter(g => g.v > 0.004).map(g => {
+        const a = (acc / tot) * 100;
+        const b = ((acc + g.v) / tot) * 100;
+        const e = Math.max(a, b - 0.8);
+        acc += g.v;
+        parts.push(`${g.cor} ${a.toFixed(2)}% ${e.toFixed(2)}%`, `#ffffff ${e.toFixed(2)}% ${b.toFixed(2)}%`);
+        return { label: g.label, cor: g.cor, vTxt: BRL(g.v), pTxt: P((g.v / tot) * 100) };
+      });
+      return {
+        segs: out,
+        aria: ariaOf(out),
+        grad: `conic-gradient(${parts.length ? parts.join(', ') : '#eef1f7 0% 100%'})`,
+        centerLabel,
+        centerTxt: BRL(centerV)
+      };
+    }
+    function wfBuild(steps) {
+      steps = steps.filter(s => s.kind === 'start' || s.kind === 'total' || s.v > 0.004);
+      let run = 0, max = 0;
+      steps.forEach(s => {
+        if (s.kind === 'start' || s.kind === 'total') run = s.v;
+        else if (s.kind === 'dec') run -= s.v;
+        else run += s.v;
+        max = Math.max(max, run, s.v);
+      });
+      max = max || 1;
+      run = 0;
+      return steps.map(s => {
+        const a = run;
+        let b, x, w;
+        if (s.kind === 'start' || s.kind === 'total') {
+          b = s.v; x = 0; w = (Math.max(0, b) / max) * 100;
+        } else if (s.kind === 'dec') {
+          b = a - s.v; x = (Math.max(0, b) / max) * 100; w = ((Math.max(0, a) - Math.max(0, b)) / max) * 100;
+        } else {
+          b = a + s.v; x = (Math.max(0, a) / max) * 100; w = ((Math.max(0, b) - Math.max(0, a)) / max) * 100;
+        }
+        run = b;
+        const big = s.kind === 'start' || s.kind === 'total';
+        return {
+          label: s.label,
+          x: x.toFixed(2),
+          w: Math.max(w, 0.8).toFixed(2),
+          cor: s.cor,
+          vTxt: s.kind === 'dec' ? BRL(-s.v) : s.kind === 'inc' ? '+ ' + BRL(s.v) : BRL(s.v),
+          fw: big ? '800' : '600'
+        };
+      });
+    }
+
+    // Simulador "E se?" (What-If) exclusivo do Produtor operando APENAS sobre o bordero_produtor sanitizado
+    function simularNoProdutor(bp, vendidosSimulados, metaLiberavel) {
+      const cap = Math.max(1, Number(bp.capacidadeUsada || 1));
+      const vendAtuais = Math.max(1, Number(bp.vendidosAtuais || Math.round((bp.pctVendido / 100) * cap) || 1));
+      const borderoPorIngresso = Number(bp.borderoEvento || 0) / vendAtuais;
+      const totRetAtuais = (bp.retencoes || []).filter(r => r.status === 'provisionado').reduce((t, r) => t + r.valor, 0);
+      const totOps = (bp.descontosOperacionais || []).reduce((t, o) => t + o.valor, 0);
+      const creditos = Number(bp.rebate || 0) + Number(bp.patrocinio || 0);
+      const deducoesPos = Number(bp.jaRepassado || 0) + Number(bp.advEv || 0) + Number(bp.antEv || 0);
+      const pctResA = Number(bp.pctResultadoRegra || 60);
+      const modo = bp.modoRegra || 'MIN';
+      const faixas = [...(bp.faixas || [])].sort((a, b) => a.gatilhoPct - b.gatilhoPct);
+
+      function calcParaVendidos(vSim) {
+        const vClamped = Math.max(0, Math.min(cap, Math.round(vSim)));
+        const fator = vClamped / vendAtuais;
+        const borderoSim = Math.round(borderoPorIngresso * vClamped * 100) / 100;
+        // Projeção proporcional conservadora de retenções variáveis + fixas
+        const retSim = vClamped >= vendAtuais ? Math.round(totRetAtuais * (0.5 + 0.5 * fator) * 100) / 100 : totRetAtuais;
+        const resSim = Math.max(0, Math.round((borderoSim - Number(bp.despesas || 0) - retSim - totOps) * 100) / 100);
+        const pctVend = (vClamped / cap) * 100;
+        let fAtiva = null;
+        for (const f of faixas) {
+          if (pctVend >= f.gatilhoPct) fAtiva = f;
+        }
+        const libPctB = fAtiva ? fAtiva.liberaPct : 0;
+        const valA = resSim * (pctResA / 100);
+        const valB = resSim * (libPctB / 100);
+        const escolhidoSim = modo === 'A' ? valA : modo === 'B' ? valB : Math.min(valA, valB);
+        const libSim = Math.max(0, Math.round((escolhidoSim + creditos - deducoesPos) * 100) / 100);
+        return { vendidos: vClamped, pctVendido: pctVend, borderoSim, resSim, faixaAtual: fAtiva, liberavel: libSim };
+      }
+
+      const proj = calcParaVendidos(vendidosSimulados);
+      let meta = null;
+      if (Number(metaLiberavel) > 0) {
+        let achou = null;
+        for (let v = Number(bp.vendidosAtuais || 0); v <= cap; v++) {
+          const c = calcParaVendidos(v);
+          if (c.liberavel >= metaLiberavel - 0.009) {
+            achou = {
+              atingivel: true,
+              ingressosFaltantes: Math.max(0, v - Number(bp.vendidosAtuais || 0)),
+              vendidosNecessarios: v,
+              pctCapacidade: c.pctVendido
+            };
+            break;
+          }
+        }
+        if (!achou) achou = { atingivel: false };
+        meta = achou;
+      }
+
+      return { proj, meta, borderoPorIngresso };
+    }
+
+    window.state = {
+      tab: 'home',
+      q: '',
+      checked: { polaquedo: true, festival: true },
+      det: 'polaquedo',
+      valor: '',
+      forma: 'PIX',
+      ac1: false, // Aceites DESMARCADOS por padrão
+      ac2: false,
+      enviado: false,
+      exportMsg: false,
+      contaSel: 'c1',
+      nc: { banco: '', ag: '', cc: '', pix: '' },
+      antEv: 'festival',
+      antValor: '',
+      antOk: false,
+      despEv: 'festival',
+      simEvId: 'polaquedo',
+      simIng: undefined,
+      simMeta: undefined
+    };
+
+    window.render = function () {
+      const s = window.state;
+      const PVIEW = loadProducerAllowedView();
+      const consNode = PVIEW.borderos._consolidado || {
+        liberavelEventos: 0, patrocinioProdutora: 0, patrocinioDescricao: 'Patrocínio da produtora',
+        advConsolidado: 0, devedores: 0, saldoDisponivel: 0
+      };
+
+      const ids = Object.keys(PVIEW.eventos).filter(id => PVIEW.eventos[id].liberadoParaSolicitacao && PVIEW.borderos[id]);
+
+      const defs = [
+        ['saldo', 'Saldo Consolidado', 'saldo geral acumulado exportes extrato'],
+        ['sol', 'Solicitar Repasse', 'transferencia repasse conta simulador'],
+        ['contas', 'Contas Bancárias', 'conta corrente pix validacao banco'],
+        ['ant', 'Antecipações', 'antecipacao vendas prazo'],
+        ['desp', 'Despesas', 'custos infraestrutura descontos retencoes nf comprovante']
+      ];
+      const norm = x => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const qn = norm(s.q);
+      const m = {};
+      let any = false;
+      defs.forEach(t => {
+        m[t[0]] = !qn || norm(t[1] + ' ' + t[2]).includes(qn);
+        if (m[t[0]]) any = true;
+      });
+      m.nada = !any;
+
+      let libSel = 0, libAll = 0, ret = 0, jaAll = 0, nSel = 0;
+      const selRows = [];
+
+      const evs = ids.map(id => {
+        const ev = PVIEW.eventos[id];
+        const bp = PVIEW.borderos[id];
+        const loc = PVIEW.locais[ev.localId] || { nome: 'Local', cidade: 'Curitiba', uf: 'PR' };
+        const blocked = bp.liberavel <= 0;
+        const checked = Boolean(s.checked[id]) && !blocked;
+
+        libAll += bp.liberavel;
+        ret += bp.retido;
+        jaAll += bp.jaRepassado;
+        if (checked) {
+          libSel += bp.liberavel;
+          nSel++;
+          selRows.push({ nome: ev.nome, v: BRL(bp.liberavel) });
+        }
+
+        const primGatilho = (bp.faixas && bp.faixas[0]?.gatilhoPct) || 30;
+        const liberaPctAtual = bp.faixaAtual ? bp.faixaAtual.liberaPct : 0;
+        const chip = blocked
+          ? (liberaPctAtual === 0 ? `Bloqueado · abaixo de ${primGatilho}% vendido` : 'Sem saldo liberável')
+          : bp.proximaFaixa
+            ? `Liberado parcial · ${liberaPctAtual}% do resultado`
+            : 'Liberado';
+
+        return {
+          id,
+          nome: ev.nome,
+          data: ev.data,
+          local: `${loc.nome} · ${loc.cidade}/${loc.uf}`,
+          checked,
+          blocked,
+          borda: id === s.det ? '#1e3a8a' : '#dde2ee',
+          chip,
+          chipBg: blocked ? '#ffedd5' : '#dcfce7',
+          chipFg: blocked ? '#9a3412' : '#065f46',
+          pctTxt: P(bp.pctVendido),
+          capTxt: `${bp.capacidadeUsada.toLocaleString('pt-BR')} lugares`,
+          barW: Math.min(100, bp.pctVendido).toFixed(1),
+          marks: (bp.faixas || []).map(f => ({ g: Math.min(100, f.gatilhoPct) })),
+          nextMsg: bp.proximaFaixa
+            ? `Faltam ${bp.proximaFaixa.ingressosFaltantes.toLocaleString('pt-BR')} ingressos para liberar ${bp.proximaFaixa.liberaPct}%`
+            : 'Faixa máxima atingida',
+          libTxt: BRL(bp.liberavel),
+          libCor: blocked ? '#9a3412' : '#065f46',
+          baseTxt: BRL(bp.resultado),
+          retTxt: BRL(bp.retido)
+        };
+      });
+
+      const saldo = consNode.saldoDisponivel;
+      const disp = nSel ? Math.max(0, libSel + consNode.patrocinioProdutora - consNode.advConsolidado - consNode.devedores) : 0;
+
+      // Demonstrativo do evento selecionado em Solicitar Repasse
+      const detId = PVIEW.borderos[s.det] ? s.det : ids[0];
+      const de = PVIEW.eventos[detId];
+      const dbp = PVIEW.borderos[detId];
+      const totRetDet = (dbp.retencoes || []).filter(r => r.status === 'provisionado').reduce((t, r) => t + r.valor, 0);
+      const totOpsDet = (dbp.descontosOperacionais || []).reduce((t, o) => t + o.valor, 0);
+
+      // Simulador What-If no Produtor
+      const vendReaisDet = Number(dbp.vendidosAtuais || Math.round((dbp.pctVendido / 100) * dbp.capacidadeUsada) || 0);
+      const simIngVal = (s.simEvId === detId && s.simIng !== undefined) ? s.simIng : vendReaisDet;
+      const simMetaVal = (s.simEvId === detId && s.simMeta !== undefined) ? s.simMeta : Math.round(dbp.liberavel + 3000);
+      const simOut = simularNoProdutor(dbp, simIngVal, simMetaVal);
+
+      // Gráficos Visão Geral e Saldo
+      let tRep = 0, tLib = 0, tRet = 0;
+      const stk = ids.map(id => {
+        const bp = PVIEW.borderos[id];
+        const rep = Math.max(0, bp.jaRepassado + bp.advEv + bp.antEv);
+        tRep += rep;
+        tLib += bp.liberavel;
+        tRet += bp.retido;
+        const sg = stack([
+          { label: 'Já recebido', v: rep, cor: CO.rep },
+          { label: 'Liberável', v: bp.liberavel, cor: CO.lib },
+          { label: 'Retido', v: bp.retido, cor: CO.ret }
+        ]);
+        return {
+          nome: PVIEW.eventos[id].nome,
+          totTxt: BRL(rep + bp.liberavel + bp.retido),
+          segs: sg,
+          aria: `${PVIEW.eventos[id].nome}: ${ariaOf(sg)}`
+        };
+      });
+
+      const dnHome = donut([
+        { label: 'Já recebido', v: tRep, cor: CO.rep },
+        { label: 'Liberável agora', v: tLib, cor: CO.lib },
+        { label: 'Retido pelas travas', v: tRet, cor: CO.ret }
+      ], 'Total', tRep + tLib + tRet);
+
+      const wfDet = wfBuild([
+        { label: 'Borderô do evento', kind: 'start', v: dbp.borderoEvento, cor: CO.tot },
+        { label: 'Despesas (' + (dbp.despesasAPagar > 0 && dbp.despesas > dbp.despesasPagas ? 'Pagas + A pagar' : 'Abatidas') + ')', kind: 'dec', v: dbp.despesas, cor: CO.cus },
+        { label: 'Retenções', kind: 'dec', v: totRetDet, cor: CO.rtc },
+        { label: 'Descontos operacionais', kind: 'dec', v: totOpsDet, cor: CO.cus },
+        { label: 'Resultado', kind: 'total', v: dbp.resultado, cor: CO.tot },
+        { label: 'Créditos (rebate, patrocínio)', kind: 'inc', v: dbp.rebate + dbp.patrocinio, cor: CO.lib },
+        { label: 'Retido pelas travas', kind: 'dec', v: dbp.retido, cor: CO.ret },
+        { label: 'Já recebido', kind: 'dec', v: dbp.jaRepassado + dbp.advEv + dbp.antEv, cor: CO.rep },
+        { label: 'Liberável agora', kind: 'total', v: dbp.liberavel, cor: CO.lib }
+      ]);
+
+      // Repasses históricos e em análise
+      const repList = Object.entries(PVIEW.repasses || {}).map(([id, r]) => ({ id, ...r }));
+      const pendCount = repList.filter(r => r.status === 'Solicitado' || r.status === 'Aprovado').length;
+
+      // Validação do formulário de solicitação de repasse
+      const v = num(s.valor);
+      const erro = (s.valor !== '' && v > disp + 0.009) ? 'O valor ultrapassa o disponível na seleção.' : '';
+      const bloqEnvio = !(v > 0 && v <= disp + 0.009 && s.ac1 && s.ac2);
+      const tarifaTed = consNode.tarifaTed !== undefined ? Number(consNode.tarifaTed) : Number((PVIEW.config.transferencia && PVIEW.config.transferencia.tedValor) ?? 10);
+      const tarifaPix = consNode.tarifaPix !== undefined ? Number(consNode.tarifaPix) : Number((PVIEW.config.transferencia && PVIEW.config.transferencia.pixValor) ?? 0);
+      const tarifaTransf = v > 0 ? (s.forma === 'TED' ? tarifaTed : tarifaPix) : 0;
+      const valorLiquidoTransf = Math.max(0, v - tarifaTransf);
+
+      // Contas bancárias
+      const stCor = st => (st === 'Validada' || st === 'Pago' || st === 'Paga' || st === 'Aprovada' || st === 'Aprovado') ? '#065f46' : st === 'Recusada' || st === 'Recusado' ? '#991b1b' : '#9a3412';
+      const stBg = st => st === 'Validada' ? '#dcfce7' : st === 'Recusada' ? '#fee2e2' : '#ffedd5';
+      const contasArr = Object.entries(PVIEW.contas || {}).map(([id, c]) => ({ id, ...c, bg: stBg(c.status), fg: stCor(c.status) }));
+      const contasOk = contasArr.filter(c => c.status === 'Validada');
+
+      // Antecipações
+      const antCfg = PVIEW.config.antecipacao || { pctLimite: 50, taxaPct: 2 };
+      const antBp = PVIEW.borderos[s.antEv] || dbp;
+      const antList = Object.entries(PVIEW.antecipacoes || {}).map(([id, a]) => ({ id, ...a }));
+      const jaAnt = antList.filter(a => a.eventoId === s.antEv && a.status !== 'Recusada').reduce((t, a) => t + num(a.valor), 0);
+      const limAnt = Math.max(0, (antBp.retido * (antCfg.pctLimite / 100)) - jaAnt);
+      const av = num(s.antValor);
+      const taxaAnt = av * (antCfg.taxaPct / 100);
+
+      // Despesas do evento selecionado
+      const despBp = PVIEW.borderos[s.despEv] || dbp;
+      let pagoDesp = 0, aPagarDesp = 0;
+      const listaDesp = Object.values(PVIEW.despesas || {}).filter(d => d.eventoId === s.despEv).map(d => {
+        if (d.status === 'Pago') pagoDesp += num(d.valor);
+        else aPagarDesp += num(d.valor);
+        return {
+          cat: d.categoria,
+          forn: d.fornecedor,
+          data: d.data,
+          nfCodigo: d.nfCodigo || '',
+          comprovanteUrl: d.comprovanteUrl || '',
+          valor: BRL(num(d.valor)),
+          status: d.status,
+          cor: d.status === 'Pago' ? '#065f46' : '#9a3412'
+        };
+      });
+      const totRetDesp = (despBp.retencoes || []).filter(r => r.status === 'provisionado').reduce((t, r) => t + r.valor, 0);
+      const totOpsDesp = (despBp.descontosOperacionais || []).reduce((t, o) => t + o.valor, 0);
+      const dnDesp = donut([
+        { label: 'Despesas pagas', v: pagoDesp, cor: CO.cus },
+        { label: 'Retenções', v: totRetDesp, cor: CO.rtc },
+        { label: 'Descontos operacionais', v: totOpsDesp, cor: CO.rep }
+      ], 'Deduções', pagoDesp + totRetDesp + totOpsDesp);
+
+      // Render HTML
+      document.getElementById('app').innerHTML = `
+        <header style="background:#1e3a8a;color:#fff;padding:20px 32px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#c7d2fe">DiskIngressos · Hub do Produtor</div>
+            <div style="font-size:24px;font-weight:800">${PVIEW.produtora.nome}</div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+            <span style="background:#fff;color:#1e3a8a;font-size:12px;font-weight:800;padding:8px 14px;border-radius:999px;text-transform:uppercase;letter-spacing:.06em">Produtor · acesso limitado</span>
+            <a href="financeiro.html" style="color:#fff;font-weight:700;font-size:14px;border:1px solid #93a3d8;border-radius:10px;padding:12px 16px;text-decoration:none">← Visão Financeiro</a>
+          </div>
+        </header>
+
+        ${s.tab !== 'home' ? `
+          <nav aria-label="Menu financeiro do produtor" style="background:#fff;border-bottom:1px solid #dde2ee;padding:0 24px;display:flex;flex-wrap:wrap;align-items:center;gap:4px">
+            <button class="btn" style="background:#eef2ff;color:#1e3a8a;margin-right:12px;min-height:44px;font-size:14px" onclick="window.setTab('home')">← Menu</button>
+            ${defs.map(t => `
+              <button class="${s.tab === t[0] ? 'tabOn' : 'tab'}" onclick="window.setTab('${t[0]}')">${t[1]}</button>
+            `).join('')}
+          </nav>
+        ` : ''}
+
+        <div class="wrap-p" style="max-width:1376px;margin:0 auto;padding:24px 32px 48px;display:flex;flex-direction:column;gap:20px">
+
+          ${s.tab === 'home' ? `
+            <div style="display:flex;flex-direction:column;gap:24px">
+              <div class="grp">Visão geral</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">
+                <div class="kpi" style="border:2px solid #047857"><span>Saldo disponível</span><span class="num" style="font-size:22px;color:#065f46">${BRL(saldo)}</span></div>
+                <div class="kpi"><span>Liberável nos eventos</span><span class="num" style="font-size:20px">${BRL(libAll)}</span></div>
+                <div class="kpi"><span>Retido pelas travas</span><span class="num" style="font-size:20px;color:#9a3412">${BRL(ret)}</span></div>
+                <div class="kpi"><span>Repassado até hoje</span><span class="num" style="font-size:20px">${BRL(jaAll)}</span></div>
+                <div class="kpi"><span>Eventos abertos</span><span class="num" style="font-size:20px">${ids.length}</span><span class="sub">${pendCount} repasse(s) em análise</span></div>
+              </div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:stretch">
+                <section class="card" style="flex:1 1 420px;min-width:0">
+                  <div><h2 class="h2">Para onde vai o resultado dos eventos</h2><div class="sub" style="margin-top:6px">Resultado + créditos de todos os eventos abertos.</div></div>
+                  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:28px">
+                    <div role="img" aria-label="Gráfico de rosca: ${dnHome.aria}" style="position:relative;width:176px;height:176px;flex:none;border-radius:50%;background:${dnHome.grad}">
+                      <div style="position:absolute;inset:22px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px">
+                        <span style="font-size:11px;font-weight:800;color:#5a6584;text-transform:uppercase;letter-spacing:.06em">${dnHome.centerLabel}</span>
+                        <span class="num" style="font-size:15px;color:#0f1b3d">${dnHome.centerTxt}</span>
+                      </div>
+                    </div>
+                    <div style="flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:12px">
+                      ${dnHome.segs.map(g => `
+                        <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#3d4766" data-tip="${g.label}: ${g.vTxt} (${g.pTxt})">
+                          <span aria-hidden="true" style="width:12px;height:12px;border-radius:3px;flex:none;background:${g.cor}"></span>
+                          <span style="flex:1">${g.label}</span>
+                          <span class="num" style="color:#0f1b3d">${g.vTxt}</span>
+                          <span style="width:52px;text-align:right;font-size:12px;color:#5a6584">${g.pTxt}</span>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                </section>
+
+                <section class="card" style="flex:1 1 520px;min-width:0">
+                  <div><h2 class="h2">Situação por evento</h2><div class="sub" style="margin-top:6px">Passe o mouse nas barras para ver os valores.</div></div>
+                  <div style="display:flex;flex-direction:column;gap:16px">
+                    ${stk.map(b => `
+                      <div style="display:flex;flex-direction:column;gap:6px">
+                        <div style="display:flex;justify-content:space-between;gap:8px;font-size:14px">
+                          <span style="font-weight:800">${b.nome}</span>
+                          <span class="num" style="color:#5a6584">${b.totTxt}</span>
+                        </div>
+                        <div role="img" aria-label="${b.aria}" style="display:flex;gap:2px;height:22px;background:#f4f6fb;border-radius:4px">
+                          ${b.segs.map(g => `
+                            <div title="${g.label}: ${g.vTxt} (${g.pTxt})" data-tip="${b.nome} · ${g.label}: ${g.vTxt} (${g.pTxt})" style="height:100%;min-width:3px;border-radius:4px;background:${g.cor};flex:${g.f} 1 0px"></div>
+                          `).join('')}
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:#3d4766">
+                    <span style="display:flex;align-items:center;gap:6px"><span aria-hidden="true" style="width:12px;height:12px;border-radius:3px;background:#2f55c4"></span>Já recebido</span>
+                    <span style="display:flex;align-items:center;gap:6px"><span aria-hidden="true" style="width:12px;height:12px;border-radius:3px;background:#0f8a5f"></span>Liberável</span>
+                    <span style="display:flex;align-items:center;gap:6px"><span aria-hidden="true" style="width:12px;height:12px;border-radius:3px;background:#e0661b"></span>Retido</span>
+                  </div>
+                </section>
+              </div>
+
+              <section class="card" style="gap:10px">
+                <h2 class="h2">Vendas × travas de capacidade</h2>
+                ${evs.map(e => `
+                  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:10px 0;border-top:1px solid #eef1f7">
+                    <div style="flex:2 1 200px;min-width:0"><div style="font-weight:800">${e.nome}</div><div class="sub">${e.data}</div></div>
+                    <span style="flex:0 1 auto;font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px;background:${e.chipBg};color:${e.chipFg}">${e.chip}</span>
+                    <div style="flex:2 1 180px;min-width:0;display:flex;flex-direction:column;gap:4px">
+                      <div style="position:relative;height:12px;background:#e3e7f1;border-radius:999px" title="${e.pctTxt} vendido">
+                        <div style="position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:#1e3a8a;width:${e.barW}%"></div>
+                        ${e.marks.map(k => `<div style="position:absolute;top:-3px;width:2px;height:18px;background:#c2410c;left:${k.g}%"></div>`).join('')}
+                      </div>
+                      <span class="sub" style="font-size:12px">${e.pctTxt} vendido · ${e.nextMsg}</span>
+                    </div>
+                    <span class="num" style="flex:1 1 120px;text-align:right;color:${e.libCor}">${e.libTxt}</span>
+                  </div>
+                `).join('')}
+              </section>
+
+              <label style="display:flex;align-items:center;background:#fff;border:1px solid #dde2ee;border-radius:12px;overflow:hidden">
+                <span aria-hidden="true" style="width:60px;min-height:52px;display:flex;align-items:center;justify-content:center;border-right:1px solid #dde2ee;color:#3d4766">🔍</span>
+                <input aria-label="Buscar módulo financeiro" value="${s.q}" oninput="window.state.q=this.value;window.render()" placeholder="Buscar módulo financeiro..." style="border:0;outline:none;flex:1;font:500 16px 'Manrope',sans-serif;padding:14px 16px;min-height:52px;color:#0f1b3d;background:transparent" />
+              </label>
+
+              <div class="grp">Operações de caixa</div>
+              <div class="mods">
+                ${m.saldo ? `<button class="mod" onclick="window.setTab('saldo')"><span class="ic">📊</span><span><span class="mtt">Saldo Consolidado</span><span class="mtd">Saldo geral acumulado dos seus eventos e exportes rápidos.</span><span class="bdg">${BRL(saldo)}</span></span></button>` : ''}
+                ${m.sol ? `<button class="mod" onclick="window.setTab('sol')"><span class="ic">💸</span><span><span class="mtt">Solicitar Repasse</span><span class="mtd">Escolha os eventos, simule metas de venda e solicite a transferência.</span></span></button>` : ''}
+                ${m.contas ? `<button class="mod" onclick="window.setTab('contas')"><span class="ic">🏦</span><span><span class="mtt">Contas Bancárias</span><span class="mtd">Cadastro e validação de contas correntes e chaves PIX.</span></span></button>` : ''}
+                ${m.ant ? `<button class="mod" onclick="window.setTab('ant')"><span class="ic">⚡</span><span><span class="mtt">Antecipações</span><span class="mtd">Antecipe parte do valor retido das vendas.</span></span></button>` : ''}
+                ${m.desp ? `<button class="mod" onclick="window.setTab('desp')"><span class="ic">🧾</span><span><span class="mtt">Despesas e NFs</span><span class="mtd">Custos diretos, notas fiscais anexadas, descontos e retenções.</span></span></button>` : ''}
+              </div>
+              ${m.nada ? `<div class="sub">Nenhum módulo encontrado para "${s.q}".</div>` : ''}
+            </div>
+          ` : ''}
+
+          <!-- MÓDULO: SALDO CONSOLIDADO -->
+          ${s.tab === 'saldo' ? `
+            <div style="display:flex;flex-direction:column;gap:20px">
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px">
+                <div class="kpi" style="border:2px solid #047857"><span>Saldo disponível</span><span class="num" style="font-size:22px;color:#065f46">${BRL(saldo)}</span></div>
+                <div class="kpi"><span>Liberável nos eventos</span><span class="num" style="font-size:20px">${BRL(libAll)}</span></div>
+                <div class="kpi"><span>Retido pelas travas</span><span class="num" style="font-size:20px;color:#9a3412">${BRL(ret)}</span></div>
+                <div class="kpi"><span>Repassado até hoje</span><span class="num" style="font-size:20px">${BRL(jaAll)}</span></div>
+              </div>
+
+              <section class="card">
+                <div><h2 class="h2">Situação por evento</h2><div class="sub" style="margin-top:6px">Já recebido, liberável e retido em cada evento.</div></div>
+                <div style="display:flex;flex-direction:column;gap:16px">
+                  ${stk.map(b => `
+                    <div style="display:flex;flex-direction:column;gap:6px">
+                      <div style="display:flex;justify-content:space-between;gap:8px;font-size:14px"><span style="font-weight:800">${b.nome}</span><span class="num" style="color:#5a6584">${b.totTxt}</span></div>
+                      <div role="img" aria-label="${b.aria}" style="display:flex;gap:2px;height:26px;background:#f4f6fb;border-radius:4px">
+                        ${b.segs.map(g => `<div title="${g.label}: ${g.vTxt} (${g.pTxt})" data-tip="${b.nome} · ${g.label}: ${g.vTxt} (${g.pTxt})" style="height:100%;min-width:3px;border-radius:4px;background:${g.cor};flex:${g.f} 1 0px"></div>`).join('')}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:#3d4766">
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:#2f55c4"></span>Já recebido</span>
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:#0f8a5f"></span>Liberável</span>
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:#e0661b"></span>Retido</span>
+                </div>
+              </section>
+
+              <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+                <section class="card" style="flex:999 1 640px;min-width:0">
+                  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:center">
+                    <h2 class="h2">Meus eventos</h2>
+                    <button class="btn" style="background:#fff;color:#1e3a8a;border:1px solid #1e3a8a;min-height:44px;font-size:14px" onclick="window.exportarCSV()">Exportar extrato (CSV)</button>
+                  </div>
+                  ${s.exportMsg ? `<div style="font-size:13px;font-weight:700;color:#065f46">Extrato gerado com eventos, borderô e repasses.</div>` : ''}
+                  <div style="overflow-x:auto">
+                    <table style="width:100%;border-collapse:collapse;font-size:14px;min-width:640px">
+                      <thead>
+                        <tr style="text-align:left;font-size:12px;color:#5a6584;text-transform:uppercase">
+                          <th style="padding:10px 8px">Evento</th>
+                          <th style="padding:10px 8px;text-align:right">% vendido</th>
+                          <th style="padding:10px 8px;text-align:right">Resultado</th>
+                          <th style="padding:10px 8px;text-align:right">Liberável</th>
+                          <th style="padding:10px 8px;text-align:right">Retido</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${evs.map(e => `
+                          <tr style="border-top:1px solid #eef1f7">
+                            <td style="padding:10px 8px"><div style="font-weight:800">${e.nome}</div><div class="sub">${e.data}</div></td>
+                            <td class="num" style="padding:10px 8px;text-align:right">${e.pctTxt}</td>
+                            <td class="num" style="padding:10px 8px;text-align:right">${e.baseTxt}</td>
+                            <td class="num" style="padding:10px 8px;text-align:right;color:#065f46">${e.libTxt}</td>
+                            <td class="num" style="padding:10px 8px;text-align:right;color:#9a3412">${e.retTxt}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                <section class="card" style="flex:1 1 380px;min-width:0;border:2px solid #1e3a8a">
+                  <h2 class="h2">Composição do saldo</h2>
+                  <div style="display:flex;flex-direction:column">
+                    <div class="row"><span>Liberável nos eventos</span><span class="num" style="color:#0f1b3d">${BRL(libAll)}</span></div>
+                    ${consNode.patrocinioProdutora > 0 ? `<div class="row"><span>(+) ${consNode.patrocinioDescricao}</span><span class="num" style="color:#065f46">${BRL(consNode.patrocinioProdutora)}</span></div>` : ''}
+                    ${consNode.advConsolidado > 0 ? `<div class="row"><span>(−) Advanced (adiantamentos)</span><span class="num">${BRL(-consNode.advConsolidado)}</span></div>` : ''}
+                    ${consNode.devedores > 0 ? `<div class="row"><span>(−) Saldo devedor de eventos</span><span class="num">${BRL(-consNode.devedores)}</span></div>` : ''}
+                    <div class="row" style="border-top:1px solid #dde2ee;margin-top:6px;padding-top:10px;font-weight:800;color:#065f46">
+                      <span>Saldo disponível</span><span class="num" style="font-size:18px">${BRL(saldo)}</span>
+                    </div>
+                  </div>
+                  <button class="btn" style="background:#047857;color:#fff" onclick="window.setTab('sol')">Solicitar repasse</button>
+                </section>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- MÓDULO: SOLICITAR REPASSE -->
+          ${s.tab === 'sol' ? `
+            <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+              <div style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:20px">
+                <section class="card">
+                  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center">
+                    <div><h2 class="h2">1. Escolha de quais eventos solicitar</h2><div class="sub" style="margin-top:6px">Combine vários eventos em um único repasse.</div></div>
+                    <button class="btn" style="background:#fff;color:#1e3a8a;border:1px solid #1e3a8a;min-height:44px;font-size:14px" onclick="window.selTodosLiberados()">Selecionar todos liberados</button>
+                  </div>
+                  ${evs.map(e => `
+                    <div style="border:1px solid ${e.borda};border-radius:12px;padding:16px;display:flex;flex-wrap:wrap;align-items:center;gap:16px">
+                      <input type="checkbox" aria-label="Incluir evento no repasse" ${e.checked ? 'checked' : ''} ${e.blocked ? 'disabled' : ''} onchange="window.toggleEvRepasse('${e.id}', this.checked)" style="width:22px;height:22px" />
+                      <div style="flex:2 1 220px;min-width:0;display:flex;flex-direction:column;gap:6px">
+                        <div style="font-size:16px;font-weight:800">${e.nome}</div>
+                        <div class="sub">${e.data} · ${e.local}</div>
+                        <span style="align-self:flex-start;font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px;background:${e.chipBg};color:${e.chipFg}">${e.chip}</span>
+                      </div>
+                      <div style="flex:2 1 200px;min-width:0;display:flex;flex-direction:column;gap:6px">
+                        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>Vendido</span><span class="num">${e.pctTxt} de ${e.capTxt}</span></div>
+                        <div style="position:relative;height:10px;background:#e3e7f1;border-radius:999px">
+                          <div style="position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:#1e3a8a;width:${e.barW}%"></div>
+                          ${e.marks.map(k => `<div style="position:absolute;top:-3px;width:2px;height:16px;background:#c2410c;left:${k.g}%"></div>`).join('')}
+                        </div>
+                        <div style="font-size:12px;color:#5a6584">${e.nextMsg}</div>
+                      </div>
+                      <div style="flex:1 1 140px;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+                        <span style="font-size:12px;color:#5a6584;font-weight:700;text-transform:uppercase">Liberável</span>
+                        <span class="num" style="font-size:18px;color:${e.libCor}">${e.libTxt}</span>
+                        <button class="btn" style="background:transparent;color:#1e3a8a;padding:6px 0;min-height:36px;font-size:13px" onclick="window.state.det='${e.id}';window.state.simEvId='${e.id}';window.state.simIng=undefined;window.render()">Ver demonstrativo</button>
+                      </div>
+                    </div>
+                  `).join('')}
+                </section>
+
+                <!-- Demonstrativo — Começa em "Borderô do evento" (ZERO referências a percentuais internos do Disk) -->
+                <section class="card">
+                  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center">
+                    <div>
+                      <h2 class="h2">Demonstrativo · ${de.nome}</h2>
+                      <span class="sub">Somente leitura · Liberação de 100% em ${dbp.dataLiberacaoTotal || 'D+2 dias úteis'}</span>
+                    </div>
+                    <button class="btn" style="background:#fff;color:#1e3a8a;border:1px solid #1e3a8a;min-height:40px;padding:8px 14px;font-size:13px" onclick="window.abrirBorderoProdutorPDF('${detId}')">📄 Imprimir Borderô (PDF)</button>
+                  </div>
+                  <div style="display:flex;flex-wrap:wrap;gap:24px">
+                    <div style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column">
+                      <div class="row"><span>Borderô do evento</span><span class="num" style="color:#0f1b3d">${BRL(dbp.borderoEvento)}</span></div>
+                      <div class="row"><span>(−) Despesas lançadas</span><span class="num">${BRL(-dbp.despesas)}</span></div>
+                      <div class="row"><span>(−) Retenções (ISS, ECAD, Locação…)</span><span class="num" style="color:#b91c1c">${BRL(-totRetDet)}</span></div>
+                      <div class="row"><span>(−) Descontos operacionais</span><span class="num" style="color:#b91c1c">${BRL(-totOpsDet)}</span></div>
+                      <div class="row" style="border-top:1px solid #dde2ee;margin-top:6px;padding-top:10px;font-weight:800;color:#0f1b3d"><span>Resultado do evento</span><span class="num">${BRL(dbp.resultado)}</span></div>
+                      <button class="btn" style="background:transparent;color:#1e3a8a;padding:6px 0;min-height:36px;font-size:13px;align-self:flex-start" onclick="window.state.tab='desp';window.state.despEv='${detId}';window.render()">Ver detalhes e NFs em Despesas →</button>
+                    </div>
+                    <div style="flex:1 1 260px;min-width:0;display:flex;flex-direction:column;gap:8px">
+                      <div style="background:#f4f6fb;border-radius:12px;padding:16px;font-size:14px;line-height:1.5;color:#3d4766">${dbp.regraTexto}</div>
+                      <div class="row"><span>Liberado pela regra</span><span class="num" style="color:#0f1b3d">${BRL(dbp.escolhido)}</span></div>
+                      ${dbp.rebate > 0 ? `<div class="row"><span>(+) Rebate</span><span class="num" style="color:#065f46">${BRL(dbp.rebate)}</span></div>` : ''}
+                      ${dbp.patrocinio > 0 ? `<div class="row"><span>(+) Patrocínio do evento</span><span class="num" style="color:#065f46">${BRL(dbp.patrocinio)}</span></div>` : ''}
+                      <div class="row"><span>(−) Já repassado</span><span class="num">${BRL(-dbp.jaRepassado)}</span></div>
+                      ${dbp.advEv > 0 ? `<div class="row"><span>(−) Advanced do evento</span><span class="num">${BRL(-dbp.advEv)}</span></div>` : ''}
+                      ${dbp.antEv > 0 ? `<div class="row"><span>(−) Antecipação recebida</span><span class="num">${BRL(-dbp.antEv)}</span></div>` : ''}
+                      <div style="background:#ecfdf5;border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center">
+                        <span style="font-weight:800;color:#065f46">Liberável no evento</span>
+                        <span class="num" style="font-size:20px;color:#065f46">${BRL(dbp.liberavel)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Simulador "E se?" de Vendas e Metas para o Produtor -->
+                <section class="card" style="border:2px solid #c2410c;background:#fffaf5">
+                  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center">
+                    <div>
+                      <h2 class="h2" style="color:#9a3412">🔮 Simulador "E se?" de Vendas e Metas · ${de.nome}</h2>
+                      <div class="sub">Descubra quantos ingressos faltam para destravar a próxima faixa ou atingir sua meta de saque.</div>
+                    </div>
+                    <button class="btn" style="background:#eef2ff;color:#1e3a8a;min-height:38px;padding:6px 12px;font-size:12.5px" onclick="window.state.simEvId='${detId}';window.state.simIng=${vendReaisDet};window.render()">↺ Vendas atuais (${vendReaisDet} ing.)</button>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;align-items:end">
+                    <label class="lb">Simular ingressos vendidos (0 a ${dbp.capacidadeUsada})
+                      <div style="display:flex;gap:10px;align-items:center">
+                        <input type="range" min="0" max="${dbp.capacidadeUsada}" value="${simIngVal}" style="flex:1;accent-color:#c2410c" oninput="window.state.simEvId='${detId}';window.state.simIng=Number(this.value);window.render()" />
+                        <input class="in" style="width:105px;min-height:42px;padding:6px 10px" type="number" min="0" max="${dbp.capacidadeUsada}" value="${simIngVal}" oninput="window.state.simEvId='${detId}';window.state.simIng=Number(this.value||0);window.render()" />
+                      </div>
+                    </label>
+                    <label class="lb">Meta de valor liberável desejado (R$)
+                      <input class="in" style="min-height:42px;padding:6px 10px" type="number" step="500" value="${simMetaVal}" oninput="window.state.simEvId='${detId}';window.state.simMeta=Number(this.value||0);window.render()" />
+                    </label>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+                    <div class="kpi">
+                      <span>Ocupação Simulada</span>
+                      <span class="num" style="font-size:18px">${simOut.proj.vendidos} / ${dbp.capacidadeUsada} (${P(simOut.proj.pctVendido)})</span>
+                      <span class="sub">${simOut.proj.faixaAtual ? `Faixa ${simOut.proj.faixaAtual.gatilhoPct}% (libera ${simOut.proj.faixaAtual.liberaPct}%)` : 'Abaixo da 1ª faixa'}</span>
+                    </div>
+                    <div class="kpi">
+                      <span>Borderô Projetado</span>
+                      <span class="num" style="font-size:18px">${BRL(simOut.proj.borderoSim)}</span>
+                      <span class="sub">Resultado: ${BRL(simOut.proj.resSim)}</span>
+                    </div>
+                    <div class="kpi" style="border:2px solid #047857">
+                      <span>Liberável Projetado</span>
+                      <span class="num" style="font-size:18px;color:#065f46">${BRL(simOut.proj.liberavel)}</span>
+                      <span class="sub">Atual: ${BRL(dbp.liberavel)}</span>
+                    </div>
+                    <div class="kpi" style="background:#eef2ff">
+                      <span>Para liberar ${BRL(simMetaVal)}</span>
+                      <span class="num" style="font-size:15px;color:#1e3a8a">
+                        ${simOut.meta ? (simOut.meta.atingivel ? (simOut.meta.ingressosFaltantes === 0 ? '✓ Já disponível!' : `Faltam +${simOut.meta.ingressosFaltantes} ingressos`) : 'Apenas no D+' + (dbp.liberaTotalDmais || 2)) : '—'}
+                      </span>
+                      <span class="sub">${simOut.meta && simOut.meta.atingivel ? `Total de ${simOut.meta.vendidosNecessarios} ing. (${P(simOut.meta.pctCapacidade)})` : `100% liberado em ${dbp.dataLiberacaoTotal || 'pós-evento'}`}</span>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Cascata: Do borderô ao liberável -->
+                <section class="card">
+                  <div><h2 class="h2">Do borderô ao liberável · ${de.nome}</h2><div class="sub" style="margin-top:6px">Cada barra mostra quanto sai ou entra até chegar no valor que você pode solicitar.</div></div>
+                  <div role="img" aria-label="Cascata do borderô ao liberável de ${de.nome}" style="display:flex;flex-direction:column;gap:8px">
+                    ${wfDet.map(w => `
+                      <div style="display:grid;grid-template-columns:minmax(130px,220px) minmax(0,1fr) 130px;gap:14px;align-items:center;font-size:13px">
+                        <span style="color:#3d4766;font-weight:${w.fw}">${w.label}</span>
+                        <div title="${w.label}: ${w.vTxt}" data-tip="${w.label}: ${w.vTxt}" style="position:relative;height:24px;background:#f4f6fb;border-radius:4px">
+                          <div style="position:absolute;top:3px;bottom:3px;border-radius:4px;left:${w.x}%;width:${w.w}%;background:${w.cor}"></div>
+                        </div>
+                        <span class="num" style="text-align:right;color:#0f1b3d;font-weight:${w.fw}">${w.vTxt}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </section>
+
+                <section class="card">
+                  <h2 class="h2">Meus repasses e comprovantes</h2>
+                  ${repList.map(h => {
+                    const nomes = (h.eventoIds || []).map(id => PVIEW.eventos[id]?.nome || id).join(' + ');
+                    return `
+                      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #eef1f7;font-size:14px">
+                        <div style="flex:2 1 220px">
+                          <div style="font-weight:700">${nomes}</div>
+                          ${h.protocoloBancario ? `<div class="num" style="font-size:11.5px;color:#5a6584">Protocolo: ${h.protocoloBancario}</div>` : ''}
+                        </div>
+                        <span style="color:#5a6584;flex:1 1 120px">${h.forma} · ${h.solicitadoEm}</span>
+                        <span class="num" style="flex:1 1 120px;text-align:right">${BRL(h.valorLiquido ?? h.valorSolicitado)}</span>
+                        <span style="flex:0 0 95px;text-align:right;font-weight:800;color:${stCor(h.status)}">${h.status}</span>
+                        <div style="flex:0 0 auto">
+                          ${(h.status === 'Pago' || h.status === 'Aprovado') ? `<button class="btn" style="background:#eef2ff;color:#1e3a8a;min-height:36px;padding:6px 12px;font-size:12px" onclick="window.abrirReciboProdutorPDF('${h.id}')">🧾 Recibo PDF</button>` : ''}
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </section>
+              </div>
+
+              <aside style="flex:1 1 380px;min-width:0;display:flex;flex-direction:column;gap:20px">
+                <section class="card" style="border:2px solid #1e3a8a">
+                  <h2 class="h2">Consolidado da seleção</h2>
+                  <div style="display:flex;flex-direction:column">
+                    ${selRows.map(x => `<div class="row"><span>${x.nome}</span><span class="num" style="color:#0f1b3d">${x.v}</span></div>`).join('')}
+                    ${nSel === 0 ? `<div class="sub">Nenhum evento selecionado.</div>` : ''}
+                    ${consNode.patrocinioProdutora > 0 ? `<div class="row"><span>(+) ${consNode.patrocinioDescricao}</span><span class="num" style="color:#065f46">${BRL(consNode.patrocinioProdutora)}</span></div>` : ''}
+                    ${consNode.advConsolidado > 0 ? `<div class="row"><span>(−) Advanced (adiantamentos)</span><span class="num">${BRL(-consNode.advConsolidado)}</span></div>` : ''}
+                    ${consNode.devedores > 0 ? `<div class="row"><span>(−) Saldo devedor de eventos</span><span class="num">${BRL(-consNode.devedores)}</span></div>` : ''}
+                    <div class="row" style="border-top:1px solid #dde2ee;margin-top:6px;padding-top:10px;font-weight:800;color:#065f46">
+                      <span>Disponível para repasse</span><span class="num" style="font-size:18px">${BRL(disp)}</span>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="card">
+                  <h2 class="h2">2. Conta de destino</h2>
+                  ${contasOk.map(ct => `
+                    <button class="btn" style="text-align:left;background:${s.contaSel === ct.id ? '#eef2ff' : '#fff'};border:${s.contaSel === ct.id ? '2px solid #1e3a8a' : '1px solid #c9cfdf'};color:#0f1b3d;display:flex;flex-direction:column;gap:4px;font-weight:700" onclick="window.state.contaSel='${ct.id}';window.render()">
+                      <span style="font-size:16px;font-weight:800">${ct.banco}</span>
+                      <span class="num" style="font-size:13px;color:#5a6584">Ag ${ct.agencia} · CC ${ct.conta}</span>
+                      <span style="font-size:13px;color:${s.contaSel === ct.id ? '#065f46' : '#5a6584'}">${ct.padrao ? 'Conta padrão' : 'Conta validada'}</span>
+                    </button>
+                  `).join('')}
+                  <button class="btn" style="background:transparent;color:#1e3a8a;padding:4px 0;min-height:36px;font-size:13px;align-self:flex-start" onclick="window.setTab('contas')">Gerenciar contas →</button>
+                </section>
+
+                <section class="card">
+                  <h2 class="h2">3. Valor a transferir</h2>
+                  <div style="display:flex;gap:8px">
+                    <label class="lb" style="flex:1">Valor (R$)
+                      <input class="in" value="${s.valor}" oninput="window.state.valor=this.value;window.state.enviado=false;window.render()" inputmode="decimal" placeholder="0,00" />
+                    </label>
+                    <button class="btn" style="align-self:flex-end;background:#fff;color:#1e3a8a;border:1px solid #1e3a8a" onclick="window.state.valor='${disp.toFixed(2).replace('.',',')}';window.state.enviado=false;window.render()">Total</button>
+                  </div>
+
+                  <h2 class="h2">4. Forma de pagamento</h2>
+                  <div style="display:flex;gap:10px">
+                    <button class="${s.forma === 'PIX' ? 'pillOn' : 'pill'}" style="flex:1" onclick="window.state.forma='PIX';window.render()">PIX · Gratuito</button>
+                    <button class="${s.forma === 'TED' ? 'pillOn' : 'pill'}" style="flex:1" onclick="window.state.forma='TED';window.render()">TED · ${tarifaTed > 0 ? BRL(tarifaTed) : 'Gratuito'}</button>
+                  </div>
+
+                  <div style="background:#f4f6fb;border-radius:12px;padding:16px;display:flex;flex-direction:column">
+                    <div class="row"><span>Valor solicitado</span><span class="num" style="color:#0f1b3d">${BRL(v)}</span></div>
+                    <div class="row"><span>Tarifa de transferência (${s.forma})</span><span class="num" style="color:${tarifaTransf > 0 ? '#b91c1c' : '#065f46'}">${tarifaTransf > 0 ? BRL(-tarifaTransf) : 'R$ 0,00 (Gratuito)'}</span></div>
+                    <div class="row" style="border-top:1px solid #dde2ee;margin-top:4px;padding-top:8px;font-weight:800;color:#065f46"><span>Valor líquido a receber na conta</span><span class="num">${BRL(valorLiquidoTransf)}</span></div>
+                    <div class="row"><span>Prazo</span><span style="font-weight:700;color:#0f1b3d">${s.forma === 'PIX' ? 'Mesmo dia útil após aprovação' : 'Até 1 dia útil bancário após aprovação'}</span></div>
+                  </div>
+
+                  <label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer;min-height:44px">
+                    <input type="checkbox" ${s.ac1 ? 'checked' : ''} onchange="window.state.ac1=this.checked;window.render()" style="width:20px;height:20px;margin-top:1px" />
+                    Declaro que as informações bancárias estão corretas.
+                  </label>
+                  <label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer;min-height:44px">
+                    <input type="checkbox" ${s.ac2 ? 'checked' : ''} onchange="window.state.ac2=this.checked;window.render()" style="width:20px;height:20px;margin-top:1px" />
+                    Concordo com os termos de repasse e com os descontos do borderô.
+                  </label>
+
+                  ${erro ? `<div style="font-size:13px;font-weight:700;color:#b91c1c">${erro}</div>` : ''}
+                  ${s.enviado ? `<div style="font-size:13px;font-weight:700;color:#065f46;background:#ecfdf5;padding:12px;border-radius:10px">Solicitação enviada para análise do Financeiro.</div>` : ''}
+
+                  <div style="display:flex;gap:10px">
+                    <button class="btn" style="flex:1;background:#fff;color:#1e3a8a;border:1px solid #c9cfdf" onclick="window.limparSolicitacao()">Cancelar</button>
+                    <button class="btn" style="flex:2;background:#047857;color:#fff" ${bloqEnvio ? 'disabled' : ''} onclick="window.enviarSolicitacaoRepasse()">Solicitar repasse</button>
+                  </div>
+                </section>
+              </aside>
+            </div>
+          ` : ''}
+
+          <!-- MÓDULO: CONTAS BANCÁRIAS -->
+          ${s.tab === 'contas' ? `
+            <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+              <section class="card" style="flex:999 1 640px;min-width:0">
+                <h2 class="h2">Minhas contas</h2>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">
+                  ${contasArr.map(ct => `
+                    <div style="border:1px solid #dde2ee;border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:8px">
+                      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+                        <span style="font-size:16px;font-weight:800">${ct.banco}</span>
+                        <span style="font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;background:${ct.bg};color:${ct.fg}">${ct.status}</span>
+                      </div>
+                      <div class="num" style="font-size:13px;color:#5a6584">Ag ${ct.agencia} · CC ${ct.conta}</div>
+                      <div style="font-size:13px;color:#3d4766">PIX: ${ct.pix}</div>
+                      ${ct.padrao ? `<div style="font-size:13px;font-weight:800;color:#065f46">Conta padrão de repasse</div>` : ''}
+                      ${ct.status === 'Pendente' ? `<div style="font-size:13px;color:#9a3412">Aguardando validação do Financeiro. Ainda não recebe repasses.</div>` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+              </section>
+
+              <section class="card" style="flex:1 1 380px;min-width:0">
+                <h2 class="h2">Cadastrar nova conta</h2>
+                <label class="lb">Banco<input class="in tx" value="${s.nc.banco}" oninput="window.state.nc.banco=this.value;window.render()" placeholder="Nome e código do banco" /></label>
+                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+                  <label class="lb">Agência<input class="in" value="${s.nc.ag}" oninput="window.state.nc.ag=this.value;window.render()" /></label>
+                  <label class="lb">Conta corrente<input class="in" value="${s.nc.cc}" oninput="window.state.nc.cc=this.value;window.render()" /></label>
+                </div>
+                <label class="lb">Chave PIX<input class="in tx" value="${s.nc.pix}" oninput="window.state.nc.pix=this.value;window.render()" placeholder="CNPJ, e-mail, telefone ou aleatória" /></label>
+                <div class="sub">A conta precisa ter a mesma titularidade (CNPJ) da produtora.</div>
+                <button class="btn" style="background:#1e3a8a;color:#fff" ${!(s.nc.banco && s.nc.ag && s.nc.cc) ? 'disabled' : ''} onclick="window.cadastrarContaProdutor()">Enviar para validação</button>
+              </section>
+            </div>
+          ` : ''}
+
+          <!-- MÓDULO: ANTECIPAÇÕES -->
+          ${s.tab === 'ant' ? `
+            <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+              <section class="card" style="flex:1 1 420px;min-width:0">
+                <div><h2 class="h2">Solicitar antecipação</h2><div class="sub" style="margin-top:6px">Antecipe até ${antCfg.pctLimite}% do valor ainda retido pelas travas do evento.</div></div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                  ${ids.map(id => `
+                    <button class="${s.antEv === id ? 'pillOn' : 'pill'}" onclick="window.state.antEv='${id}';window.state.antValor='';window.state.antOk=false;window.render()">${PVIEW.eventos[id].nome}</button>
+                  `).join('')}
+                </div>
+                <div style="background:#f4f6fb;border-radius:12px;padding:16px;display:flex;flex-direction:column">
+                  <div class="row"><span>Retido pelas travas</span><span class="num" style="color:#0f1b3d">${BRL(antBp.retido)}</span></div>
+                  <div class="row"><span>Já antecipado</span><span class="num">${BRL(-jaAnt)}</span></div>
+                  <div class="row" style="font-weight:800;color:#0f1b3d"><span>Limite disponível</span><span class="num">${BRL(limAnt)}</span></div>
+                </div>
+                <label class="lb">Valor a antecipar (R$)<input class="in" value="${s.antValor}" oninput="window.state.antValor=this.value;window.state.antOk=false;window.render()" inputmode="decimal" placeholder="0,00" /></label>
+                <div style="display:flex;flex-direction:column">
+                  <div class="row"><span>Custo de antecipação (${antCfg.taxaPct}%)</span><span class="num" style="color:#b91c1c">${BRL(-taxaAnt)}</span></div>
+                  <div class="row" style="font-weight:800;color:#065f46"><span>Você recebe agora</span><span class="num">${BRL(av - taxaAnt)}</span></div>
+                  <div class="row"><span>Será abatido do evento</span><span class="num">${BRL(-(av + taxaAnt))}</span></div>
+                </div>
+                ${av > limAnt + 0.009 ? `<div style="font-size:13px;font-weight:700;color:#b91c1c">O valor ultrapassa o limite disponível.</div>` : ''}
+                ${s.antOk ? `<div style="font-size:13px;font-weight:700;color:#065f46;background:#ecfdf5;padding:12px;border-radius:10px">Antecipação solicitada. O Financeiro vai analisar.</div>` : ''}
+                <button class="btn" style="background:#047857;color:#fff" ${!(av > 0 && av <= limAnt + 0.009) ? 'disabled' : ''} onclick="window.pedirAntecipacaoProdutor()">Solicitar antecipação</button>
+              </section>
+
+              <section class="card" style="flex:999 1 560px;min-width:0">
+                <h2 class="h2">Minhas antecipações</h2>
+                ${antList.map(a => `
+                  <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #eef1f7;font-size:14px">
+                    <span style="font-weight:700;flex:2 1 200px">${PVIEW.eventos[a.eventoId]?.nome || a.eventoId}</span>
+                    <span style="color:#5a6584;flex:1 1 100px">${a.data}</span>
+                    <span class="num" style="flex:1 1 120px;text-align:right">${BRL(a.valor)}</span>
+                    <span class="sub" style="flex:1 1 120px;text-align:right">encargo ${BRL(num(a.valor) * (num(a.taxaPct) / 100))}</span>
+                    <span style="flex:0 0 100px;text-align:right;font-weight:800;color:${stCor(a.status)}">${a.status}</span>
+                  </div>
+                `).join('')}
+              </section>
+            </div>
+          ` : ''}
+
+          <!-- MÓDULO: DESPESAS E NOTAS FISCAIS -->
+          ${s.tab === 'desp' ? `
+            <div style="display:flex;flex-direction:column;gap:20px">
+              <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+                <span style="font-size:13px;font-weight:700;color:#3d4766;margin-right:6px">Evento:</span>
+                ${ids.map(id => `
+                  <button class="${s.despEv === id ? 'pillOn' : 'pill'}" onclick="window.state.despEv='${id}';window.render()">${PVIEW.eventos[id].nome}</button>
+                `).join('')}
+              </div>
+
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px">
+                <div class="kpi"><span>Despesas pagas</span><span class="num" style="font-size:20px">${BRL(pagoDesp)}</span></div>
+                <div class="kpi"><span>Despesas a pagar</span><span class="num" style="font-size:20px;color:#9a3412">${BRL(aPagarDesp)}</span></div>
+                <div class="kpi"><span>Descontos operacionais</span><span class="num" style="font-size:20px">${BRL(totOpsDesp)}</span></div>
+                <div class="kpi"><span>Retenções</span><span class="num" style="font-size:20px">${BRL(totRetDesp)}</span></div>
+              </div>
+
+              <section class="card">
+                <div><h2 class="h2">Composição das deduções</h2><div class="sub" style="margin-top:6px">Tudo o que sai do borderô deste evento antes do resultado.</div></div>
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:28px">
+                  <div role="img" aria-label="Gráfico de rosca: ${dnDesp.aria}" style="position:relative;width:176px;height:176px;flex:none;border-radius:50%;background:${dnDesp.grad}">
+                    <div style="position:absolute;inset:22px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px">
+                      <span style="font-size:11px;font-weight:800;color:#5a6584;text-transform:uppercase;letter-spacing:.06em">${dnDesp.centerLabel}</span>
+                      <span class="num" style="font-size:15px;color:#0f1b3d">${dnDesp.centerTxt}</span>
+                    </div>
+                  </div>
+                  <div style="flex:1 1 260px;min-width:0;display:flex;flex-direction:column;gap:12px">
+                    ${dnDesp.segs.map(g => `
+                      <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#3d4766" data-tip="${g.label}: ${g.vTxt} (${g.pTxt})">
+                        <span aria-hidden="true" style="width:12px;height:12px;border-radius:3px;flex:none;background:${g.cor}"></span>
+                        <span style="flex:1">${g.label}</span>
+                        <span class="num" style="color:#0f1b3d">${g.vTxt}</span>
+                        <span style="width:52px;text-align:right;font-size:12px;color:#5a6584">${g.pTxt}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              </section>
+
+              <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+                <section class="card" style="flex:999 1 560px;min-width:0">
+                  <h2 class="h2">Despesas lançadas e Notas Fiscais</h2>
+                  ${listaDesp.map(dp => `
+                    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #eef1f7;font-size:14px">
+                      <div style="flex:2 1 180px">
+                        <div style="font-weight:700">${dp.cat}</div>
+                        ${dp.nfCodigo ? `<div class="num" style="font-size:11.5px;color:#5a6584">Doc: ${dp.nfCodigo}</div>` : ''}
+                      </div>
+                      <span style="color:#5a6584;flex:1 1 140px">${dp.forn} · ${dp.data}</span>
+                      <span class="num" style="flex:1 1 110px;text-align:right">${dp.valor}</span>
+                      <span style="flex:0 0 85px;text-align:right;font-weight:800;color:${dp.cor}">${dp.status}</span>
+                      <div style="flex:0 0 auto">
+                        ${dp.comprovanteUrl ? `<a href="${dp.comprovanteUrl}" target="_blank" rel="noopener" style="font-size:12px;font-weight:800;background:#eef2ff;color:#1e3a8a;padding:6px 10px;border-radius:8px;text-decoration:none">📎 Ver NF</a>` : ''}
+                      </div>
+                    </div>
+                  `).join('')}
+                  ${listaDesp.length === 0 ? `<div class="sub">Nenhuma despesa lançada neste evento.</div>` : ''}
+                  <div class="sub" style="font-size:12px">Despesas lançadas (status Pago e A pagar) são abatidas conforme a regra do evento.</div>
+                </section>
+
+                <aside style="flex:1 1 380px;min-width:0;display:flex;flex-direction:column;gap:20px">
+                  <section class="card">
+                    <h2 class="h2">Descontos operacionais</h2>
+                    ${(despBp.descontosOperacionais || []).map(o => `
+                      <div class="row"><span>${o.nome} <span class="sub" style="font-size:12px">${o.qtd} × ${BRL(o.unit)}</span></span><span class="num" style="color:#b91c1c">${BRL(-o.valor)}</span></div>
+                    `).join('')}
+                    ${(despBp.descontosOperacionais || []).length === 0 ? `<div class="sub">Sem descontos operacionais.</div>` : ''}
+                  </section>
+
+                  <section class="card">
+                    <h2 class="h2">Retenções</h2>
+                    ${(despBp.retencoes || []).map(r => `
+                      <div class="row">
+                        <span>${r.nome} <span style="font-size:11px;font-weight:800;color:${r.status === 'pago' ? '#065f46' : '#5a6584'};text-transform:uppercase;margin-left:6px">${r.status}</span></span>
+                        <span class="num" style="color:#b91c1c">${BRL(-r.valor)}</span>
+                      </div>
+                    `).join('')}
+                  </section>
+                </aside>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    };
+
+    // Impressão de Borderô do Produtor (Começa em Borderô do Evento — ZERO menção a encargos internos Disk)
+    window.abrirBorderoProdutorPDF = (evId) => {
+      const PVIEW = loadProducerAllowedView();
+      const ev = PVIEW.eventos[evId];
+      const bp = PVIEW.borderos[evId];
+      if (!ev || !bp) return;
+      const loc = PVIEW.locais[ev.localId] || { nome: 'Local', cidade: 'Curitiba', uf: 'PR' };
+      const totRet = (bp.retencoes || []).filter(r => r.status === 'provisionado').reduce((t, r) => t + r.valor, 0);
+      const totOps = (bp.descontosOperacionais || []).reduce((t, o) => t + o.valor, 0);
+
+      document.getElementById('modal-prod-body').innerHTML = `
+        <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #dde2ee">
+          <span style="font-weight:800;color:#1e3a8a">📄 Demonstrativo de Borderô · Impressão / PDF</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn" style="background:#1e3a8a;color:#fff;min-height:36px;padding:6px 14px;font-size:13px" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+            <button class="btn" style="background:#eef2ff;color:#1e3a8a;min-height:36px;padding:6px 14px;font-size:13px" onclick="window.fecharModalProd()">Fechar</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:13.5px">
+          <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1e3a8a;padding-bottom:12px">
+            <div>
+              <div style="font-size:11px;font-weight:800;color:#1e3a8a;text-transform:uppercase;letter-spacing:.08em">DiskIngressos · Demonstrativo Oficial do Produtor</div>
+              <div style="font-size:20px;font-weight:800;color:#0f1b3d">${ev.nome}</div>
+              <div class="sub">${PVIEW.produtora.nome} (${PVIEW.produtora.cnpj}) · ${loc.nome} · Data: ${ev.data}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="sub">Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
+              <div style="font-weight:800;color:#065f46;margin-top:4px">Vendido: ${P(bp.pctVendido)} de ${bp.capacidadeUsada} lug.</div>
+            </div>
+          </div>
+          <div class="row" style="font-weight:800;color:#0f1b3d"><span>Borderô do Evento</span><span class="num">${BRL(bp.borderoEvento)}</span></div>
+          <div class="row"><span>(−) Despesas Lançadas</span><span class="num">${BRL(-bp.despesas)}</span></div>
+          <div class="row"><span>(−) Retenções (ISS, ECAD, Locação…)</span><span class="num">${BRL(-totRet)}</span></div>
+          <div class="row"><span>(−) Descontos Operacionais</span><span class="num">${BRL(-totOps)}</span></div>
+          <div class="row" style="border-top:1px solid #dde2ee;font-weight:800;color:#0f1b3d"><span>(=) Resultado do Evento</span><span class="num">${BRL(bp.resultado)}</span></div>
+          <div style="background:#f4f6fb;padding:10px 12px;border-radius:8px;font-size:12.5px;color:#3d4766">${bp.regraTexto}</div>
+          <div class="row"><span>(=) Liberado pela Regra</span><span class="num">${BRL(bp.escolhido)}</span></div>
+          ${bp.rebate > 0 ? `<div class="row"><span>(+) Rebate</span><span class="num">${BRL(bp.rebate)}</span></div>` : ''}
+          ${bp.patrocinio > 0 ? `<div class="row"><span>(+) Patrocínio do Evento</span><span class="num">${BRL(bp.patrocinio)}</span></div>` : ''}
+          <div class="row"><span>(−) Já Repassado / Antecipado</span><span class="num">${BRL(-(bp.jaRepassado + bp.advEv + bp.antEv))}</span></div>
+          <div class="row" style="border-top:2px solid #047857;padding-top:10px;font-size:16px;font-weight:800;color:#065f46">
+            <span>(=) Liberável no Evento</span><span class="num">${BRL(bp.liberavel)}</span>
+          </div>
+          <div class="row"><span>Retido pelas Travas (Liberação 100% em ${bp.dataLiberacaoTotal || 'pós-evento'})</span><span class="num">${BRL(bp.retido)}</span></div>
+          <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:32px;padding-top:24px;border-top:1px dashed #c9cfdf;text-align:center;font-size:12px;color:#5a6584">
+            <div>____________________________________________________<br/><strong>DiskIngressos · Hub de Repasses</strong></div>
+            <div>____________________________________________________<br/><strong>${PVIEW.produtora.nome}</strong></div>
+          </div>
+        </div>
+      `;
+      document.getElementById('modal-prod').classList.add('open');
+    };
+
+    window.abrirReciboProdutorPDF = (repId) => {
+      const PVIEW = loadProducerAllowedView();
+      const rep = PVIEW.repasses[repId];
+      if (!rep) return;
+      const cta = PVIEW.contas[rep.contaId] || {};
+      const nomes = (rep.eventoIds || []).map(id => PVIEW.eventos[id]?.nome || id).join(' + ');
+      document.getElementById('modal-prod-body').innerHTML = `
+        <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #dde2ee">
+          <span style="font-weight:800;color:#1e3a8a">🧾 Comprovante de Repasse</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn" style="background:#1e3a8a;color:#fff;min-height:36px;padding:6px 14px;font-size:13px" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+            <button class="btn" style="background:#eef2ff;color:#1e3a8a;min-height:36px;padding:6px 14px;font-size:13px" onclick="window.fecharModalProd()">Fechar</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:13.5px">
+          <div style="border-bottom:2px solid #1e3a8a;padding-bottom:12px;display:flex;justify-content:space-between">
+            <div>
+              <div style="font-size:11px;font-weight:800;color:#1e3a8a;text-transform:uppercase">DiskIngressos · Comprovante de Repasse ao Produtor</div>
+              <div style="font-size:19px;font-weight:800;color:#0f1b3d">Recibo #${repId} (${rep.status})</div>
+              <div class="sub">${PVIEW.produtora.nome} · CNPJ ${PVIEW.produtora.cnpj}</div>
+            </div>
+            <div class="sub" style="text-align:right">Data: ${rep.solicitadoEm || '—'}</div>
+          </div>
+          <div class="row"><span>Evento(s)</span><span style="font-weight:800">${nomes}</span></div>
+          <div class="row"><span>Conta de Destino</span><span class="num">${cta.banco || rep.contaId} · Ag ${cta.agencia || ''} CC ${cta.conta || ''}</span></div>
+          <div class="row"><span>Forma / Protocolo Bancário</span><span class="num">${rep.forma} · ${rep.protocoloBancario || 'Em processamento'}</span></div>
+          <div class="row"><span>Valor Solicitado</span><span class="num">${BRL(rep.valorSolicitado)}</span></div>
+          <div class="row"><span>(−) Tarifa de Transferência (${rep.forma})</span><span class="num">${BRL(-(rep.tarifaTransferencia || 0))}</span></div>
+          <div class="row" style="border-top:2px solid #047857;padding-top:8px;font-size:16px;font-weight:800;color:#065f46">
+            <span>(=) Valor Líquido Recebido</span><span class="num">${BRL(rep.valorLiquido ?? rep.valorSolicitado)}</span>
+          </div>
+        </div>
+      `;
+      document.getElementById('modal-prod').classList.add('open');
+    };
+
+    window.fecharModalProd = () => document.getElementById('modal-prod').classList.remove('open');
+
+    window.setTab = (t) => { window.state.tab = t; window.state.exportMsg = false; window.render(); };
+    window.toggleEvRepasse = (id, ch) => { window.state.checked[id] = ch; window.state.enviado = false; window.render(); };
+    window.selTodosLiberados = () => {
+      const PVIEW = loadProducerAllowedView();
+      Object.keys(PVIEW.eventos).forEach(id => {
+        if (PVIEW.borderos[id] && PVIEW.borderos[id].liberavel > 0) window.state.checked[id] = true;
+      });
+      window.state.enviado = false;
+      window.render();
+    };
+    window.limparSolicitacao = () => {
+      window.state.checked = {};
+      window.state.valor = '';
+      window.state.ac1 = false;
+      window.state.ac2 = false;
+      window.state.enviado = false;
+      window.render();
+    };
+    window.enviarSolicitacaoRepasse = () => {
+      const PVIEW = loadProducerAllowedView();
+      const consNode = PVIEW.borderos._consolidado || {};
+      const eventoIds = Object.keys(window.state.checked).filter(id => window.state.checked[id] && PVIEW.borderos[id]?.liberavel > 0);
+      const valorSolicitado = num(window.state.valor);
+      const tarifaTed = consNode.tarifaTed !== undefined ? Number(consNode.tarifaTed) : Number((PVIEW.config.transferencia && PVIEW.config.transferencia.tedValor) ?? 10);
+      const tarifaPix = consNode.tarifaPix !== undefined ? Number(consNode.tarifaPix) : Number((PVIEW.config.transferencia && PVIEW.config.transferencia.pixValor) ?? 0);
+      const tarifaTransferencia = window.state.forma === 'TED' ? tarifaTed : tarifaPix;
+      const valorLiquido = Math.max(0, valorSolicitado - tarifaTransferencia);
+      persistProducerWrite(full => {
+        if (!full.repasses) full.repasses = {};
+        full.repasses['rep_' + Date.now()] = {
+          produtoraId: PRODUTORA_ID,
+          eventoIds,
+          valorSolicitado,
+          tarifaTransferencia,
+          valorLiquido,
+          forma: window.state.forma,
+          contaId: window.state.contaSel,
+          status: 'Solicitado',
+          solicitadoEm: new Date().toLocaleDateString('pt-BR')
+        };
+      });
+      window.state.valor = '';
+      window.state.checked = {};
+      window.state.ac1 = false;
+      window.state.ac2 = false;
+      window.state.enviado = true;
+      window.render();
+    };
+
+    window.cadastrarContaProdutor = () => {
+      const { banco, ag, cc, pix } = window.state.nc;
+      persistProducerWrite(full => {
+        if (!full.contas) full.contas = {};
+        if (!full.contas[PRODUTORA_ID]) full.contas[PRODUTORA_ID] = {};
+        full.contas[PRODUTORA_ID]['c_' + Date.now()] = {
+          banco, agencia: ag, conta: cc, pix: pix || '—',
+          titular: 'Produtora Exemplo Curitiba Ltda',
+          status: 'Pendente',
+          padrao: false
+        };
+      });
+      window.state.nc = { banco: '', ag: '', cc: '', pix: '' };
+      window.render();
+    };
+
+    window.pedirAntecipacaoProdutor = () => {
+      const valor = num(window.state.antValor);
+      persistProducerWrite(full => {
+        if (!full.antecipacoes) full.antecipacoes = {};
+        full.antecipacoes['ant_' + Date.now()] = {
+          produtoraId: PRODUTORA_ID,
+          eventoId: window.state.antEv,
+          data: new Date().toLocaleDateString('pt-BR'),
+          valor,
+          taxaPct: 2,
+          abaterNoProximo: true,
+          status: 'Solicitada'
+        };
+      });
+      window.state.antValor = '';
+      window.state.antOk = true;
+      window.render();
+    };
+
+    window.exportarCSV = () => {
+      const PVIEW = loadProducerAllowedView();
+      const rows = [['Evento', 'Data', '% Vendido', 'Bordero Evento', 'Despesas', 'Resultado', 'Liberavel', 'Retido']];
+      Object.keys(PVIEW.eventos).forEach(id => {
+        const ev = PVIEW.eventos[id];
+        const bp = PVIEW.borderos[id];
+        if (!bp) return;
+        rows.push([
+          `"${ev.nome}"`, ev.data, bp.pctVendido.toFixed(1),
+          bp.borderoEvento.toFixed(2), bp.despesas.toFixed(2),
+          bp.resultado.toFixed(2), bp.liberavel.toFixed(2), bp.retido.toFixed(2)
+        ]);
+      });
+      const csv = 'data:text/csv;charset=utf-8,\uFEFF' + rows.map(r => r.join(';')).join('\n');
+      const a = document.createElement('a');
+      a.href = encodeURI(csv);
+      a.download = 'extrato_produtor_diskingressos.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.state.exportMsg = true;
+      window.render();
+    };
+
+    // Tooltip listener
+    document.addEventListener('mouseover', e => {
+      const el = e.target.closest('[data-tip]');
+      const tip = document.getElementById('chart-tip');
+      if (el && tip) { tip.textContent = el.getAttribute('data-tip'); tip.style.display = 'block'; }
+    });
+    document.addEventListener('mousemove', e => {
+      const tip = document.getElementById('chart-tip');
+      if (tip && tip.style.display === 'block') {
+        tip.style.left = Math.min(window.innerWidth - 260, e.clientX + 12) + 'px';
+        tip.style.top = Math.max(10, e.clientY - 36) + 'px';
+      }
+    });
+    document.addEventListener('mouseout', e => {
+      if (e.target.closest('[data-tip]')) document.getElementById('chart-tip').style.display = 'none';
+    });
+
+    window.render();
+  </script>
+</body>
+</html>

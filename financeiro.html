@@ -1,0 +1,2316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiskIngressos · Hub de Repasses — Financeiro (Acesso Total)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blue: #1e3a8a;
+      --blue-hover: #142a66;
+      --orange: #c2410c;
+      --bg: #EEF1F7;
+      --card: #ffffff;
+      --border: #dde2ee;
+      --input-border: #c9cfdf;
+      --text: #0f1b3d;
+      --text-mid: #3d4766;
+      --text-sub: #5a6584;
+
+      /* Cores fixas por significado — PROMPT 6 (validadas para daltonismo) */
+      --c-liberavel: #0f8a5f;
+      --c-retido: #e0661b;
+      --c-pago: #2f55c4;
+      --c-retencao: #0891b2;
+      --c-despesa: #c2307a;
+      --c-disk: #7c3aed; /* SÓ no financeiro */
+      --c-total: #1e3a8a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { color: var(--blue-hover); }
+
+    .num { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+    .in {
+      font: 500 15px 'IBM Plex Mono', monospace;
+      color: var(--text);
+      background: #fff;
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      padding: 10px 13px;
+      min-height: 44px;
+      width: 100%;
+    }
+    .in.tx { font-family: 'Manrope', sans-serif; font-weight: 600; }
+    .in:focus { outline: 2px solid var(--blue); outline-offset: 1px; border-color: var(--blue); }
+
+    .lb {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-mid);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .h2 { margin: 0; font-size: 17px; font-weight: 800; color: var(--text); }
+    .sub { font-size: 13px; color: var(--text-sub); line-height: 1.45; }
+    .grp { font-size: 12px; font-weight: 800; color: var(--text-mid); letter-spacing: 0.08em; text-transform: uppercase; }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--text-mid);
+      padding: 5px 0;
+    }
+
+    .pill {
+      border: 1px solid var(--input-border);
+      background: #fff;
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 16px;
+      min-height: 44px;
+      font: 700 14px 'Manrope', sans-serif;
+      cursor: pointer;
+    }
+    .pillOn {
+      border: 2px solid var(--blue);
+      background: #eef2ff;
+      color: var(--blue);
+      border-radius: 10px;
+      padding: 10px 16px;
+      min-height: 44px;
+      font: 800 14px 'Manrope', sans-serif;
+      cursor: pointer;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 18px;
+      min-height: 44px;
+      font: 800 14px 'Manrope', sans-serif;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:disabled { background: var(--input-border); color: var(--text-sub); cursor: not-allowed; }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-orange { background: var(--orange); color: #fff; }
+    .btn-green { background: #047857; color: #fff; }
+    .btn-outline { background: #fff; color: var(--blue); border: 1px solid var(--blue); }
+    .btn-soft { background: #eef2ff; color: var(--blue); }
+    .btn-danger { background: #fee2e2; color: #991b1b; }
+    .btn-sm { min-height: 34px; padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+      gap: 14px;
+    }
+    .kpi {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .kpi span:first-child {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .mods {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .mod {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      text-align: left;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      min-height: 144px;
+      cursor: pointer;
+      font-family: 'Manrope', sans-serif;
+      width: 100%;
+      transition: all 0.15s ease;
+    }
+    .mod:hover {
+      border-color: var(--blue);
+      box-shadow: 0 6px 18px rgba(15, 27, 61, 0.08);
+      transform: translateY(-1px);
+    }
+    .ic {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      background: #e6ecfb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      color: var(--blue);
+      font-size: 22px;
+    }
+    .mtt { display: block; font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+    .mtd { display: block; font-size: 13.5px; color: #4b5573; line-height: 1.45; }
+    .bdg {
+      display: inline-block;
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #dcfce7;
+      color: #065f46;
+    }
+    .bdg.warn { background: #ffedd5; color: #9a3412; }
+    .bdg.info { background: #eef2ff; color: var(--blue); }
+
+    .tab {
+      border: 0;
+      border-bottom: 3px solid transparent;
+      background: transparent;
+      color: var(--text-mid);
+      padding: 14px 14px;
+      min-height: 48px;
+      font: 700 13.5px 'Manrope', sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tabOn {
+      border: 0;
+      border-bottom: 3px solid var(--orange);
+      background: transparent;
+      color: var(--text);
+      padding: 14px 14px;
+      min-height: 48px;
+      font: 800 13.5px 'Manrope', sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th {
+      text-align: left;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 11px 8px;
+      border-bottom: 1px solid #eef1f7;
+      vertical-align: middle;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+
+    .alert-box {
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .alert-warn { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+    .alert-info { background: #eef2ff; color: var(--blue); border: 1px solid #c7d2fe; }
+    .alert-ok { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+
+    #chart-tip {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      background: #0f1b3d;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      box-shadow: 0 6px 20px rgba(15, 27, 61, 0.25);
+      display: none;
+    }
+
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 27, 61, 0.55);
+      z-index: 5000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-bg.open { display: flex; }
+    .modal-card {
+      background: #fff;
+      border-radius: 14px;
+      max-width: 760px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 24px;
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 768px) {
+      .main-wrap { padding: 16px !important; }
+      header { padding: 16px !important; }
+    }
+
+    @media print {
+      body { background: #fff !important; }
+      #app, #chart-tip { display: none !important; }
+      #modal-memoria {
+        position: static !important;
+        background: #fff !important;
+        padding: 0 !important;
+        display: block !important;
+      }
+      .modal-card {
+        max-width: 100% !important;
+        max-height: none !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="chart-tip"></div>
+  <div id="app"></div>
+
+  <!-- Modal Universal (Memória de Cálculo / Rateio / Impressão de Borderô e Recibo) -->
+  <div id="modal-memoria" class="modal-bg" onclick="if(event.target===this) fecharModalMemoria()">
+    <div class="modal-card" id="modal-memoria-body"></div>
+  </div>
+
+  <script src="motorRepasse.js"></script>
+  <script type="module">
+    // Integração Firebase Web SDK v10 modular (diskingressos-62591) + Sincronia Local Reativa
+    const STORAGE_KEY = 'diskingressos_rtdb_v1';
+
+    const SEED_DB = {
+      config: {
+        antecipacao: { pctLimite: 50, taxaPct: 2 },
+        transferencia: { pixValor: 0, tedValor: 10 }
+      },
+      produtoras: {
+        prod_exemplo: {
+          nome: 'Produtora Exemplo Curitiba Ltda',
+          cnpj: '14.890.321/0001-55',
+          patrocinio: { ativo: true, descricao: 'Patrocínio master da temporada', valor: 1000 }
+        }
+      },
+      locais: {
+        loc_polaquedo: { nome: 'Espaço Cultural Polaquedo', cidade: 'Curitiba', uf: 'PR', capacidadeTotal: 500, setores: [{ nome: 'Pista', capacidade: 500 }] },
+        loc_teatro: { nome: 'Teatro Guaíra', cidade: 'Curitiba', uf: 'PR', capacidadeTotal: 2173, setores: [{ nome: 'Plateia', capacidade: 1200 }, { nome: 'Balcão', capacidade: 973 }] },
+        loc_comedy: { nome: 'Auditório Curitiba Comedy', cidade: 'Curitiba', uf: 'PR', capacidadeTotal: 800, setores: [{ nome: 'Plateia', capacidade: 800 }] }
+      },
+      eventos: {
+        polaquedo: {
+          produtoraId: 'prod_exemplo', nome: 'Polaquedo', data: '03/10/2026', localId: 'loc_polaquedo', liberadoParaSolicitacao: true,
+          capacidade: { modo: 'local', setoresAbertos: ['Pista'], manual: 500, contarCortesias: false },
+          vendas: { vendidos: 150, cortesias: 20 }, bilheteria: 6000, jaRepassado: 0
+        },
+        festival: {
+          produtoraId: 'prod_exemplo', nome: 'Festival de Inverno', data: '22/11/2026', localId: 'loc_teatro', liberadoParaSolicitacao: true,
+          capacidade: { modo: 'setores', setoresAbertos: ['Plateia'], manual: 1200, contarCortesias: false },
+          vendas: { vendidos: 720, cortesias: 40 }, bilheteria: 72000, jaRepassado: 5000
+        },
+        standup: {
+          produtoraId: 'prod_exemplo', nome: 'Noite de Stand-up', data: '14/12/2026', localId: 'loc_comedy', liberadoParaSolicitacao: true,
+          capacidade: { modo: 'local', setoresAbertos: ['Plateia'], manual: 800, contarCortesias: false },
+          vendas: { vendidos: 60, cortesias: 0 }, bilheteria: 3600, jaRepassado: 0
+        }
+      },
+      eventos_fin: {
+        polaquedo: {
+          taxaAdm: { ativo: true, percentual: 5 },
+          retencoes: [
+            { id: 'iss', nome: 'ISS', ativo: true, tipo: 'percentual', base: 'bruto', percentual: 5, valorFixo: 0, valorUnitario: 0, responsavel: 'disk', status: 'provisionado' },
+            { id: 'ecad', nome: 'ECAD', ativo: true, tipo: 'percentual', base: 'bruto', percentual: 10, valorFixo: 0, valorUnitario: 0, responsavel: 'disk', status: 'provisionado' },
+            { id: 'loc', nome: 'Locação', ativo: true, tipo: 'maiorEntre', base: 'bruto', percentual: 15, valorFixo: 2000, valorUnitario: 0, responsavel: 'disk', status: 'provisionado' },
+            { id: 'seg', nome: 'Segurança', ativo: true, tipo: 'fixo', base: 'bruto', percentual: 0, valorFixo: 800, valorUnitario: 0, responsavel: 'disk', status: 'provisionado' }
+          ],
+          descontosOperacionais: [
+            { id: 'bil', nome: 'Bilheteiros', ativo: true, quantidade: 2, valorUnitario: 150 },
+            { id: 'tec', nome: 'Técnicos', ativo: false, quantidade: 0, valorUnitario: 0 },
+            { id: 'val', nome: 'Validadores', ativo: true, quantidade: 2, valorUnitario: 100 },
+            { id: 'hos', nome: 'Hospedagem', ativo: false, quantidade: 0, valorUnitario: 0 },
+            { id: 'des', nome: 'Deslocamento', ativo: false, quantidade: 0, valorUnitario: 0 }
+          ],
+          rebate: { ativo: false, tipo: 'percentual', valor: 0 },
+          patrocinioEvento: { ativo: false, descricao: '', valor: 0 },
+          regra: {
+            modo: 'MIN', pctResultado: 60, reservaReembolsoPct: 0, teto: 0, liberaTotalDmais: 2, creditosSujeitosTrava: false, abaterDespesasAPagar: false,
+            faixas: [{ gatilhoPct: 30, liberaPct: 20 }, { gatilhoPct: 50, liberaPct: 40 }, { gatilhoPct: 80, liberaPct: 70 }]
+          }
+        },
+        festival: {
+          taxaAdm: { ativo: true, percentual: 5 },
+          retencoes: [
+            { id: 'iss', nome: 'ISS', ativo: true, tipo: 'percentual', base: 'bruto', percentual: 5, valorFixo: 0, valorUnitario: 0, responsavel: 'disk', status: 'provisionado' },
+            { id: 'ecad', nome: 'ECAD', ativo: true, tipo: 'percentual', base: 'bruto', percentual: 10, valorFixo: 0, valorUnitario: 0, responsavel: 'disk', status: 'provisionado' },
+            { id: 'loc', nome: 'Locação', ativo: true, tipo: 'maiorEntre', base: 'bruto', percentual: 10, valorFixo: 15000, valorUnitario: 0, responsavel: 'disk', status: 'provisionado' },
+            { id: 'bri', nome: 'Brigada', ativo: true, tipo: 'fixo', base: 'bruto', percentual: 0, valorFixo: 1500, valorUnitario: 0, responsavel: 'disk', status: 'provisionado' }
+          ],
+          descontosOperacionais: [
+            { id: 'bil', nome: 'Bilheteiros', ativo: true, quantidade: 4, valorUnitario: 150 },
+            { id: 'tec', nome: 'Técnicos', ativo: true, quantidade: 2, valorUnitario: 400 },
+            { id: 'val', nome: 'Validadores', ativo: true, quantidade: 6, valorUnitario: 100 },
+            { id: 'hos', nome: 'Hospedagem', ativo: true, quantidade: 2, valorUnitario: 350 },
+            { id: 'des', nome: 'Deslocamento', ativo: true, quantidade: 1, valorUnitario: 1200 }
+          ],
+          rebate: { ativo: true, tipo: 'percentual', valor: 1 },
+          patrocinioEvento: { ativo: true, descricao: 'Cota Apresenta Inverno', valor: 2000 },
+          regra: {
+            modo: 'MIN', pctResultado: 60, reservaReembolsoPct: 0, teto: 0, liberaTotalDmais: 2, creditosSujeitosTrava: false, abaterDespesasAPagar: true,
+            faixas: [{ gatilhoPct: 30, liberaPct: 20 }, { gatilhoPct: 50, liberaPct: 40 }, { gatilhoPct: 80, liberaPct: 70 }]
+          }
+        },
+        standup: {
+          taxaAdm: { ativo: true, percentual: 5 },
+          retencoes: [
+            { id: 'iss', nome: 'ISS', ativo: true, tipo: 'percentual', base: 'bruto', percentual: 5, valorFixo: 0, valorUnitario: 0, responsavel: 'disk', status: 'provisionado' },
+            { id: 'ecad', nome: 'ECAD', ativo: false, tipo: 'percentual', base: 'bruto', percentual: 10, valorFixo: 0, valorUnitario: 0, responsavel: 'disk', status: 'provisionado' },
+            { id: 'loc', nome: 'Locação', ativo: true, tipo: 'fixo', base: 'bruto', percentual: 0, valorFixo: 1500, valorUnitario: 0, responsavel: 'disk', status: 'provisionado' }
+          ],
+          descontosOperacionais: [
+            { id: 'bil', nome: 'Bilheteiros', ativo: false, quantidade: 0, valorUnitario: 0 },
+            { id: 'tec', nome: 'Técnicos', ativo: false, quantidade: 0, valorUnitario: 0 },
+            { id: 'val', nome: 'Validadores', ativo: false, quantidade: 0, valorUnitario: 0 },
+            { id: 'hos', nome: 'Hospedagem', ativo: false, quantidade: 0, valorUnitario: 0 },
+            { id: 'des', nome: 'Deslocamento', ativo: false, quantidade: 0, valorUnitario: 0 }
+          ],
+          rebate: { ativo: false, tipo: 'percentual', valor: 0 },
+          patrocinioEvento: { ativo: false, descricao: '', valor: 0 },
+          regra: {
+            modo: 'MIN', pctResultado: 60, reservaReembolsoPct: 0, teto: 0, liberaTotalDmais: 2, creditosSujeitosTrava: false, abaterDespesasAPagar: true,
+            faixas: [{ gatilhoPct: 30, liberaPct: 20 }, { gatilhoPct: 50, liberaPct: 40 }, { gatilhoPct: 80, liberaPct: 70 }]
+          }
+        }
+      },
+      negociacoes: {
+        polaquedo: { status: 'Ativa', taxaOp: { tipo: 'porIngresso', valor: 2 }, conveniencia: { percentual: 12 }, observacoes: 'Taxa operacional R$ 2,00/ingresso.' },
+        festival: { status: 'Ativa', taxaOp: { tipo: 'percentual', valor: 3 }, conveniencia: { percentual: 15 }, observacoes: 'Setor Plateia aberto (1.200 lugares).' },
+        standup: { status: 'Ativa', taxaOp: { tipo: 'fixo', valor: 300 }, conveniencia: { percentual: 10 }, observacoes: 'Taxa operacional fixa R$ 300,00.' }
+      },
+      despesas: {
+        desp_1: { eventoId: 'festival', produtoraId: 'prod_exemplo', data: '02/10/2026', categoria: 'Material gráfico', fornecedor: 'Gráfica Curitiba', valor: 1200, status: 'Pago', nfCodigo: 'NF-e 000.418.220', comprovanteUrl: 'https://diskingressos.com.br/comprovantes/nf-418220-grafica.pdf' },
+        desp_2: { eventoId: 'festival', produtoraId: 'prod_exemplo', data: '06/10/2026', categoria: 'Som e luz extra', fornecedor: 'AudioSul Locação', valor: 800, status: 'Pago', nfCodigo: 'NFS-e 2026/8891', comprovanteUrl: 'https://diskingressos.com.br/comprovantes/nfse-8891-audiosul.pdf' },
+        desp_3: { eventoId: 'polaquedo', produtoraId: 'prod_exemplo', data: '12/10/2026', categoria: 'Camarim', fornecedor: 'Buffet Eventos PR', valor: 500, status: 'A pagar', nfCodigo: 'Orçamento #991', comprovanteUrl: '' }
+      },
+      advanced: {
+        adv_1: { produtoraId: 'prod_exemplo', data: '01/10/2026', descricao: 'Adiantamento contratual de turnê', valor: 2000, escopo: 'consolidado', abaterNoProximo: true },
+        adv_2: { produtoraId: 'prod_exemplo', data: '04/10/2026', descricao: 'Adiantamento técnico Festival', valor: 1500, escopo: 'festival', abaterNoProximo: false }
+      },
+      antecipacoes: {
+        ant_1: { produtoraId: 'prod_exemplo', eventoId: 'festival', data: '10/10/2026', valor: 6000, taxaPct: 2, abaterNoProximo: true, status: 'Aprovada' }
+      },
+      contas: {
+        prod_exemplo: {
+          c1: { banco: '341 · Itaú Unibanco', agencia: '0392', conta: '44910-8', pix: '14.890.321/0001-55 (CNPJ)', titular: 'Produtora Exemplo Curitiba Ltda', status: 'Validada', padrao: true },
+          c2: { banco: '756 · Sicoob Sul', agencia: '4102', conta: '88210-3', pix: 'financeiro@produtoraexemplo.com.br', titular: 'Produtora Exemplo Curitiba Ltda', status: 'Pendente', padrao: false }
+        }
+      },
+      repasses: {
+        rep_hist_1: {
+          produtoraId: 'prod_exemplo', eventoIds: ['festival'], valorSolicitado: 5000, tarifaTransferencia: 10, valorLiquido: 4990, forma: 'TED', contaId: 'c1',
+          status: 'Pago', modoRateio: 'proporcional', protocoloBancario: 'TED-ITAU-20261005-994812', comprovanteUrl: 'https://diskingressos.com.br/comprovantes/ted-994812.pdf',
+          solicitadoEm: '05/10/2026 14:15', decididoPor: 'financeiro@diskingressos.com.br', decididoEm: '05/10/2026 16:40', pagoPor: 'financeiro@diskingressos.com.br', pagoEm: '05/10/2026 16:45',
+          memoriaCalculo: {
+            aprovadoPor: 'financeiro@diskingressos.com.br',
+            aprovadoEm: '05/10/2026 16:40',
+            disponivelNoMomento: 9816,
+            modoRateio: 'proporcional',
+            rateioAplicado: { festival: 5000 }
+          }
+        }
+      },
+      auditoria: {
+        aud_1: {
+          dataHora: '05/10/2026 16:40:12',
+          usuario: 'financeiro@diskingressos.com.br',
+          modulo: 'Repasses',
+          eventoId: 'festival',
+          acao: 'Aprovação e Pagamento de Repasse',
+          resumo: 'Repasse rep_hist_1 (Pago) — R$ 5.000,00 via TED (rateio proporcional). Protocolo: TED-ITAU-20261005-994812.'
+        },
+        aud_2: {
+          dataHora: '06/10/2026 11:20:05',
+          usuario: 'financeiro@diskingressos.com.br',
+          modulo: 'Travas e Taxas',
+          eventoId: 'festival',
+          acao: 'Atualização de Regra de Liberação',
+          resumo: 'Modo MIN (60% do resultado vs faixa por capacidade); liberação 100% em D+2 dias úteis bancários; abater despesas A pagar: Sim.'
+        }
+      },
+      borderos_produtor: {}
+    };
+
+    const CO = {
+      lib: '#0f8a5f',
+      ret: '#e0661b',
+      rep: '#2f55c4',
+      rtc: '#0891b2',
+      cus: '#c2307a',
+      disk: '#7c3aed',
+      tot: '#1e3a8a'
+    };
+
+    function BRL(v) {
+      const n = Number(v || 0);
+      return (n < -0.004 ? '− ' : '') + 'R$ ' + Math.abs(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function P(v) {
+      return Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%';
+    }
+    function num(v) {
+      if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+      const s = String(v == null ? '' : v).trim().replace(/\./g, '').replace(',', '.');
+      const n = parseFloat(s);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function loadDB() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const db = raw ? JSON.parse(raw) : structuredClone(SEED_DB);
+        if (!db.config) db.config = {};
+        if (!db.config.transferencia) db.config.transferencia = { pixValor: 0, tedValor: 10 };
+        if (!db.auditoria) db.auditoria = structuredClone(SEED_DB.auditoria);
+        recomputeAllBorderosProdutor(db);
+        return db;
+      } catch (e) {
+        const db = structuredClone(SEED_DB);
+        recomputeAllBorderosProdutor(db);
+        return db;
+      }
+    }
+
+    function registrarLogAuditoria(modulo, eventoId, acao, resumo) {
+      if (!window.dbState.auditoria) window.dbState.auditoria = {};
+      const id = 'aud_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      window.dbState.auditoria[id] = {
+        dataHora: new Date().toLocaleString('pt-BR'),
+        usuario: 'financeiro@diskingressos.com.br',
+        modulo,
+        eventoId: eventoId || 'Geral',
+        acao,
+        resumo
+      };
+    }
+
+    function saveDB() {
+      recomputeAllBorderosProdutor(window.dbState);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(window.dbState));
+    }
+
+    // Espelha a Cloud Function recalcularEvento gravando /borderos_produtor sem nenhum campo de taxa
+    function recomputeAllBorderosProdutor(db) {
+      if (!db.borderos_produtor) db.borderos_produtor = {};
+      const { calcEvento, calcConsolidado, bordero_produtor } = window.MotorRepasse;
+      const cfgTransf = (db.config && db.config.transferencia) || { pixValor: 0, tedValor: 10 };
+
+      for (const [prodId, prod] of Object.entries(db.produtoras || {})) {
+        if (!db.borderos_produtor[prodId]) db.borderos_produtor[prodId] = {};
+        const evCalculados = [];
+        const advList = Object.entries(db.advanced || {}).map(([id, a]) => ({ id, ...a })).filter(a => a.produtoraId === prodId);
+        const antList = Object.entries(db.antecipacoes || {}).map(([id, a]) => ({ id, ...a })).filter(a => a.produtoraId === prodId);
+        const despList = Object.values(db.despesas || {}).filter(d => d.produtoraId === prodId);
+
+        for (const [evId, evData] of Object.entries(db.eventos || {})) {
+          if (evData.produtoraId !== prodId) continue;
+          const ev = { id: evId, ...evData };
+          const fin = (db.eventos_fin && db.eventos_fin[evId]) || {};
+          const neg = (db.negociacoes && db.negociacoes[evId]) || {};
+          const loc = (db.locais && db.locais[ev.localId]) || {};
+          const despEv = despList.filter(d => d.eventoId === evId);
+          const advEv = advList.filter(a => a.escopo === evId);
+          const antEv = antList.filter(a => a.eventoId === evId);
+
+          const calc = calcEvento(ev, fin, neg, despEv, advEv, antEv, loc);
+          db.borderos_produtor[prodId][evId] = bordero_produtor(calc);
+          evCalculados.push({ id: evId, nome: ev.nome, liberadoParaSolicitacao: ev.liberadoParaSolicitacao, ...calc });
+        }
+
+        const cons = calcConsolidado(prod, evCalculados, advList);
+        db.borderos_produtor[prodId]._consolidado = {
+          liberavelEventos: cons.liberavelEventos,
+          patrocinioProdutora: cons.patrocinioProdutora,
+          patrocinioDescricao: (prod.patrocinio && prod.patrocinio.descricao) || 'Patrocínio da produtora',
+          advConsolidado: cons.advConsolidado,
+          devedores: cons.devedores,
+          saldoDisponivel: cons.saldoDisponivel,
+          tarifaPix: Number(cfgTransf.pixValor || 0),
+          tarifaTed: Number(cfgTransf.tedValor !== undefined ? cfgTransf.tedValor : 10)
+        };
+      }
+    }
+
+    window.dbState = loadDB();
+    window.ui = {
+      produtoraId: 'prod_exemplo',
+      tab: 'home',
+      q: '',
+      evId: 'polaquedo',
+      savedBanner: false
+    };
+
+    // Gráficos acessíveis sem biblioteca externa (PROMPT 6)
+    function buildDonut(segs, centerLabel, centerV) {
+      const valid = segs.filter(g => g.v > 0.004);
+      const tot = valid.reduce((t, g) => t + g.v, 0) || 1;
+      let acc = 0;
+      const parts = [];
+      const out = valid.map(g => {
+        const a = (acc / tot) * 100;
+        const b = ((acc + g.v) / tot) * 100;
+        const e = Math.max(a, b - 0.8); // ~2px de separação branca entre fatias
+        acc += g.v;
+        parts.push(`${g.cor} ${a.toFixed(2)}% ${e.toFixed(2)}%`, `#ffffff ${e.toFixed(2)}% ${b.toFixed(2)}%`);
+        return { label: g.label, cor: g.cor, vTxt: BRL(g.v), pTxt: P((g.v / tot) * 100) };
+      });
+      const aria = out.map(g => `${g.label} ${g.vTxt} (${g.pTxt})`).join(', ');
+      const grad = `conic-gradient(${parts.length ? parts.join(', ') : '#eef1f7 0% 100%'})`;
+
+      return `
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:28px">
+          <div role="img" aria-label="Gráfico de rosca: ${aria}" style="position:relative;width:176px;height:176px;flex:none;border-radius:50%;background:${grad}">
+            <div style="position:absolute;inset:22px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px">
+              <span style="font-size:11px;font-weight:800;color:#5a6584;text-transform:uppercase;letter-spacing:.06em">${centerLabel}</span>
+              <span class="num" style="font-size:15px;color:#0f1b3d">${BRL(centerV)}</span>
+            </div>
+          </div>
+          <div style="flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:10px">
+            ${out.map(g => `
+              <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#3d4766" data-tip="${g.label}: ${g.vTxt} (${g.pTxt})">
+                <span aria-hidden="true" style="width:12px;height:12px;border-radius:3px;flex:none;background:${g.cor}"></span>
+                <span style="flex:1">${g.label}</span>
+                <span class="num" style="color:#0f1b3d">${g.vTxt}</span>
+                <span style="width:52px;text-align:right;font-size:12px;color:#5a6584">${g.pTxt}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function buildStackedBars(rows, legendItems) {
+      return `
+        <div style="display:flex;flex-direction:column;gap:16px">
+          ${rows.map(b => {
+            const tot = b.segs.reduce((t, g) => t + Math.max(0, g.v), 0) || 1;
+            const validSegs = b.segs.filter(g => g.v > 0.004).map(g => ({
+              ...g,
+              vTxt: BRL(g.v),
+              pTxt: P((g.v / tot) * 100),
+              f: (g.v / tot).toFixed(4)
+            }));
+            const aria = `${b.nome}: ` + validSegs.map(g => `${g.label} ${g.vTxt}`).join(', ');
+            return `
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;justify-content:space-between;gap:8px;font-size:14px">
+                  <span style="font-weight:800;color:#0f1b3d">${b.nome}</span>
+                  <span class="num" style="color:#5a6584">${BRL(b.tot)}</span>
+                </div>
+                <div role="img" aria-label="${aria}" style="display:flex;gap:2px;height:24px;background:#f4f6fb;border-radius:4px">
+                  ${validSegs.map(g => `
+                    <div title="${g.label}: ${g.vTxt} (${g.pTxt})" data-tip="${b.nome} · ${g.label}: ${g.vTxt} (${g.pTxt})" style="height:100%;min-width:3px;border-radius:4px;background:${g.cor};flex:${g.f} 1 0px;cursor:pointer"></div>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          }).join('')}
+          <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:#3d4766;padding-top:4px">
+            ${legendItems.map(l => `
+              <span style="display:flex;align-items:center;gap:6px">
+                <span aria-hidden="true" style="width:12px;height:12px;border-radius:3px;background:${l.cor}"></span>
+                ${l.label}
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function buildWaterfall(steps) {
+      const filtered = steps.filter(s => s.kind === 'start' || s.kind === 'total' || s.v > 0.004);
+      let run = 0, max = 0;
+      filtered.forEach(s => {
+        if (s.kind === 'start' || s.kind === 'total') run = s.v;
+        else if (s.kind === 'dec') run -= s.v;
+        else run += s.v;
+        max = Math.max(max, run, s.v);
+      });
+      max = max || 1;
+      run = 0;
+
+      const rows = filtered.map(s => {
+        const a = run;
+        let b, x, w;
+        if (s.kind === 'start' || s.kind === 'total') {
+          b = s.v;
+          x = 0;
+          w = (Math.max(0, b) / max) * 100;
+        } else if (s.kind === 'dec') {
+          b = a - s.v;
+          x = (Math.max(0, b) / max) * 100;
+          w = ((Math.max(0, a) - Math.max(0, b)) / max) * 100;
+        } else {
+          b = a + s.v;
+          x = (Math.max(0, a) / max) * 100;
+          w = ((Math.max(0, b) - Math.max(0, a)) / max) * 100;
+        }
+        run = b;
+        const big = s.kind === 'start' || s.kind === 'total';
+        const vTxt = s.kind === 'dec' ? BRL(-s.v) : s.kind === 'inc' ? '+ ' + BRL(s.v) : BRL(s.v);
+        return { label: s.label, x: x.toFixed(2), w: Math.max(w, 0.8).toFixed(2), cor: s.cor, vTxt, fw: big ? '800' : '600' };
+      });
+
+      const aria = rows.map(r => `${r.label}: ${r.vTxt}`).join('; ');
+
+      return `
+        <div role="img" aria-label="Gráfico em cascata: ${aria}" style="display:flex;flex-direction:column;gap:8px">
+          ${rows.map(w => `
+            <div style="display:grid;grid-template-columns:minmax(140px,230px) minmax(0,1fr) 135px;gap:14px;align-items:center;font-size:13px">
+              <span style="color:#3d4766;font-weight:${w.fw}">${w.label}</span>
+              <div title="${w.label}: ${w.vTxt}" data-tip="${w.label}: ${w.vTxt}" style="position:relative;height:24px;background:#f4f6fb;border-radius:4px">
+                <div style="position:absolute;top:3px;bottom:3px;border-radius:4px;left:${w.x}%;width:${w.w}%;background:${w.cor}"></div>
+              </div>
+              <span class="num" style="text-align:right;color:#0f1b3d;font-weight:${w.fw}">${w.vTxt}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // Cálculo completo de todos os eventos da produtora selecionada
+    function getFinanceCalculatedState() {
+      const db = window.dbState;
+      const prodId = window.ui.produtoraId;
+      const prod = db.produtoras[prodId];
+      const { calcEvento, calcConsolidado } = window.MotorRepasse;
+
+      const advList = Object.entries(db.advanced || {}).map(([id, a]) => ({ id, ...a })).filter(a => a.produtoraId === prodId);
+      const antList = Object.entries(db.antecipacoes || {}).map(([id, a]) => ({ id, ...a })).filter(a => a.produtoraId === prodId);
+      const despList = Object.entries(db.despesas || {}).map(([id, d]) => ({ id, ...d })).filter(d => d.produtoraId === prodId);
+
+      const evMap = {};
+      const evArr = [];
+
+      for (const [evId, ev] of Object.entries(db.eventos || {})) {
+        if (ev.produtoraId !== prodId) continue;
+        const fin = db.eventos_fin[evId];
+        const neg = db.negociacoes[evId];
+        const loc = db.locais[ev.localId];
+        const despEv = despList.filter(d => d.eventoId === evId);
+        const advEv = advList.filter(a => a.escopo === evId);
+        const antEv = antList.filter(a => a.eventoId === evId);
+
+        const c = calcEvento({ id: evId, ...ev }, fin, neg, despEv, advEv, antEv, loc);
+        evMap[evId] = { id: evId, ev, fin, neg, loc, calc: c };
+        evArr.push({ id: evId, liberadoParaSolicitacao: ev.liberadoParaSolicitacao, ...c });
+      }
+
+      const cons = calcConsolidado(prod, evArr, advList);
+      return { prodId, prod, evMap, evArr, cons, advList, antList, despList };
+    }
+
+    window.render = function () {
+      const db = window.dbState;
+      const S = getFinanceCalculatedState();
+      const { prod, evMap, evArr, cons } = S;
+
+      const modulesDef = [
+        { id: 'travas', grp: 'gestao', icon: '🎛️', title: 'Eventos e travas', desc: 'Capacidade, borderô, taxas Disk, retenções, descontos, simulador e PDF.', kw: 'eventos travas capacidade regras faixas simulador pdf' },
+        { id: 'negociacoes', grp: 'gestao', icon: '🤝', title: 'Negociações', desc: 'Taxa operacional por ingresso/percentual/fixa e conveniência informativa.', kw: 'negociacoes taxa operacional conveniencia' },
+        { id: 'auditoria', grp: 'gestao', icon: '🕓', title: 'Trilha de Auditoria', desc: 'Histórico imutável de alterações em travas, taxas, despesas e repasses.', kw: 'auditoria log historico alteracoes' },
+        { id: 'saldo', grp: 'caixa', icon: '📊', title: 'Saldo consolidado', desc: 'Liberação de eventos, patrocínio da produtora e composição do saldo.', kw: 'saldo consolidado patrocinio liberavel' },
+        { id: 'solicitacoes', grp: 'caixa', icon: '💸', title: 'Solicitações de repasse', desc: 'Aprove com rateio proporcional/manual, liquide (PIX/TED) e emita recibo PDF.', kw: 'solicitacoes repasse aprovar recusar pix ted rateio recibo' },
+        { id: 'antecipacoes', grp: 'caixa', icon: '⚡', title: 'Antecipações', desc: 'Aprove pedidos de antecipação de até 50% do retido (taxa 2%).', kw: 'antecipacoes retido taxa' },
+        { id: 'advanced', grp: 'caixa', icon: '🏷️', title: 'Advanced', desc: 'Adiantamentos contratuais abatidos do consolidado ou por evento.', kw: 'advanced adiantamentos abater' },
+        { id: 'contas', grp: 'caixa', icon: '🏦', title: 'Contas bancárias', desc: 'Valide, recuse ou defina a conta padrão da produtora.', kw: 'contas bancarias pix validar padrao' },
+        { id: 'despesas', grp: 'caixa', icon: '🧾', title: 'Despesas e NFs', desc: 'Lançamentos por evento com anexo de Nota Fiscal / comprovante.', kw: 'despesas fornecedor pago bordero nf comprovante' }
+      ];
+
+      const repList = Object.entries(db.repasses || {}).map(([id, r]) => ({ id, ...r })).filter(r => r.produtoraId === S.prodId);
+      const contasList = Object.entries((db.contas && db.contas[S.prodId]) || {}).map(([id, c]) => ({ id, ...c }));
+      const audList = Object.entries(db.auditoria || {}).map(([id, a]) => ({ id, ...a })).reverse();
+
+      const pendRep = repList.filter(r => r.status === 'Solicitado' || r.status === 'Aprovado').length;
+      const pendAnt = S.antList.filter(a => a.status === 'Solicitada').length;
+      const pendCta = contasList.filter(c => c.status === 'Pendente').length;
+      const pendDesp = S.despList.filter(d => d.status === 'A pagar').length;
+      const totalPend = pendRep + pendAnt + pendCta;
+
+      const headerHtml = `
+        <header style="background:#1e3a8a;color:#fff;padding:20px 32px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#c7d2fe">DiskIngressos · Hub de Repasses (Financeiro)</div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <span style="font-size:24px;font-weight:800">${prod.nome}</span>
+              <select aria-label="Selecionar produtora" onchange="window.ui.produtoraId=this.value;window.render()" style="background:#142a66;color:#fff;border:1px solid #93a3d8;border-radius:8px;padding:6px 10px;font:700 13px 'Manrope',sans-serif">
+                ${Object.entries(db.produtoras).map(([id, p]) => `<option value="${id}" ${id === S.prodId ? 'selected' : ''}>${p.nome} (${p.cnpj})</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+            <span style="background:#c2410c;color:#fff;font-size:12px;font-weight:800;padding:8px 14px;border-radius:999px;text-transform:uppercase;letter-spacing:.06em">Financeiro · acesso total</span>
+            <button class="btn btn-sm" style="background:rgba(255,255,255,0.14);color:#fff;border:1px solid #93a3d8" onclick="window.restaurarSeed()">↺ Restaurar Seed (Prompt 7)</button>
+            <a href="produtor.html" style="color:#fff;font-weight:700;font-size:14px;border:1px solid #93a3d8;border-radius:10px;padding:11px 16px;text-decoration:none">Visão Produtor →</a>
+          </div>
+        </header>
+      `;
+
+      const navHtml = window.ui.tab !== 'home' ? `
+        <nav aria-label="Navegação de módulos do Financeiro" style="background:#fff;border-bottom:1px solid #dde2ee;padding:0 24px;display:flex;flex-wrap:wrap;align-items:center;gap:4px;overflow-x:auto">
+          <button class="btn btn-soft" style="margin-right:12px;min-height:40px;padding:8px 14px" onclick="window.setTab('home')">← Menu</button>
+          ${modulesDef.map(m => `
+            <button class="${window.ui.tab === m.id ? 'tabOn' : 'tab'}" onclick="window.setTab('${m.id}')">${m.title}</button>
+          `).join('')}
+        </nav>
+      ` : '';
+
+      let bodyHtml = '';
+      if (window.ui.tab === 'home') {
+        bodyHtml = renderHomeFinanceiro(S, modulesDef, { pendRep, pendAnt, pendCta, pendDesp, totalPend, audCount: audList.length });
+      } else if (window.ui.tab === 'travas') {
+        bodyHtml = renderModuloEventosTravas(S);
+      } else if (window.ui.tab === 'negociacoes') {
+        bodyHtml = renderModuloNegociacoes(S);
+      } else if (window.ui.tab === 'auditoria') {
+        bodyHtml = renderModuloAuditoria(S, audList);
+      } else if (window.ui.tab === 'saldo') {
+        bodyHtml = renderModuloSaldoConsolidado(S);
+      } else if (window.ui.tab === 'solicitacoes') {
+        bodyHtml = renderModuloSolicitacoes(S, repList);
+      } else if (window.ui.tab === 'antecipacoes') {
+        bodyHtml = renderModuloAntecipacoes(S);
+      } else if (window.ui.tab === 'advanced') {
+        bodyHtml = renderModuloAdvanced(S);
+      } else if (window.ui.tab === 'contas') {
+        bodyHtml = renderModuloContas(S, contasList);
+      } else if (window.ui.tab === 'despesas') {
+        bodyHtml = renderModuloDespesas(S);
+      }
+
+      document.getElementById('app').innerHTML = `
+        ${headerHtml}
+        ${navHtml}
+        <main class="main-wrap" style="max-width:1376px;margin:0 auto;padding:24px 32px 48px;display:flex;flex-direction:column;gap:20px">
+          ${bodyHtml}
+        </main>
+      `;
+    };
+
+    function renderHomeFinanceiro(S, modulesDef, badges) {
+      const { evArr, evMap, cons } = S;
+      const totBil = evArr.reduce((t, e) => t + e.bil, 0);
+      const totDiskLiq = evArr.reduce((t, e) => t + e.taxaAdmLiquida + e.taxaOp, 0);
+      const totRetencao = evArr.reduce((t, e) => t + e.totRetencoes + e.reserva, 0);
+      const totDespOps = evArr.reduce((t, e) => t + e.despesas + e.totOps, 0);
+      const totPago = evArr.reduce((t, e) => t + e.jaRepassado + e.advEv + e.antEv, 0);
+      const totLiberavel = evArr.reduce((t, e) => t + e.liberavel, 0);
+      const totRetido = evArr.reduce((t, e) => t + e.retido, 0);
+
+      const donutHtml = buildDonut([
+        { label: 'Taxa Disk (adm líq. + op)', v: totDiskLiq, cor: CO.disk },
+        { label: 'Retenções (ISS, ECAD, Locação)', v: totRetencao, cor: CO.rtc },
+        { label: 'Despesas e descontos op.', v: totDespOps, cor: CO.cus },
+        { label: 'Já pago / antecipado', v: totPago, cor: CO.rep },
+        { label: 'Liberável nos eventos', v: totLiberavel, cor: CO.lib },
+        { label: 'Retido pelas travas', v: totRetido, cor: CO.ret }
+      ], 'Bilheteria', totBil);
+
+      const stackedRows = evArr.map(e => ({
+        nome: evMap[e.id].ev.nome,
+        tot: e.bil,
+        segs: [
+          { label: 'Taxa Disk', v: e.taxaAdmLiquida + e.taxaOp, cor: CO.disk },
+          { label: 'Retenções', v: e.totRetencoes + e.reserva, cor: CO.rtc },
+          { label: 'Despesas + Descontos', v: e.despesas + e.totOps, cor: CO.cus },
+          { label: 'Já pago/antecipado', v: Math.max(0, e.jaRepassado + e.advEv + e.antEv - e.saldoDevedor), cor: CO.rep },
+          { label: 'Liberável', v: e.liberavel, cor: CO.lib },
+          { label: 'Retido', v: e.retido, cor: CO.ret }
+        ]
+      }));
+
+      const stackedHtml = buildStackedBars(stackedRows, [
+        { label: 'Taxa Disk', cor: CO.disk },
+        { label: 'Retenções', cor: CO.rtc },
+        { label: 'Despesas e descontos', cor: CO.cus },
+        { label: 'Já pago', cor: CO.rep },
+        { label: 'Liberável', cor: CO.lib },
+        { label: 'Retido', cor: CO.ret }
+      ]);
+
+      const norm = x => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const qn = norm(window.ui.q);
+      const filterMod = m => !qn || norm(m.title + ' ' + m.desc + ' ' + m.kw).includes(qn);
+
+      const getBadge = (id) => {
+        if (id === 'travas') return `<span class="bdg info">${evArr.length} eventos · Simulador + PDF</span>`;
+        if (id === 'negociacoes') return `<span class="bdg info">Receita Disk: ${BRL(totDiskLiq)}</span>`;
+        if (id === 'auditoria') return `<span class="bdg info">${badges.audCount} registro(s)</span>`;
+        if (id === 'saldo') return `<span class="bdg">Disponível: ${BRL(cons.saldoDisponivel)}</span>`;
+        if (id === 'solicitacoes') return `<span class="bdg ${badges.pendRep ? 'warn' : ''}">${badges.pendRep} em aberto</span>`;
+        if (id === 'antecipacoes') return `<span class="bdg ${badges.pendAnt ? 'warn' : ''}">${badges.pendAnt} solicitada(s)</span>`;
+        if (id === 'advanced') return `<span class="bdg info">Abater: ${BRL(cons.advConsolidado)}</span>`;
+        if (id === 'contas') return `<span class="bdg ${badges.pendCta ? 'warn' : ''}">${badges.pendCta} pendente(s)</span>`;
+        if (id === 'despesas') return `<span class="bdg ${badges.pendDesp ? 'warn' : ''}">${badges.pendDesp} a pagar</span>`;
+        return '';
+      };
+
+      return `
+        <div class="grp">Visão geral</div>
+        <div class="kpi-grid">
+          <div class="kpi"><span>Bilheteria (sem conveniência)</span><span class="num" style="font-size:21px">${BRL(totBil)}</span></div>
+          <div class="kpi" style="border:2px solid #7c3aed"><span>Receita Disk líquida</span><span class="num" style="font-size:21px;color:#0f1b3d">${BRL(totDiskLiq)}</span><span class="sub">Adm líq: ${BRL(cons.taxaAdmLiqTotal)} (após créditos)</span></div>
+          <div class="kpi" style="border:2px solid #047857"><span>Liberável (Eventos / Cons.)</span><span class="num" style="font-size:21px;color:#065f46">${BRL(totLiberavel)}</span><span class="sub">Saldo disponível: ${BRL(cons.saldoDisponivel)}</span></div>
+          <div class="kpi"><span>Retido pelas travas</span><span class="num" style="font-size:21px;color:#9a3412">${BRL(totRetido)}</span></div>
+          <div class="kpi"><span>Pendências de análise</span><span class="num" style="font-size:21px">${badges.totalPend}</span><span class="sub">${badges.pendRep} repasse · ${badges.pendAnt} antec. · ${badges.pendCta} conta</span></div>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:stretch">
+          <section class="card" style="flex:1 1 440px;min-width:0">
+            <div><h2 class="h2">Para onde vai a bilheteria</h2><div class="sub" style="margin-top:4px">Distribuição completa incluindo Taxa Disk (exclusiva Financeiro).</div></div>
+            ${donutHtml}
+          </section>
+          <section class="card" style="flex:1 1 540px;min-width:0">
+            <div><h2 class="h2">Bilheteria por evento</h2><div class="sub" style="margin-top:4px">Passe o mouse nas barras para ver os valores e percentuais.</div></div>
+            ${stackedHtml}
+          </section>
+        </div>
+
+        <label style="display:flex;align-items:center;background:#fff;border:1px solid #dde2ee;border-radius:12px;overflow:hidden">
+          <span aria-hidden="true" style="width:56px;min-height:50px;display:flex;align-items:center;justify-content:center;border-right:1px solid #dde2ee;color:#3d4766">🔍</span>
+          <input aria-label="Buscar módulo financeiro" value="${window.ui.q}" oninput="window.ui.q=this.value;window.render()" placeholder="Buscar módulo financeiro..." style="border:0;outline:none;flex:1;font:500 16px 'Manrope',sans-serif;padding:12px 16px;min-height:50px;color:#0f1b3d;background:transparent" />
+        </label>
+
+        <div class="grp">Gestão de eventos</div>
+        <div class="mods">
+          ${modulesDef.filter(m => m.grp === 'gestao' && filterMod(m)).map(m => `
+            <button class="mod" onclick="window.setTab('${m.id}')">
+              <span class="ic" aria-hidden="true">${m.icon}</span>
+              <span>
+                <span class="mtt">${m.title}</span>
+                <span class="mtd">${m.desc}</span>
+                ${getBadge(m.id)}
+              </span>
+            </button>
+          `).join('')}
+        </div>
+
+        <div class="grp">Operações de caixa</div>
+        <div class="mods">
+          ${modulesDef.filter(m => m.grp === 'caixa' && filterMod(m)).map(m => `
+            <button class="mod" onclick="window.setTab('${m.id}')">
+              <span class="ic" aria-hidden="true">${m.icon}</span>
+              <span>
+                <span class="mtt">${m.title}</span>
+                <span class="mtd">${m.desc}</span>
+                ${getBadge(m.id)}
+              </span>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // ========================================================================
+    // MÓDULO 1: EVENTOS E TRAVAS (COM CASCATA AO VIVO + SIMULADOR + PDF + 7 SEÇÕES)
+    // ========================================================================
+    function renderModuloEventosTravas(S) {
+      const item = S.evMap[window.ui.evId] || Object.values(S.evMap)[0];
+      const { id, ev, fin, neg, loc, calc: c } = item;
+      const { simularVendasEvento } = window.MotorRepasse;
+
+      const despEv = S.despList.filter(d => d.eventoId === id);
+      const advEv = S.advList.filter(a => a.escopo === id);
+      const antEv = S.antList.filter(a => a.eventoId === id);
+
+      const simIng = window.ui.simIngressos !== undefined && window.ui.simEvId === id
+        ? window.ui.simIngressos
+        : ev.vendas.vendidos;
+      const simMeta = window.ui.simMetaValor !== undefined && window.ui.simEvId === id
+        ? window.ui.simMetaValor
+        : Math.round(c.liberavel + 5000);
+
+      const simResult = simularVendasEvento(
+        { id, ...ev }, fin, neg, despEv, advEv, antEv, loc,
+        { vendidosSimulados: simIng, valorAlvoLiberavel: simMeta }
+      );
+
+      const wfHtml = buildWaterfall([
+        { label: 'Bilheteria (sem conv.)', kind: 'start', v: c.bil, cor: CO.tot },
+        { label: 'Taxa Disk (adm + op)', kind: 'dec', v: c.taxaAdm + c.taxaOp, cor: CO.disk },
+        { label: 'Borderô do evento', kind: 'total', v: c.bil - c.taxaAdm - c.taxaOp, cor: CO.tot },
+        { label: 'Despesas (' + (c.abaterDespesasAPagar ? 'Pagas + A pagar' : 'Só Pagas') + ')', kind: 'dec', v: c.despesas, cor: CO.cus },
+        { label: 'Retenções (ISS/ECAD/Loc.)', kind: 'dec', v: c.totRetencoes + c.reserva, cor: CO.rtc },
+        { label: 'Descontos operacionais', kind: 'dec', v: c.totOps, cor: CO.cus },
+        { label: 'Resultado líquido', kind: 'total', v: Math.max(0, c.resultado), cor: CO.tot },
+        { label: 'Créditos (rebate + patroc.)', kind: 'inc', v: c.creditos, cor: CO.lib },
+        { label: 'Retido pelas travas', kind: 'dec', v: c.retido, cor: CO.ret },
+        { label: 'Já repassado + antec./adv.', kind: 'dec', v: c.jaRepassado + c.advEv + c.antEv, cor: CO.rep },
+        { label: 'Liberável agora', kind: 'total', v: c.liberavel, cor: CO.lib }
+      ]);
+
+      return `
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <span style="font-size:13px;font-weight:800;color:#3d4766;margin-right:4px">Evento:</span>
+            ${Object.values(S.evMap).map(x => `
+              <button class="${x.id === id ? 'pillOn' : 'pill'}" onclick="window.ui.evId='${x.id}';window.ui.simEvId='${x.id}';window.ui.simIngressos=${x.ev.vendas.vendidos};window.render()">
+                ${x.ev.nome} (${P(x.calc.pctVendido)})
+              </button>
+            `).join('')}
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            ${window.ui.savedBanner ? `<span class="alert-box alert-ok">✓ Configuração salva e registrada na Trilha de Auditoria!</span>` : ''}
+            <button class="btn btn-outline" onclick="window.abrirBorderoPDF('${id}')">📄 Emitir Borderô / Fechamento (PDF)</button>
+          </div>
+        </div>
+
+        <section class="card">
+          <div>
+            <h2 class="h2">Cascata do cálculo · ${ev.nome}</h2>
+            <div class="sub">Atualiza ao vivo enquanto você edita qualquer campo abaixo.</div>
+          </div>
+          ${wfHtml}
+        </section>
+
+        <!-- Simulador What-If ("E se?") -->
+        <section class="card" style="border:2px solid #c2410c;background:#fffaf5">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+            <div>
+              <h2 class="h2" style="color:#9a3412">🔮 Simulador "E se?" (What-If) de Vendas e Destravamento · ${ev.nome}</h2>
+              <div class="sub">Simule o impacto de novos ingressos vendidos no destravamento de faixas de capacidade, resultado e saldo liberável (ticket médio atual: <strong class="num">${BRL(simResult.ticketMedio)}</strong>).</div>
+            </div>
+            <button class="btn btn-soft btn-sm" onclick="window.ui.simEvId='${id}';window.ui.simIngressos=${ev.vendas.vendidos};window.render()">↺ Resetar p/ vendas reais (${ev.vendas.vendidos} ing.)</button>
+          </div>
+
+          <div class="grid-2" style="align-items:end">
+            <label class="lb">Simular quantidade de ingressos vendidos (0 a ${c.capacidadeUsada})
+              <div style="display:flex;gap:10px;align-items:center">
+                <input type="range" min="0" max="${c.capacidadeUsada}" value="${simIng}" style="flex:1;accent-color:#c2410c" oninput="window.ui.simEvId='${id}';window.ui.simIngressos=Number(this.value);window.render()" />
+                <input class="in" style="width:110px" type="number" min="0" max="${c.capacidadeUsada}" value="${simIng}" oninput="window.ui.simEvId='${id}';window.ui.simIngressos=Number(this.value||0);window.render()" />
+              </div>
+            </label>
+            <label class="lb">Meta de valor liberável desejado (R$)
+              <input class="in" type="number" step="500" value="${simMeta}" oninput="window.ui.simEvId='${id}';window.ui.simMetaValor=Number(this.value||0);window.render()" />
+            </label>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi">
+              <span>Ocupação Simulada</span>
+              <span class="num" style="font-size:19px">${simResult.vendidosSimulados} / ${c.capacidadeUsada} (${P(simResult.simulacao.pctVendido)})</span>
+              <span class="sub">${simResult.ingressosAdicionais >= 0 ? `+${simResult.ingressosAdicionais} ing. vs atual` : `${simResult.ingressosAdicionais} ing. vs atual`}</span>
+            </div>
+            <div class="kpi">
+              <span>Bilheteria Projetada</span>
+              <span class="num" style="font-size:19px">${BRL(simResult.bilheteriaSimulada)}</span>
+              <span class="sub">Faixa: ${simResult.simulacao.faixaAtual ? `${simResult.simulacao.faixaAtual.gatilhoPct}% → libera ${simResult.simulacao.faixaAtual.liberaPct}%` : 'Abaixo do 1º gatilho'}</span>
+            </div>
+            <div class="kpi" style="border:2px solid #047857">
+              <span>Liberável Projetado</span>
+              <span class="num" style="font-size:19px;color:#065f46">${BRL(simResult.simulacao.liberavel)}</span>
+              <span class="sub">Diferença: ${simResult.ganhoLiberavel >= 0 ? '+ ' + BRL(simResult.ganhoLiberavel) : BRL(simResult.ganhoLiberavel)}</span>
+            </div>
+            <div class="kpi" style="background:#eef2ff;border-color:#c7d2fe">
+              <span>Meta: Liberar ${BRL(simMeta)}</span>
+              <span class="num" style="font-size:16px;color:#1e3a8a">
+                ${simResult.meta ? (simResult.meta.atingivel ? (simResult.meta.ingressosFaltantes === 0 ? '✓ Já atingida hoje!' : `Faltam +${simResult.meta.ingressosFaltantes} ingressos`) : 'Acima do teto máximo (100% cap.)') : '—'}
+              </span>
+              <span class="sub">${simResult.meta && simResult.meta.atingivel ? `Total necessário: ${simResult.meta.vendidosNecessarios} ing. (${P(simResult.meta.pctCapacidadeNecessaria)})` : 'Mesmo com lotação máxima não atinge antes de D+2'}</span>
+            </div>
+          </div>
+        </section>
+
+        <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+          <div style="flex:999 1 680px;min-width:0;display:flex;flex-direction:column;gap:20px">
+
+            <!-- 1. Local e Capacidade -->
+            <section class="card">
+              <h2 class="h2">1. Local e capacidade (${loc.nome} · Cap. Total: ${loc.capacidadeTotal})</h2>
+              <div class="grid-3">
+                <label class="lb">Modo de capacidade
+                  <select class="in tx" onchange="window.updateEv('${id}', e => e.capacidade.modo = this.value)">
+                    <option value="local" ${ev.capacidade.modo === 'local' ? 'selected' : ''}>Capacidade total do local (${loc.capacidadeTotal})</option>
+                    <option value="setores" ${ev.capacidade.modo === 'setores' ? 'selected' : ''}>Apenas setores abertos</option>
+                    <option value="manual" ${ev.capacidade.modo === 'manual' ? 'selected' : ''}>Capacidade manual</option>
+                  </select>
+                </label>
+                ${ev.capacidade.modo === 'manual' ? `
+                  <label class="lb">Capacidade manual
+                    <input class="in" type="number" value="${ev.capacidade.manual}" oninput="window.updateEv('${id}', e => e.capacidade.manual = Number(this.value||0))" />
+                  </label>
+                ` : ''}
+                <label class="lb">Ingressos vendidos
+                  <input class="in" type="number" value="${ev.vendas.vendidos}" oninput="window.updateEv('${id}', e => e.vendas.vendidos = Number(this.value||0))" />
+                </label>
+                <label class="lb">Cortesias emitidas
+                  <input class="in" type="number" value="${ev.vendas.cortesias}" oninput="window.updateEv('${id}', e => e.vendas.cortesias = Number(this.value||0))" />
+                </label>
+              </div>
+
+              ${ev.capacidade.modo === 'setores' ? `
+                <div style="display:flex;flex-wrap:wrap;gap:14px;padding:12px;background:#f4f6fb;border-radius:10px">
+                  <span style="font-size:13px;font-weight:800;color:#3d4766">Setores abertos:</span>
+                  ${loc.setores.map(s => {
+                    const checked = (ev.capacidade.setoresAbertos || []).includes(s.nome);
+                    return `
+                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;cursor:pointer">
+                        <input type="checkbox" ${checked ? 'checked' : ''} onchange="window.toggleSetor('${id}','${s.nome}',this.checked)" />
+                        ${s.nome} (${s.capacidade} lug.)
+                      </label>
+                    `;
+                  }).join('')}
+                </div>
+              ` : ''}
+
+              <label style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;cursor:pointer">
+                <input type="checkbox" ${ev.capacidade.contarCortesias ? 'checked' : ''} onchange="window.updateEv('${id}', e => e.capacidade.contarCortesias = this.checked)" />
+                Contar cortesias no cálculo de % de capacidade vendida
+              </label>
+
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700">
+                  <span>Ocupação considerada: ${c.ingressosContados} / ${c.capacidadeUsada} lugares (${P(c.pctVendido)})</span>
+                  <span style="color:#c2410c">
+                    ${c.proximaFaixa ? `Faltam ${c.proximaFaixa.ingressosFaltantes} ingressos para ${c.proximaFaixa.gatilhoPct}% (libera ${c.proximaFaixa.liberaPct}%)` : 'Faixa máxima atingida'}
+                  </span>
+                </div>
+                <div style="position:relative;height:14px;background:#e3e7f1;border-radius:999px">
+                  <div style="position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:#1e3a8a;width:${Math.min(100, c.pctVendido).toFixed(1)}%"></div>
+                  ${c.faixas.map(f => `
+                    <div title="Faixa ${f.gatilhoPct}% → libera ${f.liberaPct}%" style="position:absolute;top:-3px;width:2px;height:20px;background:#c2410c;left:${Math.min(100, f.gatilhoPct)}%"></div>
+                  `).join('')}
+                </div>
+              </div>
+            </section>
+
+            <!-- 2. Borderô -->
+            <section class="card">
+              <h2 class="h2">2. Borderô</h2>
+              <div class="alert-box alert-info">ℹ️ A taxa de conveniência é paga pelo cliente à parte: não entra na bilheteria e não é descontada do borderô.</div>
+              <div class="grid-3">
+                <label class="lb">Bilheteria (R$)
+                  <input class="in" type="number" step="100" value="${ev.bilheteria}" oninput="window.updateEv('${id}', e => e.bilheteria = Number(this.value||0))" />
+                </label>
+                <div class="lb">Despesas abatidas (somente leitura)
+                  <div class="in" style="background:#f4f6fb;display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <span>${BRL(c.despesas)} <span class="sub" style="font-size:11px">(Pago: ${BRL(c.despesasPagas)} · A pagar: ${BRL(c.despesasAPagar)})</span></span>
+                    <button class="btn btn-soft btn-sm" onclick="window.setTab('despesas')">Despesas →</button>
+                  </div>
+                </div>
+                <label class="lb">Já repassado (R$)
+                  <input class="in" type="number" step="100" value="${ev.jaRepassado}" oninput="window.updateEv('${id}', e => e.jaRepassado = Number(this.value||0))" />
+                </label>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;cursor:pointer;color:#0f1b3d">
+                <input type="checkbox" ${fin.regra.abaterDespesasAPagar !== false ? 'checked' : ''} onchange="window.updateFin('${id}', f => f.regra.abaterDespesasAPagar = this.checked)" />
+                Abater TODAS as despesas lançadas no evento (status "Pago" + "A pagar")
+              </label>
+            </section>
+
+            <!-- 3. Taxas Disk -->
+            <section class="card">
+              <h2 class="h2">3. Taxas Disk (Exclusivo Financeiro)</h2>
+              <div class="grid-2">
+                <div style="border:1px solid #dde2ee;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                  <label style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;cursor:pointer">
+                    <input type="checkbox" ${fin.taxaAdm.ativo ? 'checked' : ''} onchange="window.updateFin('${id}', f => f.taxaAdm.ativo = this.checked)" />
+                    Aplicar Taxa Administrativa Disk
+                  </label>
+                  <label class="lb">% Taxa Adm sobre bilheteria
+                    <input class="in" type="number" step="0.5" value="${fin.taxaAdm.percentual}" oninput="window.updateFin('${id}', f => f.taxaAdm.percentual = Number(this.value||0))" />
+                  </label>
+                  <div class="sub">
+                    Taxa Adm Bruta: <strong class="num">${BRL(c.taxaAdm)}</strong> − Rebate (<span class="num">${BRL(c.rebate)}</span>) − Patrocínio (<span class="num">${BRL(c.patrocinio)}</span>) =
+                    <strong class="num" style="color:#7c3aed">Taxa Adm Líquida: ${BRL(c.taxaAdmLiquida)}</strong>
+                  </div>
+                </div>
+
+                <div style="border:1px solid #dde2ee;border-radius:12px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;background:#f4f6fb">
+                  <div>
+                    <div style="font-weight:800;font-size:14px">Taxa Operacional (Negociações)</div>
+                    <div class="sub" style="margin-top:4px">
+                      Tipo: <strong>${neg.taxaOp.tipo}</strong> · Valor: <strong class="num">${neg.taxaOp.valor}</strong>
+                    </div>
+                    <div class="num" style="font-size:20px;color:#7c3aed;margin-top:8px">${BRL(c.taxaOp)}</div>
+                  </div>
+                  <button class="btn btn-outline btn-sm" style="align-self:flex-start;margin-top:10px" onclick="window.setTab('negociacoes')">Abrir Negociações →</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- 4. Retenções -->
+            <section class="card">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                <div>
+                  <h2 class="h2">4. Retenções (ISS, ECAD, Locação e Outras)</h2>
+                  <div class="sub">Desconta do repasse somente quando Ativo + Responsável = Disk + Status = Provisionado.</div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="window.addRetencao('${id}')">+ Outra retenção</button>
+              </div>
+              <div style="overflow-x:auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Ativo</th>
+                      <th>Nome</th>
+                      <th>Tipo</th>
+                      <th>Base</th>
+                      <th>Parâmetros</th>
+                      <th>Resp.</th>
+                      <th>Status</th>
+                      <th style="text-align:right">Desconto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${fin.retencoes.map((r, idx) => {
+                      const det = c.retencoesDetalhe[idx] || { valor: 0 };
+                      return `
+                        <tr>
+                          <td><input type="checkbox" ${r.ativo ? 'checked' : ''} onchange="window.updateFin('${id}', f => f.retencoes[${idx}].ativo = this.checked)" /></td>
+                          <td><input class="in tx" style="min-width:110px;padding:6px 8px;min-height:36px" value="${r.nome}" oninput="window.updateFin('${id}', f => f.retencoes[${idx}].nome = this.value)" /></td>
+                          <td>
+                            <select class="in tx" style="padding:6px 8px;min-height:36px" onchange="window.updateFin('${id}', f => f.retencoes[${idx}].tipo = this.value)">
+                              <option value="percentual" ${r.tipo === 'percentual' ? 'selected' : ''}>% Percentual</option>
+                              <option value="fixo" ${r.tipo === 'fixo' ? 'selected' : ''}>R$ Fixo</option>
+                              <option value="maiorEntre" ${r.tipo === 'maiorEntre' ? 'selected' : ''}>Maior entre</option>
+                              <option value="porIngresso" ${r.tipo === 'porIngresso' ? 'selected' : ''}>R$/Ingresso</option>
+                              <option value="porCapacidade" ${r.tipo === 'porCapacidade' ? 'selected' : ''}>R$/Capacidade</option>
+                            </select>
+                          </td>
+                          <td>
+                            <select class="in tx" style="padding:6px 8px;min-height:36px" onchange="window.updateFin('${id}', f => f.retencoes[${idx}].base = this.value)">
+                              <option value="bruto" ${r.base === 'bruto' ? 'selected' : ''}>Bruto</option>
+                              <option value="liquido" ${r.base === 'liquido' ? 'selected' : ''}>Líquido</option>
+                            </select>
+                          </td>
+                          <td>
+                            <div style="display:flex;gap:6px">
+                              ${(r.tipo === 'percentual' || r.tipo === 'maiorEntre') ? `
+                                <input class="in" style="width:78px;padding:6px;min-height:36px" type="number" placeholder="%" value="${r.percentual}" oninput="window.updateFin('${id}', f => f.retencoes[${idx}].percentual = Number(this.value||0))" />
+                              ` : ''}
+                              ${(r.tipo === 'fixo' || r.tipo === 'maiorEntre') ? `
+                                <input class="in" style="width:98px;padding:6px;min-height:36px" type="number" placeholder="R$ Fixo" value="${r.valorFixo}" oninput="window.updateFin('${id}', f => f.retencoes[${idx}].valorFixo = Number(this.value||0))" />
+                              ` : ''}
+                              ${(r.tipo === 'porIngresso' || r.tipo === 'porCapacidade') ? `
+                                <input class="in" style="width:90px;padding:6px;min-height:36px" type="number" placeholder="R$ Unit" value="${r.valorUnitario}" oninput="window.updateFin('${id}', f => f.retencoes[${idx}].valorUnitario = Number(this.value||0))" />
+                              ` : ''}
+                            </div>
+                          </td>
+                          <td>
+                            <select class="in tx" style="padding:6px 8px;min-height:36px" onchange="window.updateFin('${id}', f => f.retencoes[${idx}].responsavel = this.value)">
+                              <option value="disk" ${r.responsavel === 'disk' ? 'selected' : ''}>Disk</option>
+                              <option value="produtor" ${r.responsavel === 'produtor' ? 'selected' : ''}>Produtor</option>
+                            </select>
+                          </td>
+                          <td>
+                            <select class="in tx" style="padding:6px 8px;min-height:36px" onchange="window.updateFin('${id}', f => f.retencoes[${idx}].status = this.value)">
+                              <option value="provisionado" ${r.status === 'provisionado' ? 'selected' : ''}>Provisionado</option>
+                              <option value="pago" ${r.status === 'pago' ? 'selected' : ''}>Pago</option>
+                            </select>
+                          </td>
+                          <td class="num" style="text-align:right">${BRL(det.valor)}</td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- 5. Descontos Operacionais -->
+            <section class="card">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <h2 class="h2">5. Descontos operacionais (Total: ${BRL(c.totOps)})</h2>
+                <button class="btn btn-outline btn-sm" onclick="window.addDescontoOp('${id}')">+ Outro desconto</button>
+              </div>
+              <table>
+                <thead>
+                  <tr><th>Aplicar</th><th>Item</th><th>Quantidade</th><th>Valor Unitário (R$)</th><th style="text-align:right">Total</th></tr>
+                </thead>
+                <tbody>
+                  ${fin.descontosOperacionais.map((d, idx) => `
+                    <tr>
+                      <td><input type="checkbox" ${d.ativo ? 'checked' : ''} onchange="window.updateFin('${id}', f => f.descontosOperacionais[${idx}].ativo = this.checked)" /></td>
+                      <td><input class="in tx" style="padding:6px 8px;min-height:36px" value="${d.nome}" oninput="window.updateFin('${id}', f => f.descontosOperacionais[${idx}].nome = this.value)" /></td>
+                      <td><input class="in" style="width:90px;padding:6px 8px;min-height:36px" type="number" value="${d.quantidade}" oninput="window.updateFin('${id}', f => f.descontosOperacionais[${idx}].quantidade = Number(this.value||0))" /></td>
+                      <td><input class="in" style="width:120px;padding:6px 8px;min-height:36px" type="number" value="${d.valorUnitario}" oninput="window.updateFin('${id}', f => f.descontosOperacionais[${idx}].valorUnitario = Number(this.value||0))" /></td>
+                      <td class="num" style="text-align:right">${BRL(d.ativo ? d.quantidade * d.valorUnitario : 0)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </section>
+
+            <!-- 6. Créditos -->
+            <section class="card">
+              <h2 class="h2">6. Créditos comerciais (Saem da Taxa Adm do Disk: máx ${BRL(c.taxaAdm)})</h2>
+              ${c.excedente > 0 ? `
+                <div class="alert-box alert-warn">⚠️ Alerta de Excedente: Rebate + Patrocínio somam ${BRL(c.rebateBruto + c.patrocinioBruto)}, ultrapassando a Taxa Adm (${BRL(c.taxaAdm)}). Excedente de ${BRL(c.excedente)} NÃO creditado.</div>
+              ` : ''}
+              <div class="grid-2">
+                <div style="border:1px solid #dde2ee;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                  <label style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px">
+                    <input type="checkbox" ${fin.rebate.ativo ? 'checked' : ''} onchange="window.updateFin('${id}', f => f.rebate.ativo = this.checked)" />
+                    Rebate Comercial (Creditado: ${BRL(c.rebate)})
+                  </label>
+                  <div style="display:flex;gap:8px">
+                    <select class="in tx" onchange="window.updateFin('${id}', f => f.rebate.tipo = this.value)">
+                      <option value="percentual" ${fin.rebate.tipo === 'percentual' ? 'selected' : ''}>% Bilheteria</option>
+                      <option value="fixo" ${fin.rebate.tipo === 'fixo' ? 'selected' : ''}>R$ Fixo</option>
+                    </select>
+                    <input class="in" type="number" step="0.5" value="${fin.rebate.valor}" oninput="window.updateFin('${id}', f => f.rebate.valor = Number(this.value||0))" />
+                  </div>
+                </div>
+
+                <div style="border:1px solid #dde2ee;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                  <label style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px">
+                    <input type="checkbox" ${fin.patrocinioEvento.ativo ? 'checked' : ''} onchange="window.updateFin('${id}', f => f.patrocinioEvento.ativo = this.checked)" />
+                    Patrocínio do Evento (Creditado: ${BRL(c.patrocinio)})
+                  </label>
+                  <input class="in tx" placeholder="Descrição" value="${fin.patrocinioEvento.descricao || ''}" oninput="window.updateFin('${id}', f => f.patrocinioEvento.descricao = this.value)" />
+                  <input class="in" type="number" step="100" value="${fin.patrocinioEvento.valor}" oninput="window.updateFin('${id}', f => f.patrocinioEvento.valor = Number(this.value||0))" />
+                </div>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;cursor:pointer">
+                <input type="checkbox" ${fin.regra.creditosSujeitosTrava ? 'checked' : ''} onchange="window.updateFin('${id}', f => f.regra.creditosSujeitosTrava = this.checked)" />
+                Créditos sujeitos às travas de receita e capacidade (se desmarcado, entram livres após a trava)
+              </label>
+            </section>
+
+            <!-- 7. Regra de Liberação e Faixas -->
+            <section class="card">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <h2 class="h2">7. Regra de travas e faixas de capacidade</h2>
+                <button class="btn btn-outline btn-sm" onclick="window.addFaixa('${id}')">+ Adicionar faixa</button>
+              </div>
+              <div class="grid-3">
+                <label class="lb">Modo da regra
+                  <select class="in tx" onchange="window.updateFin('${id}', f => f.regra.modo = this.value)">
+                    <option value="MIN" ${fin.regra.modo === 'MIN' ? 'selected' : ''}>MIN(A, B) — Mais restritiva</option>
+                    <option value="A" ${fin.regra.modo === 'A' ? 'selected' : ''}>Somente Regra A (Resultado)</option>
+                    <option value="B" ${fin.regra.modo === 'B' ? 'selected' : ''}>Somente Regra B (Capacidade)</option>
+                  </select>
+                </label>
+                <label class="lb">Regra A · % sobre Resultado
+                  <input class="in" type="number" value="${fin.regra.pctResultado}" oninput="window.updateFin('${id}', f => f.regra.pctResultado = Number(this.value||0))" />
+                </label>
+                <label class="lb">Reserva reembolso (% bilheteria)
+                  <input class="in" type="number" value="${fin.regra.reservaReembolsoPct}" oninput="window.updateFin('${id}', f => f.regra.reservaReembolsoPct = Number(this.value||0))" />
+                </label>
+                <label class="lb">Teto máximo R$ (0 = sem teto)
+                  <input class="in" type="number" value="${fin.regra.teto}" oninput="window.updateFin('${id}', f => f.regra.teto = Number(this.value||0))" />
+                </label>
+                <label class="lb">Libera 100% em D+ (dias úteis bancários)
+                  <input class="in" type="number" value="${fin.regra.liberaTotalDmais}" oninput="window.updateFin('${id}', f => f.regra.liberaTotalDmais = Number(this.value||0))" />
+                  <span class="sub" style="text-transform:none;font-weight:600;color:#1e3a8a">Liberação 100%: ${c.dataLiberacaoTotal || '—'} (s/ sáb, dom e feriados)</span>
+                </label>
+              </div>
+
+              <table>
+                <thead>
+                  <tr><th>Gatilho (% vendido)</th><th>Ingressos equivalentes</th><th>% Resultado Liberado (B)</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody>
+                  ${fin.regra.faixas.map((f, idx) => {
+                    const isAtual = c.faixaAtual && c.faixaAtual.gatilhoPct === Number(f.gatilhoPct);
+                    return `
+                      <tr>
+                        <td><input class="in" style="width:90px;padding:6px;min-height:36px" type="number" value="${f.gatilhoPct}" oninput="window.updateFin('${id}', fn => fn.regra.faixas[${idx}].gatilhoPct = Number(this.value||0))" /></td>
+                        <td class="num">${Math.ceil((Number(f.gatilhoPct) / 100) * c.capacidadeUsada)} ing.</td>
+                        <td><input class="in" style="width:90px;padding:6px;min-height:36px" type="number" value="${f.liberaPct}" oninput="window.updateFin('${id}', fn => fn.regra.faixas[${idx}].liberaPct = Number(this.value||0))" /></td>
+                        <td>${isAtual ? `<span class="bdg">Faixa atual (${f.liberaPct}%)</span>` : (c.pctVendido >= f.gatilhoPct ? '<span class="sub">Superada</span>' : '<span class="sub">Pendente</span>')}</td>
+                        <td><button class="btn btn-danger btn-sm" onclick="window.removeFaixa('${id}', ${idx})">Remover</button></td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </section>
+          </div>
+
+          <!-- Coluna Lateral: Prévia Linha a Linha -->
+          <aside style="flex:1 1 360px;min-width:0;position:sticky;top:20px">
+            <section class="card" style="border:2px solid #1e3a8a">
+              <h2 class="h2">Prévia do cálculo · ${ev.nome}</h2>
+              <div style="display:flex;flex-direction:column">
+                <div class="row"><span>Bilheteria</span><span class="num">${BRL(c.bil)}</span></div>
+                <div class="row"><span>(−) Taxa Adm (${fin.taxaAdm.percentual}%)</span><span class="num">${BRL(-c.taxaAdm)}</span></div>
+                <div class="row"><span>(−) Taxa Operacional</span><span class="num">${BRL(-c.taxaOp)}</span></div>
+                <div class="row" style="border-top:1px solid #dde2ee;padding-top:8px;font-weight:800;color:#0f1b3d"><span>(=) Borderô do Produtor</span><span class="num">${BRL(c.bil - c.taxaAdm - c.taxaOp)}</span></div>
+                <div class="row"><span>(−) Despesas (${c.abaterDespesasAPagar ? 'Pagas + A pagar' : 'Só Pagas'})</span><span class="num">${BRL(-c.despesas)}</span></div>
+                <div class="row"><span>(−) Retenções provisionadas</span><span class="num">${BRL(-c.totRetencoes)}</span></div>
+                <div class="row"><span>(−) Descontos operacionais</span><span class="num">${BRL(-c.totOps)}</span></div>
+                ${c.reserva > 0 ? `<div class="row"><span>(−) Reserva reembolso</span><span class="num">${BRL(-c.reserva)}</span></div>` : ''}
+                <div class="row" style="border-top:1px solid #dde2ee;padding-top:8px;font-weight:800;color:#0f1b3d"><span>(=) Resultado do evento</span><span class="num">${BRL(c.resultado)}</span></div>
+                <div class="row"><span>• Regra A (${c.pctResultado}%)</span><span class="num">${BRL(c.A)}</span></div>
+                <div class="row"><span>• Regra B (${c.liberaPctB}% p/ ${P(c.pctVendido)})</span><span class="num">${BRL(c.B)}</span></div>
+                <div class="row" style="font-weight:700"><span>(=) Escolhido (${c.modo})</span><span class="num">${BRL(c.escolhido)}</span></div>
+                <div class="row"><span>(+) Créditos (rebate + patroc.)</span><span class="num" style="color:#065f46">${BRL(c.creditos)}</span></div>
+                <div class="row"><span>(−) Já repassado</span><span class="num">${BRL(-c.jaRepassado)}</span></div>
+                ${c.advEv > 0 ? `<div class="row"><span>(−) Advanced evento</span><span class="num">${BRL(-c.advEv)}</span></div>` : ''}
+                ${c.antEv > 0 ? `<div class="row"><span>(−) Antecipação + taxa</span><span class="num">${BRL(-c.antEv)}</span></div>` : ''}
+              </div>
+
+              <div style="background:#ecfdf5;border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center">
+                <span style="font-weight:800;color:#065f46">Liberável no evento</span>
+                <span class="num" style="font-size:20px;color:#065f46">${BRL(c.liberavel)}</span>
+              </div>
+
+              <div class="row"><span>Retido pelas travas</span><span class="num" style="color:#9a3412">${BRL(c.retido)}</span></div>
+              <div class="row"><span>Saldo devedor</span><span class="num">${BRL(c.saldoDevedor)}</span></div>
+              <div class="row"><span>Taxa Adm Líquida Disk</span><span class="num" style="color:#7c3aed">${BRL(c.taxaAdmLiquida)}</span></div>
+
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <button class="btn btn-primary" onclick="window.salvarConfigEvento('${id}')">💾 Salvar alterações (com Auditoria)</button>
+                <button class="btn btn-outline" onclick="window.abrirBorderoPDF('${id}')">📄 Emitir Borderô / Fechamento (PDF)</button>
+              </div>
+            </section>
+          </aside>
+        </div>
+      `;
+    }
+
+    // ========================================================================
+    // MÓDULO 2: NEGOCIAÇÕES
+    // ========================================================================
+    function renderModuloNegociacoes(S) {
+      return `
+        <div class="mods">
+          ${Object.values(S.evMap).map(({ id, ev, neg, calc }) => `
+            <section class="card">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <h2 class="h2">${ev.nome}</h2>
+                <select class="in tx" style="width:auto;min-height:36px;padding:6px 10px" onchange="window.updateNeg('${id}', n => n.status = this.value)">
+                  <option value="Ativa" ${neg.status === 'Ativa' ? 'selected' : ''}>Ativa</option>
+                  <option value="Em revisão" ${neg.status === 'Em revisão' ? 'selected' : ''}>Em revisão</option>
+                  <option value="Encerrada" ${neg.status === 'Encerrada' ? 'selected' : ''}>Encerrada</option>
+                </select>
+              </div>
+              <div class="grid-2">
+                <label class="lb">Forma da Taxa Operacional
+                  <select class="in tx" onchange="window.updateNeg('${id}', n => n.taxaOp.tipo = this.value)">
+                    <option value="porIngresso" ${neg.taxaOp.tipo === 'porIngresso' ? 'selected' : ''}>R$ por ingresso vendido</option>
+                    <option value="percentual" ${neg.taxaOp.tipo === 'percentual' ? 'selected' : ''}>% sobre bilheteria</option>
+                    <option value="fixo" ${neg.taxaOp.tipo === 'fixo' ? 'selected' : ''}>Valor fixo (R$)</option>
+                  </select>
+                </label>
+                <label class="lb">Valor da Taxa Op
+                  <input class="in" type="number" step="0.5" value="${neg.taxaOp.valor}" oninput="window.updateNeg('${id}', n => n.taxaOp.valor = Number(this.value||0))" />
+                </label>
+              </div>
+              <div class="row" style="background:#f4f6fb;padding:10px 12px;border-radius:10px">
+                <span>Taxa Operacional Calculada:</span>
+                <span class="num" style="color:#7c3aed">${BRL(calc.taxaOp)}</span>
+              </div>
+              <label class="lb">Taxa de Conveniência (% informativo — paga pelo cliente, nunca entra no cálculo)
+                <input class="in" type="number" value="${neg.conveniencia?.percentual || 0}" oninput="window.updateNeg('${id}', n => { n.conveniencia = { percentual: Number(this.value||0) }; })" />
+              </label>
+              <label class="lb">Observações da Negociação
+                <input class="in tx" value="${neg.observacoes || ''}" oninput="window.updateNeg('${id}', n => n.observacoes = this.value)" />
+              </label>
+            </section>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // ========================================================================
+    // MÓDULO 2.5: TRILHA DE AUDITORIA (AUDIT LOG)
+    // ========================================================================
+    function renderModuloAuditoria(S, audList) {
+      return `
+        <section class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div>
+              <h2 class="h2">🕓 Trilha de Auditoria · Histórico de Alterações</h2>
+              <div class="sub">Registro cronológico de aprovações, recusas, liquidações bancárias, ajustes de travas/taxas e lançamentos de despesas.</div>
+            </div>
+            <span class="bdg info">${audList.length} evento(s) auditado(s)</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data / Hora</th>
+                  <th>Usuário</th>
+                  <th>Módulo</th>
+                  <th>Evento(s)</th>
+                  <th>Ação</th>
+                  <th>Detalhamento (Antes / Depois)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${audList.map(a => `
+                  <tr>
+                    <td class="num" style="font-size:12.5px;white-space:nowrap">${a.dataHora}</td>
+                    <td style="font-size:13px;font-weight:700">${a.usuario}</td>
+                    <td><span class="bdg info" style="margin:0">${a.modulo}</span></td>
+                    <td><strong>${S.evMap[a.eventoId]?.ev.nome || a.eventoId || 'Geral'}</strong></td>
+                    <td style="font-weight:800;color:#0f1b3d">${a.acao}</td>
+                    <td style="font-size:13px;color:#3d4766">${a.resumo}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      `;
+    }
+
+    // ========================================================================
+    // MÓDULO 3: SALDO CONSOLIDADO (FINANCEIRO)
+    // ========================================================================
+    function renderModuloSaldoConsolidado(S) {
+      const { prod, evArr, evMap, cons } = S;
+      const stackedRows = evArr.map(e => ({
+        nome: evMap[e.id].ev.nome,
+        tot: e.bil,
+        segs: [
+          { label: 'Taxa Disk', v: e.taxaAdmLiquida + e.taxaOp, cor: CO.disk },
+          { label: 'Retenções', v: e.totRetencoes + e.reserva, cor: CO.rtc },
+          { label: 'Despesas + Descontos', v: e.despesas + e.totOps, cor: CO.cus },
+          { label: 'Já pago', v: Math.max(0, e.jaRepassado + e.advEv + e.antEv - e.saldoDevedor), cor: CO.rep },
+          { label: 'Liberável', v: e.liberavel, cor: CO.lib },
+          { label: 'Retido', v: e.retido, cor: CO.ret }
+        ]
+      }));
+
+      return `
+        <section class="card">
+          <h2 class="h2">Bilheteria e situação por evento</h2>
+          ${buildStackedBars(stackedRows, [
+            { label: 'Taxa Disk', cor: CO.disk },
+            { label: 'Retenções', cor: CO.rtc },
+            { label: 'Despesas e descontos', cor: CO.cus },
+            { label: 'Já pago', cor: CO.rep },
+            { label: 'Liberável', cor: CO.lib },
+            { label: 'Retido', cor: CO.ret }
+          ])}
+        </section>
+
+        <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+          <section class="card" style="flex:999 1 620px;min-width:0">
+            <h2 class="h2">Eventos da produtora</h2>
+            <div style="overflow-x:auto">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Liberado p/ solicitação</th>
+                    <th>Evento</th>
+                    <th style="text-align:right">% Vendido</th>
+                    <th style="text-align:right">Taxa Adm Líq.</th>
+                    <th style="text-align:right">Resultado</th>
+                    <th style="text-align:right">Liberável</th>
+                    <th style="text-align:right">Devedor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${evArr.map(e => {
+                    const ev = evMap[e.id].ev;
+                    return `
+                      <tr>
+                        <td>
+                          <input type="checkbox" ${ev.liberadoParaSolicitacao ? 'checked' : ''} onchange="window.updateEv('${e.id}', x => x.liberadoParaSolicitacao = this.checked)" style="width:18px;height:18px" />
+                        </td>
+                        <td><strong>${ev.nome}</strong><div class="sub">${ev.data}</div></td>
+                        <td class="num" style="text-align:right">${P(e.pctVendido)}</td>
+                        <td class="num" style="text-align:right">${BRL(e.taxaAdmLiquida)}</td>
+                        <td class="num" style="text-align:right">${BRL(e.resultado)}</td>
+                        <td class="num" style="text-align:right;color:#065f46">${BRL(e.liberavel)}</td>
+                        <td class="num" style="text-align:right;color:#991b1b">${BRL(e.saldoDevedor)}</td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <aside style="flex:1 1 380px;min-width:0;display:flex;flex-direction:column;gap:20px">
+            <section class="card">
+              <h2 class="h2">Patrocínio da produtora</h2>
+              <div class="sub">Sai da Taxa Adm Líquida total dos eventos liberados (limite atual: <strong>${BRL(cons.taxaAdmLiqTotal)}</strong>).</div>
+              ${cons.excedentePatrocinioProdutora > 0 ? `
+                <div class="alert-box alert-warn">⚠️ Excedente de ${BRL(cons.excedentePatrocinioProdutora)} bloqueado! Creditado apenas até o limite da Taxa Adm Líquida (${BRL(cons.taxaAdmLiqTotal)}).</div>
+              ` : ''}
+              <label style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px">
+                <input type="checkbox" ${prod.patrocinio.ativo ? 'checked' : ''} onchange="window.updateProd(p => p.patrocinio.ativo = this.checked)" />
+                Ativar patrocínio da produtora
+              </label>
+              <label class="lb">Descrição
+                <input class="in tx" value="${prod.patrocinio.descricao}" oninput="window.updateProd(p => p.patrocinio.descricao = this.value)" />
+              </label>
+              <label class="lb">Valor contratado (R$)
+                <input class="in" type="number" step="100" value="${prod.patrocinio.valor}" oninput="window.updateProd(p => p.patrocinio.valor = Number(this.value||0))" />
+              </label>
+            </section>
+
+            <section class="card" style="border:2px solid #1e3a8a">
+              <h2 class="h2">Composição consolidada</h2>
+              <div class="row"><span>Liberável nos eventos liberados</span><span class="num">${BRL(cons.liberavelEventos)}</span></div>
+              <div class="row"><span>(+) Patrocínio da produtora (creditado)</span><span class="num" style="color:#065f46">${BRL(cons.patrocinioProdutora)}</span></div>
+              <div class="row"><span>(−) Advanced consolidado a abater</span><span class="num">${BRL(-cons.advConsolidado)}</span></div>
+              <div class="row"><span>(−) Saldo devedor de eventos</span><span class="num">${BRL(-cons.devedores)}</span></div>
+              <div class="row" style="border-top:1px solid #dde2ee;padding-top:10px;font-weight:800;color:#065f46">
+                <span>Saldo disponível total</span>
+                <span class="num" style="font-size:19px">${BRL(cons.saldoDisponivel)}</span>
+              </div>
+            </section>
+          </aside>
+        </div>
+      `;
+    }
+
+    // ========================================================================
+    // MÓDULO 4: SOLICITAÇÕES DE REPASSE (COM RATEIO PROPORCIONAL/MANUAL, PROTOCOLO E RECIBO PDF)
+    // ========================================================================
+    function renderModuloSolicitacoes(S, repList) {
+      const cfgTransf = (window.dbState.config && window.dbState.config.transferencia) || { pixValor: 0, tedValor: 10 };
+      const { calcTransferencia } = window.MotorRepasse;
+      return `
+        <section class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">
+            <div>
+              <h2 class="h2">Parâmetros de Tarifa de Transferência (Saque)</h2>
+              <div class="sub">PIX gratuito (R$ 0,00) e TED com tarifa bancária configurável abatida do valor líquido a transferir.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <div class="in" style="width:auto;background:#ecfdf5;border-color:#a7f3d0;color:#065f46;font-weight:700;display:flex;align-items:center;gap:6px">
+                <span>PIX:</span> <span>R$ 0,00 (Gratuito)</span>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#3d4766">
+                <span>Tarifa TED (R$):</span>
+                <input class="in" style="width:110px;min-height:40px;padding:6px 10px" type="number" step="0.5" value="${cfgTransf.tedValor ?? 10}" oninput="window.dbState.config.transferencia.tedValor=Number(this.value||0);saveDB()" onchange="window.render()" />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="h2">Solicitações de repasse · Fluxo Solicitado → Aprovado → Pago</h2>
+          <div class="sub">Escolha entre rateio proporcional automático ou rateio manual por evento, anexe protocolo PIX/TED e emita o comprovante oficial de repasse em PDF.</div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Solicitado em</th>
+                  <th>Eventos / Rateio</th>
+                  <th>Forma / Conta</th>
+                  <th style="text-align:right">Valor Bruto</th>
+                  <th style="text-align:right">Tarifa</th>
+                  <th style="text-align:right">Valor Líquido</th>
+                  <th>Status / Protocolo</th>
+                  <th>Documentos</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${repList.map(r => {
+                  const nomes = (r.eventoIds || []).map(id => S.evMap[id]?.ev.nome || id).join(' + ');
+                  const tr = calcTransferencia(r.valorSolicitado, r.forma, cfgTransf);
+                  const tarifaExibida = r.tarifaTransferencia !== undefined ? r.tarifaTransferencia : tr.tarifa;
+                  const liqExibido = r.valorLiquido !== undefined ? r.valorLiquido : tr.valorLiquido;
+                  const rateioObj = (r.memoriaCalculo && (r.memoriaCalculo.rateioAplicado || r.memoriaCalculo.rateioEventos)) || null;
+                  const rateioTxt = rateioObj
+                    ? Object.entries(rateioObj).map(([eid, q]) => `${S.evMap[eid]?.ev.nome || eid}: ${BRL(q)}`).join(' · ')
+                    : '';
+                  return `
+                    <tr>
+                      <td>${r.solicitadoEm || '—'}</td>
+                      <td>
+                        <strong>${nomes}</strong>
+                        ${rateioTxt ? `<div class="sub" style="font-size:11.5px">Rateio (${r.modoRateio || 'prop.'}): ${rateioTxt}</div>` : ''}
+                      </td>
+                      <td>${r.forma} · Conta ${r.contaId}</td>
+                      <td class="num" style="text-align:right">${BRL(r.valorSolicitado)}</td>
+                      <td class="num" style="text-align:right;color:#5a6584">${tarifaExibida > 0 ? BRL(-tarifaExibida) : 'R$ 0,00'}</td>
+                      <td class="num" style="text-align:right;color:#065f46">${BRL(liqExibido)}</td>
+                      <td>
+                        <span class="bdg ${r.status === 'Solicitado' ? 'warn' : (r.status === 'Aprovado' ? 'info' : '')}">${r.status}</span>
+                        ${r.protocoloBancario ? `<div class="num" style="font-size:11px;color:#3d4766;margin-top:4px">${r.protocoloBancario}</div>` : ''}
+                      </td>
+                      <td>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap">
+                          ${r.memoriaCalculo ? `<button class="btn btn-soft btn-sm" onclick="window.abrirModalMemoria('${r.id}')">Memória</button>` : ''}
+                          ${(r.status === 'Aprovado' || r.status === 'Pago') ? `<button class="btn btn-outline btn-sm" onclick="window.abrirReciboRepassePDF('${r.id}')">🧾 Recibo PDF</button>` : ''}
+                        </div>
+                      </td>
+                      <td>
+                        ${r.status === 'Solicitado' ? `
+                          <div style="display:flex;gap:6px;flex-wrap:wrap">
+                            <button class="btn btn-green btn-sm" onclick="window.abrirModalAprovarRepasse('${r.id}')">Analisar / Rateio</button>
+                            <button class="btn btn-danger btn-sm" onclick="window.decidirRepasseUI('${r.id}','recusar')">Recusar</button>
+                          </div>
+                        ` : r.status === 'Aprovado' ? `
+                          <button class="btn btn-primary btn-sm" onclick="window.abrirModalLiquidarRepasse('${r.id}')">Confirmar PIX/TED (Pago)</button>
+                        ` : `<span class="sub">${r.pagoPor || r.decididoPor || 'Finalizado'}</span>`}
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      `;
+    }
+
+    // ========================================================================
+    // MÓDULO 5: ANTECIPAÇÕES
+    // ========================================================================
+    function renderModuloAntecipacoes(S) {
+      return `
+        <section class="card">
+          <h2 class="h2">Antecipações de recebíveis (Taxa: 2%)</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Abater no próx.</th>
+                <th>Data</th>
+                <th>Evento</th>
+                <th style="text-align:right">Valor Antecipado</th>
+                <th style="text-align:right">Taxa %</th>
+                <th style="text-align:right">Total a Abater</th>
+                <th>Status</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${S.antList.map(a => {
+                const totAbater = num(a.valor) * (1 + num(a.taxaPct) / 100);
+                return `
+                  <tr>
+                    <td><input type="checkbox" ${a.abaterNoProximo ? 'checked' : ''} onchange="window.toggleAntAbater('${a.id}',this.checked)" /></td>
+                    <td>${a.data}</td>
+                    <td><strong>${S.evMap[a.eventoId]?.ev.nome || a.eventoId}</strong></td>
+                    <td class="num" style="text-align:right">${BRL(a.valor)}</td>
+                    <td class="num" style="text-align:right">${P(a.taxaPct)}</td>
+                    <td class="num" style="text-align:right">${BRL(totAbater)}</td>
+                    <td><span class="bdg ${a.status === 'Solicitada' ? 'warn' : ''}">${a.status}</span></td>
+                    <td>
+                      ${a.status === 'Solicitada' ? `
+                        <div style="display:flex;gap:6px">
+                          <button class="btn btn-green btn-sm" onclick="window.decidirAntecipacao('${a.id}','Aprovada')">Aprovar</button>
+                          <button class="btn btn-danger btn-sm" onclick="window.decidirAntecipacao('${a.id}','Recusada')">Recusar</button>
+                        </div>
+                      ` : '—'}
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </section>
+      `;
+    }
+
+    // ========================================================================
+    // MÓDULO 6: ADVANCED
+    // ========================================================================
+    function renderModuloAdvanced(S) {
+      const totAtivo = S.advList.filter(a => a.abaterNoProximo).reduce((t, a) => t + num(a.valor), 0);
+      return `
+        <section class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h2 class="h2">Advanced · Adiantamentos (Total marcado p/ abater: ${BRL(totAtivo)})</h2>
+              <div class="sub">Adiantamentos podem ser abatidos do saldo consolidado ou de um evento específico.</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="window.addAdvanced()">+ Novo Advanced</button>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Abater</th><th>Data</th><th>Descrição</th><th>Valor (R$)</th><th>Abater de (Escopo)</th><th></th></tr>
+            </thead>
+            <tbody>
+              ${S.advList.map(a => `
+                <tr>
+                  <td><input type="checkbox" ${a.abaterNoProximo ? 'checked' : ''} onchange="window.updateAdv('${a.id}', x => x.abaterNoProximo = this.checked)" /></td>
+                  <td><input class="in tx" style="width:125px;padding:6px;min-height:36px" value="${a.data}" oninput="window.updateAdv('${a.id}', x => x.data = this.value)" /></td>
+                  <td><input class="in tx" style="padding:6px;min-height:36px" value="${a.descricao}" oninput="window.updateAdv('${a.id}', x => x.descricao = this.value)" /></td>
+                  <td><input class="in" style="width:130px;padding:6px;min-height:36px" type="number" value="${a.valor}" oninput="window.updateAdv('${a.id}', x => x.valor = Number(this.value||0))" /></td>
+                  <td>
+                    <select class="in tx" style="padding:6px;min-height:36px" onchange="window.updateAdv('${a.id}', x => x.escopo = this.value)">
+                      <option value="consolidado" ${a.escopo === 'consolidado' ? 'selected' : ''}>Consolidado da produtora</option>
+                      ${Object.values(S.evMap).map(e => `<option value="${e.id}" ${a.escopo === e.id ? 'selected' : ''}>Evento: ${e.ev.nome}</option>`).join('')}
+                    </select>
+                  </td>
+                  <td><button class="btn btn-danger btn-sm" onclick="window.removeAdv('${a.id}')">Remover</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </section>
+      `;
+    }
+
+    // ========================================================================
+    // MÓDULO 7: CONTAS BANCÁRIAS
+    // ========================================================================
+    function renderModuloContas(S, contasList) {
+      return `
+        <section class="card">
+          <h2 class="h2">Contas bancárias da produtora</h2>
+          <div class="mods">
+            ${contasList.map(c => `
+              <div style="border:1px solid #dde2ee;border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <strong style="font-size:16px">${c.banco}</strong>
+                  <span class="bdg ${c.status === 'Pendente' ? 'warn' : ''}">${c.status}</span>
+                </div>
+                <div class="num" style="font-size:13px;color:#5a6584">Ag ${c.agencia} · CC ${c.conta}</div>
+                <div style="font-size:13px;color:#3d4766">PIX: ${c.pix}</div>
+                ${c.padrao ? `<div style="font-size:13px;font-weight:800;color:#065f46">★ Conta padrão de repasse</div>` : ''}
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+                  <button class="btn btn-green btn-sm" onclick="window.acaoConta('${c.id}','Validada')">Validar</button>
+                  <button class="btn btn-danger btn-sm" onclick="window.acaoConta('${c.id}','Recusada')">Recusar</button>
+                  <button class="btn btn-outline btn-sm" onclick="window.acaoConta('${c.id}','padrao')">Tornar padrão</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </section>
+      `;
+    }
+
+    // ========================================================================
+    // MÓDULO 8: DESPESAS E ANEXOS DE NOTA FISCAL
+    // ========================================================================
+    function renderModuloDespesas(S) {
+      return `
+        <section class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div>
+              <h2 class="h2">Despesas por evento e Comprovantes / Notas Fiscais</h2>
+              <div class="sub">Por padrão, todas as despesas ("Pago" + "A pagar") são abatidas do borderô. Informe o nº da NF/Recibo e link do comprovante para transparência com o produtor.</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="window.addDespesa()">+ Lançar despesa</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr><th>Evento</th><th>Data</th><th>Categoria</th><th>Fornecedor</th><th>Nº NF / Doc</th><th>Link Comprovante</th><th>Valor (R$)</th><th>Status</th><th></th></tr>
+              </thead>
+              <tbody>
+                ${S.despList.map(d => `
+                  <tr>
+                    <td>
+                      <select class="in tx" style="padding:6px;min-height:36px" onchange="window.updateDesp('${d.id}', x => x.eventoId = this.value)">
+                        ${Object.values(S.evMap).map(e => `<option value="${e.id}" ${d.eventoId === e.id ? 'selected' : ''}>${e.ev.nome}</option>`).join('')}
+                      </select>
+                    </td>
+                    <td><input class="in tx" style="width:110px;padding:6px;min-height:36px" value="${d.data}" oninput="window.updateDesp('${d.id}', x => x.data = this.value)" /></td>
+                    <td><input class="in tx" style="padding:6px;min-height:36px" value="${d.categoria}" oninput="window.updateDesp('${d.id}', x => x.categoria = this.value)" /></td>
+                    <td><input class="in tx" style="padding:6px;min-height:36px" value="${d.fornecedor}" oninput="window.updateDesp('${d.id}', x => x.fornecedor = this.value)" /></td>
+                    <td><input class="in tx" style="width:130px;padding:6px;min-height:36px" placeholder="Ex: NF-e 418" value="${d.nfCodigo || ''}" oninput="window.updateDesp('${d.id}', x => x.nfCodigo = this.value)" /></td>
+                    <td><input class="in tx" style="width:160px;padding:6px;min-height:36px" placeholder="https://..." value="${d.comprovanteUrl || ''}" oninput="window.updateDesp('${d.id}', x => x.comprovanteUrl = this.value)" /></td>
+                    <td><input class="in" style="width:115px;padding:6px;min-height:36px" type="number" value="${d.valor}" oninput="window.updateDesp('${d.id}', x => x.valor = Number(this.value||0))" /></td>
+                    <td>
+                      <select class="in tx" style="padding:6px;min-height:36px" onchange="window.updateDesp('${d.id}', x => x.status = this.value)">
+                        <option value="Pago" ${d.status === 'Pago' ? 'selected' : ''}>Pago</option>
+                        <option value="A pagar" ${d.status === 'A pagar' ? 'selected' : ''}>A pagar</option>
+                      </select>
+                    </td>
+                    <td><button class="btn btn-danger btn-sm" onclick="window.removeDesp('${d.id}')">Remover</button></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      `;
+    }
+
+    // ========================================================================
+    // HANDLERS GLOBAIS DE INTERAÇÃO, MODAIS DE RATEIO E IMPRESSÃO PDF
+    // ========================================================================
+    window.setTab = (t) => { window.ui.tab = t; window.ui.savedBanner = false; window.render(); };
+    window.updateEv = (evId, fn) => { fn(window.dbState.eventos[evId]); saveDB(); window.render(); };
+    window.updateFin = (evId, fn) => { fn(window.dbState.eventos_fin[evId]); saveDB(); window.render(); };
+    window.updateNeg = (evId, fn) => { fn(window.dbState.negociacoes[evId]); saveDB(); window.render(); };
+    window.updateProd = (fn) => { fn(window.dbState.produtoras[window.ui.produtoraId]); saveDB(); window.render(); };
+    window.salvarConfigEvento = (evId) => {
+      const targetId = evId || window.ui.evId;
+      const fin = window.dbState.eventos_fin[targetId];
+      const ev = window.dbState.eventos[targetId];
+      registrarLogAuditoria(
+        'Travas e Taxas',
+        targetId,
+        'Salvo Configuração do Evento',
+        `Bilheteria ${BRL(ev.bilheteria)} (${ev.vendas.vendidos} ing.); Taxa Adm ${fin.taxaAdm.percentual}%; Regra ${fin.regra.modo} (${fin.regra.pctResultado}% resultado, D+${fin.regra.liberaTotalDmais} dias úteis).`
+      );
+      saveDB();
+      window.ui.savedBanner = true;
+      window.render();
+    };
+
+    window.toggleSetor = (evId, nome, checked) => {
+      const arr = window.dbState.eventos[evId].capacidade.setoresAbertos || [];
+      window.dbState.eventos[evId].capacidade.setoresAbertos = checked
+        ? [...new Set([...arr, nome])]
+        : arr.filter(x => x !== nome);
+      saveDB();
+      window.render();
+    };
+
+    window.addRetencao = (evId) => {
+      window.dbState.eventos_fin[evId].retencoes.push({
+        id: 'ret_' + Date.now(), nome: 'Nova Retenção', ativo: true, tipo: 'fixo', base: 'bruto',
+        percentual: 0, valorFixo: 500, valorUnitario: 0, responsavel: 'disk', status: 'provisionado'
+      });
+      saveDB(); window.render();
+    };
+
+    window.addDescontoOp = (evId) => {
+      window.dbState.eventos_fin[evId].descontosOperacionais.push({
+        id: 'op_' + Date.now(), nome: 'Item Operacional', ativo: true, quantidade: 1, valorUnitario: 200
+      });
+      saveDB(); window.render();
+    };
+
+    window.addFaixa = (evId) => {
+      window.dbState.eventos_fin[evId].regra.faixas.push({ gatilhoPct: 90, liberaPct: 85 });
+      saveDB(); window.render();
+    };
+
+    window.removeFaixa = (evId, idx) => {
+      window.dbState.eventos_fin[evId].regra.faixas.splice(idx, 1);
+      saveDB(); window.render();
+    };
+
+    window.updateAdv = (id, fn) => { fn(window.dbState.advanced[id]); saveDB(); window.render(); };
+    window.addAdvanced = () => {
+      const id = 'adv_' + Date.now();
+      window.dbState.advanced[id] = {
+        produtoraId: window.ui.produtoraId, data: '13/10/2026', descricao: 'Novo Adiantamento',
+        valor: 1000, escopo: 'consolidado', abaterNoProximo: true
+      };
+      registrarLogAuditoria('Advanced', 'consolidado', 'Inclusão de Adiantamento', 'Novo adiantamento de R$ 1.000,00 lançado.');
+      saveDB(); window.render();
+    };
+    window.removeAdv = (id) => { delete window.dbState.advanced[id]; saveDB(); window.render(); };
+
+    window.toggleAntAbater = (id, ch) => { window.dbState.antecipacoes[id].abaterNoProximo = ch; saveDB(); window.render(); };
+    window.decidirAntecipacao = (id, st) => {
+      window.dbState.antecipacoes[id].status = st;
+      registrarLogAuditoria('Antecipações', window.dbState.antecipacoes[id].eventoId, `Antecipação ${st}`, `Antecipação ${id} marcada como ${st}.`);
+      saveDB(); window.render();
+    };
+
+    window.acaoConta = (id, acao) => {
+      const map = window.dbState.contas[window.ui.produtoraId];
+      if (acao === 'padrao') {
+        Object.values(map).forEach(c => { c.padrao = false; });
+        map[id].padrao = true;
+        map[id].status = 'Validada';
+      } else {
+        map[id].status = acao;
+      }
+      registrarLogAuditoria('Contas Bancárias', 'Geral', `Conta ${id}: ${acao}`, `Status da conta bancária atualizado.`);
+      saveDB(); window.render();
+    };
+
+    window.updateDesp = (id, fn) => { fn(window.dbState.despesas[id]); saveDB(); window.render(); };
+    window.addDespesa = () => {
+      const id = 'desp_' + Date.now();
+      window.dbState.despesas[id] = {
+        eventoId: 'polaquedo', produtoraId: window.ui.produtoraId, data: '13/10/2026',
+        categoria: 'Nova Despesa', fornecedor: 'Fornecedor PR', valor: 500, status: 'Pago',
+        nfCodigo: 'NF-e 000.999', comprovanteUrl: ''
+      };
+      registrarLogAuditoria('Despesas', 'polaquedo', 'Lançamento de Despesa', 'Nova despesa de R$ 500,00 (NF-e 000.999).');
+      saveDB(); window.render();
+    };
+    window.removeDesp = (id) => { delete window.dbState.despesas[id]; saveDB(); window.render(); };
+
+    // Modal de Aprovação com Rateio Proporcional ou Manual + Opção Aprovar vs Aprovar e Pagar
+    window.abrirModalAprovarRepasse = (repId) => {
+      const rep = window.dbState.repasses[repId];
+      if (!rep) return;
+      const S = getFinanceCalculatedState();
+      const sel = S.evArr.filter(e => (rep.eventoIds || []).includes(e.id));
+      const { calcularRateioRepasse } = window.MotorRepasse;
+      const prop = calcularRateioRepasse(sel, rep.valorSolicitado, 'proporcional');
+
+      window.ui.modalRepId = repId;
+      window.ui.modalModoRateio = 'proporcional';
+      window.ui.modalRateioManual = { ...prop.rateio };
+
+      window.renderModalAprovacao();
+      document.getElementById('modal-memoria').classList.add('open');
+    };
+
+    window.renderModalAprovacao = () => {
+      const repId = window.ui.modalRepId;
+      const rep = window.dbState.repasses[repId];
+      const S = getFinanceCalculatedState();
+      const sel = S.evArr.filter(e => (rep.eventoIds || []).includes(e.id));
+      const { calcularRateioRepasse } = window.MotorRepasse;
+      const resRateio = calcularRateioRepasse(sel, rep.valorSolicitado, window.ui.modalModoRateio, window.ui.modalRateioManual);
+
+      document.getElementById('modal-memoria-body').innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <h2 class="h2">Aprovação e Rateio de Repasse · ${repId}</h2>
+            <div class="sub">Valor Bruto Solicitado: <strong class="num">${BRL(rep.valorSolicitado)}</strong> · Forma: <strong>${rep.forma}</strong></div>
+          </div>
+          <button class="btn btn-soft btn-sm" onclick="window.fecharModalMemoria()">Fechar</button>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-bottom:16px">
+          <button class="${window.ui.modalModoRateio === 'proporcional' ? 'pillOn' : 'pill'}" onclick="window.ui.modalModoRateio='proporcional';window.renderModalAprovacao()">
+            Rateio Proporcional Automático
+          </button>
+          <button class="${window.ui.modalModoRateio === 'manual' ? 'pillOn' : 'pill'}" onclick="window.ui.modalModoRateio='manual';window.renderModalAprovacao()">
+            Rateio Manual por Evento
+          </button>
+        </div>
+
+        <table style="margin-bottom:16px">
+          <thead>
+            <tr><th>Evento</th><th style="text-align:right">Liberável Atual</th><th style="text-align:right">Quota a Abater (jaRepassado)</th></tr>
+          </thead>
+          <tbody>
+            ${sel.map(e => {
+              const qVal = resRateio.rateio[e.id] ?? 0;
+              return `
+                <tr>
+                  <td><strong>${S.evMap[e.id]?.ev.nome || e.id}</strong></td>
+                  <td class="num" style="text-align:right;color:#065f46">${BRL(e.liberavel)}</td>
+                  <td style="text-align:right">
+                    ${window.ui.modalModoRateio === 'manual' ? `
+                      <input class="in" style="width:150px;min-height:36px;padding:6px 10px;text-align:right" type="number" step="10" value="${qVal}" oninput="window.ui.modalRateioManual['${e.id}']=Number(this.value||0);window.renderModalAprovacao()" />
+                    ` : `<span class="num">${BRL(qVal)}</span>`}
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+
+        ${!resRateio.valido ? `<div class="alert-box alert-warn" style="margin-bottom:14px">⚠️ ${resRateio.erro}</div>` : `
+          <div class="alert-box alert-ok" style="margin-bottom:14px">✓ Soma das quotas (${BRL(resRateio.somaRateio)}) confere exatamente com o valor solicitado (${BRL(rep.valorSolicitado)}).</div>
+        `}
+
+        <div class="grid-2" style="margin-bottom:18px">
+          <label class="lb">Protocolo Bancário PIX / TED (opcional na aprovação, obrigatório no Pago)
+            <input id="in-proto-rep" class="in tx" placeholder="Ex: PIX-E2E-20261014-8821" value="${rep.protocoloBancario || ''}" />
+          </label>
+          <label class="lb">URL do Comprovante Bancário (PDF/Imagem)
+            <input id="in-comp-rep" class="in tx" placeholder="https://diskingressos.com.br/comprovantes/..." value="${rep.comprovanteUrl || ''}" />
+          </label>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline" ${!resRateio.valido ? 'disabled' : ''} onclick="window.confirmarDecisaoRepasseModal('aprovar')">✓ Apenas Aprovar (Aguardando Banco)</button>
+          <button class="btn btn-green" ${!resRateio.valido ? 'disabled' : ''} onclick="window.confirmarDecisaoRepasseModal('pagar')">💸 Aprovar e Marcar como Pago</button>
+        </div>
+      `;
+    };
+
+    window.confirmarDecisaoRepasseModal = (acaoFinal) => {
+      const repId = window.ui.modalRepId;
+      const proto = document.getElementById('in-proto-rep')?.value || '';
+      const comp = document.getElementById('in-comp-rep')?.value || '';
+      window.decidirRepasseUI(repId, acaoFinal, window.ui.modalModoRateio, window.ui.modalRateioManual, proto, comp);
+      window.fecharModalMemoria();
+    };
+
+    window.abrirModalLiquidarRepasse = (repId) => {
+      const rep = window.dbState.repasses[repId];
+      if (!rep) return;
+      document.getElementById('modal-memoria-body').innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 class="h2">Liquidar Repasse Aprovado · ${repId}</h2>
+          <button class="btn btn-soft btn-sm" onclick="window.fecharModalMemoria()">Fechar</button>
+        </div>
+        <div class="sub" style="margin-bottom:14px">Informe o protocolo bancário PIX/TED e o link do comprovante para concluir a transferência de <strong>${BRL(rep.valorLiquido || rep.valorSolicitado)}</strong>.</div>
+        <div class="grid-2" style="margin-bottom:18px">
+          <label class="lb">Protocolo Bancário PIX / TED
+            <input id="in-liq-proto" class="in tx" placeholder="Ex: PIX-ITAU-2026-99120" value="${rep.protocoloBancario || 'PIX-ITAU-' + Date.now()}" />
+          </label>
+          <label class="lb">URL do Comprovante
+            <input id="in-liq-comp" class="in tx" placeholder="https://..." value="${rep.comprovanteUrl || 'https://diskingressos.com.br/comprovantes/pix-recibo.pdf'}" />
+          </label>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px">
+          <button class="btn btn-green" onclick="window.confirmarLiquidacao('${repId}')">Confirmar Liquidação (Status: Pago)</button>
+        </div>
+      `;
+      document.getElementById('modal-memoria').classList.add('open');
+    };
+
+    window.confirmarLiquidacao = (repId) => {
+      const rep = window.dbState.repasses[repId];
+      if (!rep) return;
+      rep.status = 'Pago';
+      rep.protocoloBancario = document.getElementById('in-liq-proto')?.value || '';
+      rep.comprovanteUrl = document.getElementById('in-liq-comp')?.value || '';
+      rep.pagoPor = 'financeiro@diskingressos.com.br';
+      rep.pagoEm = new Date().toLocaleString('pt-BR');
+      registrarLogAuditoria('Repasses', (rep.eventoIds || []).join(', '), 'Liquidação Bancária (Pago)', `Repasse ${repId} pago. Protocolo: ${rep.protocoloBancario}`);
+      saveDB();
+      window.fecharModalMemoria();
+      window.render();
+    };
+
+    window.decidirRepasseUI = (repId, acao, modoRateio = 'proporcional', rateioManual = {}, protocoloBancario = '', comprovanteUrl = '') => {
+      const rep = window.dbState.repasses[repId];
+      if (!rep) return;
+      if (acao === 'recusar') {
+        const motivo = prompt('Informe o motivo da recusa:', 'Revisão de borderô pendente.');
+        if (!motivo) return;
+        rep.status = 'Recusado';
+        rep.motivoRecusa = motivo;
+        rep.decididoPor = 'financeiro@diskingressos.com.br';
+        rep.decididoEm = new Date().toLocaleString('pt-BR');
+        registrarLogAuditoria('Repasses', (rep.eventoIds || []).join(', '), 'Recusa de Repasse', `Repasse ${repId} recusado: ${motivo}`);
+        saveDB(); window.render();
+        return;
+      }
+
+      const S = getFinanceCalculatedState();
+      const disp = S.cons.disponivel(rep.eventoIds || []);
+      if (rep.valorSolicitado > disp + 0.01) {
+        alert(`Recusado: Valor solicitado (${BRL(rep.valorSolicitado)}) supera o disponível atual (${BRL(disp)}).`);
+        rep.status = 'Recusado';
+        saveDB(); window.render();
+        return;
+      }
+
+      const sel = S.evArr.filter(e => (rep.eventoIds || []).includes(e.id));
+      const { calcularRateioRepasse } = window.MotorRepasse;
+      const rateioRes = calcularRateioRepasse(sel, rep.valorSolicitado, modoRateio, rateioManual);
+      if (!rateioRes.valido) {
+        alert(rateioRes.erro);
+        return;
+      }
+
+      sel.forEach(e => {
+        const quota = Number(rateioRes.rateio[e.id] || 0);
+        window.dbState.eventos[e.id].jaRepassado = Math.round((Number(window.dbState.eventos[e.id].jaRepassado || 0) + quota) * 100) / 100;
+      });
+
+      Object.values(window.dbState.advanced || {}).forEach(a => {
+        if (a.produtoraId === rep.produtoraId && a.abaterNoProximo && (a.escopo === 'consolidado' || (rep.eventoIds || []).includes(a.escopo))) {
+          a.abaterNoProximo = false;
+        }
+      });
+      Object.values(window.dbState.antecipacoes || {}).forEach(a => {
+        if (a.produtoraId === rep.produtoraId && a.abaterNoProximo && (rep.eventoIds || []).includes(a.eventoId)) {
+          a.abaterNoProximo = false;
+        }
+      });
+
+      const stFinal = acao === 'pagar' ? 'Pago' : 'Aprovado';
+      rep.status = stFinal;
+      rep.modoRateio = rateioRes.modo;
+      rep.protocoloBancario = protocoloBancario;
+      rep.comprovanteUrl = comprovanteUrl;
+      rep.decididoPor = 'financeiro@diskingressos.com.br';
+      rep.decididoEm = new Date().toLocaleString('pt-BR');
+      if (stFinal === 'Pago') {
+        rep.pagoPor = rep.decididoPor;
+        rep.pagoEm = rep.decididoEm;
+      }
+      rep.memoriaCalculo = {
+        aprovadoPor: rep.decididoPor,
+        aprovadoEm: rep.decididoEm,
+        disponivelNoMomento: disp,
+        modoRateio: rateioRes.modo,
+        rateioAplicado: rateioRes.rateio,
+        eventosSnapshot: sel
+      };
+      registrarLogAuditoria('Repasses', (rep.eventoIds || []).join(', '), `Repasse ${stFinal}`, `Valor ${BRL(rep.valorSolicitado)} (${rep.forma}) — rateio ${rateioRes.modo}.`);
+      saveDB(); window.render();
+    };
+
+    // Emissão de Fechamento de Borderô em PDF / Impressão (Visão Completa Financeiro)
+    window.abrirBorderoPDF = (evId) => {
+      const S = getFinanceCalculatedState();
+      const item = S.evMap[evId];
+      if (!item) return;
+      const { ev, fin, loc, calc: c } = item;
+      document.getElementById('modal-memoria-body').innerHTML = `
+        <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #dde2ee">
+          <span style="font-weight:800;color:#1e3a8a">📄 Pré-visualização de Impressão / PDF</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+            <button class="btn btn-soft btn-sm" onclick="window.fecharModalMemoria()">Fechar</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;font-size:13.5px">
+          <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1e3a8a;padding-bottom:12px">
+            <div>
+              <div style="font-size:11px;font-weight:800;color:#1e3a8a;text-transform:uppercase;letter-spacing:.08em">DiskIngressos · Fechamento Oficial de Borderô (Financeiro)</div>
+              <div style="font-size:20px;font-weight:800;color:#0f1b3d">${ev.nome}</div>
+              <div class="sub">${S.prod.nome} (${S.prod.cnpj}) · Local: ${loc.nome} · Data do Evento: ${ev.data}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="sub">Emitido em: ${new Date().toLocaleString('pt-BR')}</div>
+              <div style="font-weight:800;color:#065f46;margin-top:4px">Ocupação: ${c.ingressosContados}/${c.capacidadeUsada} (${P(c.pctVendido)})</div>
+            </div>
+          </div>
+          <div class="row"><span>Bilheteria Bruta (sem conveniência)</span><span class="num">${BRL(c.bil)}</span></div>
+          <div class="row"><span>(−) Taxa Administrativa Disk (${fin.taxaAdm.percentual}%)</span><span class="num">${BRL(-c.taxaAdm)}</span></div>
+          <div class="row"><span>(−) Taxa Operacional Negociada</span><span class="num">${BRL(-c.taxaOp)}</span></div>
+          <div class="row" style="border-top:1px solid #dde2ee;font-weight:800;color:#0f1b3d"><span>(=) Borderô Líquido do Evento</span><span class="num">${BRL(c.bil - c.taxaAdm - c.taxaOp)}</span></div>
+          <div class="row"><span>(−) Despesas Lançadas (Pago: ${BRL(c.despesasPagas)} / A pagar: ${BRL(c.despesasAPagar)})</span><span class="num">${BRL(-c.despesas)}</span></div>
+          <div class="row"><span>(−) Retenções Provisionadas (ISS, ECAD, Locação e Outras)</span><span class="num">${BRL(-c.totRetencoes)}</span></div>
+          <div class="row"><span>(−) Descontos Operacionais (Equipe/Estrutura)</span><span class="num">${BRL(-c.totOps)}</span></div>
+          <div class="row" style="border-top:1px solid #dde2ee;font-weight:800;color:#0f1b3d"><span>(=) Resultado Líquido do Evento</span><span class="num">${BRL(c.resultado)}</span></div>
+          <div class="row"><span>(=) Escolhido pelas Travas (${c.modo})</span><span class="num">${BRL(c.escolhido)}</span></div>
+          <div class="row"><span>(+) Créditos Comerciais (Rebate + Patrocínio)</span><span class="num">${BRL(c.creditos)}</span></div>
+          <div class="row"><span>(−) Já Repassado / Antecipações / Advanced</span><span class="num">${BRL(-(c.jaRepassado + c.advEv + c.antEv))}</span></div>
+          <div class="row" style="border-top:2px solid #047857;padding-top:10px;font-size:16px;font-weight:800;color:#065f46">
+            <span>(=) Saldo Liberável Atual do Evento</span><span class="num">${BRL(c.liberavel)}</span>
+          </div>
+          <div class="row"><span>Valor Retido pelas Travas (Liberação 100% em ${c.dataLiberacaoTotal} — D+${c.liberaTotalDmais} dias úteis)</span><span class="num">${BRL(c.retido)}</span></div>
+          <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:32px;padding-top:24px;border-top:1px dashed #c9cfdf;text-align:center;font-size:12px;color:#5a6584">
+            <div>____________________________________________________<br/><strong>DiskIngressos · Departamento Financeiro</strong></div>
+            <div>____________________________________________________<br/><strong>${S.prod.nome} (${S.prod.cnpj})</strong></div>
+          </div>
+        </div>
+      `;
+      document.getElementById('modal-memoria').classList.add('open');
+    };
+
+    window.abrirReciboRepassePDF = (repId) => {
+      const rep = window.dbState.repasses[repId];
+      if (!rep) return;
+      const S = getFinanceCalculatedState();
+      const cta = (window.dbState.contas[rep.produtoraId] || {})[rep.contaId] || {};
+      const rateioObj = (rep.memoriaCalculo && (rep.memoriaCalculo.rateioAplicado || rep.memoriaCalculo.rateioEventos)) || {};
+      document.getElementById('modal-memoria-body').innerHTML = `
+        <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #dde2ee">
+          <span style="font-weight:800;color:#1e3a8a">🧾 Comprovante e Recibo de Repasse</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+            <button class="btn btn-soft btn-sm" onclick="window.fecharModalMemoria()">Fechar</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:13.5px">
+          <div style="border-bottom:2px solid #1e3a8a;padding-bottom:12px;display:flex;justify-content:space-between">
+            <div>
+              <div style="font-size:11px;font-weight:800;color:#1e3a8a;text-transform:uppercase">DiskIngressos · Comprovante Oficial de Liquidação de Repasse</div>
+              <div style="font-size:19px;font-weight:800;color:#0f1b3d">Recibo #${repId} (${rep.status})</div>
+              <div class="sub">Favorecido: ${S.prod.nome} · CNPJ: ${S.prod.cnpj}</div>
+            </div>
+            <div style="text-align:right" class="sub">
+              Solicitado: ${rep.solicitadoEm || '—'}<br/>
+              Liquidado: ${rep.pagoEm || rep.decididoEm || '—'}
+            </div>
+          </div>
+          <div class="row"><span>Conta Bancária de Destino</span><span class="num">${cta.banco || rep.contaId} · Ag ${cta.agencia || ''} CC ${cta.conta || ''}</span></div>
+          <div class="row"><span>Modalidade / Protocolo Bancário</span><span class="num">${rep.forma} · ${rep.protocoloBancario || 'Sem protocolo'}</span></div>
+          <div class="row"><span>Valor Bruto Abatido do Saldo</span><span class="num">${BRL(rep.valorSolicitado)}</span></div>
+          <div class="row"><span>(−) Tarifa Bancária de Transferência (${rep.forma})</span><span class="num">${BRL(-(rep.tarifaTransferencia || 0))}</span></div>
+          <div class="row" style="border-top:2px solid #047857;padding-top:8px;font-size:16px;font-weight:800;color:#065f46">
+            <span>(=) Valor Líquido Creditado em Conta</span><span class="num">${BRL(rep.valorLiquido ?? rep.valorSolicitado)}</span>
+          </div>
+          <div style="background:#f4f6fb;padding:12px;border-radius:10px">
+            <div style="font-weight:800;font-size:12px;margin-bottom:6px;text-transform:uppercase;color:#3d4766">Rateio por Evento (${rep.modoRateio || 'proporcional'})</div>
+            ${Object.entries(rateioObj).map(([eid, val]) => `
+              <div class="row"><span>${S.evMap[eid]?.ev.nome || eid}</span><span class="num">${BRL(val)}</span></div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      document.getElementById('modal-memoria').classList.add('open');
+    };
+
+    window.abrirModalMemoria = (repId) => {
+      const rep = window.dbState.repasses[repId];
+      if (!rep || !rep.memoriaCalculo) return;
+      document.getElementById('modal-memoria-body').innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <h2 class="h2">Memória de Cálculo Auditável · ${repId}</h2>
+          <button class="btn btn-soft btn-sm" onclick="window.fecharModalMemoria()">Fechar</button>
+        </div>
+        <pre class="num" style="background:#f4f6fb;padding:14px;border-radius:10px;font-size:12px;overflow-x:auto">${JSON.stringify(rep.memoriaCalculo, null, 2)}</pre>
+      `;
+      document.getElementById('modal-memoria').classList.add('open');
+    };
+    window.fecharModalMemoria = () => document.getElementById('modal-memoria').classList.remove('open');
+
+    window.restaurarSeed = () => {
+      localStorage.removeItem(STORAGE_KEY);
+      window.dbState = loadDB();
+      saveDB();
+      window.render();
+    };
+
+    // Tooltip listener
+    document.addEventListener('mouseover', e => {
+      const el = e.target.closest('[data-tip]');
+      const tip = document.getElementById('chart-tip');
+      if (el && tip) { tip.textContent = el.getAttribute('data-tip'); tip.style.display = 'block'; }
+    });
+    document.addEventListener('mousemove', e => {
+      const tip = document.getElementById('chart-tip');
+      if (tip && tip.style.display === 'block') {
+        tip.style.left = Math.min(window.innerWidth - 260, e.clientX + 12) + 'px';
+        tip.style.top = Math.max(10, e.clientY - 36) + 'px';
+      }
+    });
+    document.addEventListener('mouseout', e => {
+      if (e.target.closest('[data-tip]')) document.getElementById('chart-tip').style.display = 'none';
+    });
+
+    window.render();
+  </script>
+</body>
+</html>
