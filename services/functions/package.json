@@ -1,0 +1,17 @@
+{
+  "name": "@diskingressos/functions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloud Functions v2 (southamerica-east1, Node 20) — Hub de Repasses DiskIngressos",
+  "main": "src/index.js",
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "@diskingressos/contracts": "workspace:*",
+    "@diskingressos/firebase-client": "workspace:*",
+    "@diskingressos/motor-repasse": "workspace:*",
+    "firebase-admin": "^12.5.0",
+    "firebase-functions": "^6.0.0"
+  }
+}

@@ -5,7 +5,10 @@
 
     "lancamentos": {
       ".read": "auth != null && auth.token.role === 'financeiro'",
-      ".write": "auth != null && auth.token.role === 'financeiro'"
+      ".write": "auth != null && auth.token.role === 'financeiro'",
+      "$lancamentoId": {
+        ".write": "auth != null && auth.token.role === 'financeiro' && !data.exists() && root.child('fechamentos').child(newData.child('competencia').val()).child('fechado').val() !== true"
+      }
     },
     "fechamentos": {
       ".read": "auth != null && auth.token.role === 'financeiro'",
@@ -14,6 +17,33 @@
     "labels": {
       ".read": "auth != null && auth.token.role === 'financeiro'",
       ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+
+    "contas_pagar": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+
+    "contas_receber": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+
+    "saldos": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+
+    "fluxo_caixa": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+
+    "extrato_produtor": {
+      "$produtoraId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId))",
+        ".write": false
+      }
     },
 
     "config": {

@@ -1,0 +1,44 @@
+{
+  "fonte": "HTML enviado pelo usuário",
+  "sha256_original": "d423a4a13ae00048d7d96ea54fd68663a7a98ccc70b5b18c0976b40c98b1f583",
+  "tamanho_bytes": 266228,
+  "assets": [
+    {
+      "nome": "e17c2bb5-edf6-417b-8538-14445d0fd3d0.js",
+      "mime": "text/javascript",
+      "bytes": 45305,
+      "sha256": "654b7f6201e7e08c0aa3d9c670125d53b47f1438141ecd0d7df05589a877b324"
+    },
+    {
+      "nome": "e4cc8b04-9cd7-4618-b3c3-fcaef15a7ebc.js",
+      "mime": "text/javascript",
+      "bytes": 10751,
+      "sha256": "d949f1c3687aedadcedac85261865f29b17cd273997e7f6b2bfc53b2f9d4c4dd"
+    },
+    {
+      "nome": "5dd39dbc-2962-4b68-bf16-c9c9c96090ec.js",
+      "mime": "text/javascript",
+      "bytes": 131835,
+      "sha256": "35f4f974f4b2bcd44da73963347f8952e341f83909e4498227d4e26b98f66f0d"
+    },
+    {
+      "nome": "75956dd8-0bf0-4be5-8ad9-7e7600ad55c3.woff2",
+      "mime": "font/woff2",
+      "bytes": 14888,
+      "sha256": "01d285447409c8a588692162439a038b8cbd7871309ee20267b0d2d91c6e8e22"
+    },
+    {
+      "nome": "fefb454a-9b10-435e-9321-cb8a437499e4.woff2",
+      "mime": "font/woff2",
+      "bytes": 15620,
+      "sha256": "0d1f0b8d0722224e32e9f28261bdc86c79115be73444ae5eceb73976a1bcdf83"
+    },
+    {
+      "nome": "6c04520b-fcb1-4b81-bcb0-e4e4e7be0fc2.woff2",
+      "mime": "font/woff2",
+      "bytes": 24836,
+      "sha256": "a30ddcd349703aff7464c34bef3fffdff405ee50c113440d7c8693c02d210972"
+    }
+  ],
+  "tipo": "HTML empacotado com template, runtime e React; não equivale a fonte original do projeto"
+}

@@ -1,47 +1,80 @@
-# Hub de Repasses DiskIngressos (`diskingressos-62591`)
+# Hub de Repasses DiskIngressos (`diskingressos-62591`) — Monorepo
 
-Módulo financeiro completo de apuração de borderô, travas por resultado (Regra A) e capacidade vendida em faixas (Regra B), créditos comerciais limitados à Taxa Adm do Disk, adiantamentos (`Advanced`), antecipações e solicitações de repasse com isolamento estrito entre os perfis **Financeiro** e **Produtor**.
-
----
-
-## Estrutura de Arquivos
-
-- `index.html` — Portal de entrada para abrir a visão do **Financeiro** ou do **Produtor**.
-- `financeiro.html` — Painel do **Financeiro (acesso total)** com 8 módulos (*Eventos e travas*, *Negociações*, *Saldo consolidado*, *Solicitações de repasse*, *Antecipações*, *Advanced*, *Contas bancárias* e *Despesas*) e prévia ao vivo via `motorRepasse.js`.
-- `produtor.html` — Painel do **Produtor (acesso limitado)** que lê exclusivamente `/borderos_produtor/{produtoraId}` e seus próprios registros, sem importar `motorRepasse.js` e sem nenhum campo ou menção às taxas do Disk.
-- `motorRepasse.js` — Motor de cálculo puro compartilhado entre `financeiro.html` e Cloud Functions (`capacidadeUsada`, `calcEvento`, `calcConsolidado`, `bordero_produtor`, `calcTransferencia`, `somarDiasUteis`).
-- `motorRepasse.test.js` — Suíte de testes unitários, de aceitação (Prompt 7) e de segurança (`node --test motorRepasse.test.js`).
-- `database.rules.json` — Regras de segurança do Firebase Realtime Database.
-- `setRole.js` — Script CLI (`firebase-admin`) para definir Custom Claims (`financeiro` ou `produtor` + `produtoraId`).
-- `seed.json` — Base inicial com os 3 eventos de validação (*Polaquedo*, *Festival de Inverno*, *Noite de Stand-up*) e `/borderos_produtor` pré-calculado.
-- `functions/index.js` & `functions/package.json` — Cloud Functions v2 (`southamerica-east1`, Node 20): triggers `recalcularPor*` e callables `solicitarRepasse`, `decidirRepasse` e `solicitarAntecipacao`.
-- `firebase.json` & `.firebaserc` — Configuração pronta para deploy no projeto `diskingressos-62591`.
+Arquitetura em monorepo do Hub de Repasses DiskIngressos, preservando 100% do motor de cálculo puro, das regras de segurança do Firebase Realtime Database (`database.rules.json`) e dos testes de aceitação (*Golden Tests*) e segurança, enquanto permite que cada novo módulo financeiro entre como um **plugin padronizado**.
 
 ---
 
-## Como Executar os Testes
+## Estrutura do Monorepo
+
+```text
+.
+├── apps/
+│   ├── financeiro/                 # React + Vite + TS (acesso total — role: financeiro)
+│   │   └── src/
+│   │       ├── app/                # Roteamento, layout e registro de plugins
+│   │       ├── modules/            # eventos, negociacoes, repasses, antecipacoes, advanced, contas, despesas, _template
+│   │       └── shared/             # Formatadores, contrato FinancialModulePlugin
+│   │
+│   └── produtor/                   # React + Vite + TS separado (role: produtor)
+│       └── src/
+│           ├── modules/            # bordero, repasses, antecipacoes, contas, _template
+│           └── shared/             # NÃO importa @diskingressos/motor-repasse nem taxas do Disk
+│
+├── packages/
+│   ├── motor-repasse/              # @diskingressos/motor-repasse (cálculo puro + Golden Tests + testes de segurança)
+│   ├── contracts/                  # @diskingressos/contracts (schemas e validadores do RTDB)
+│   └── firebase-client/            # @diskingressos/firebase-client (config Firebase, claims e auditoria)
+│
+├── services/
+│   ├── functions/                  # Cloud Functions v2 Node 20 (southamerica-east1)
+│   │   └── src/
+│   │       ├── shared/             # recalculo.js, auditoria
+│   │       ├── triggers/           # recalcularPor*
+│   │       ├── callables/          # solicitarRepasse, decidirRepasse, solicitarAntecipacao
+│   │       └── modules/            # _template e novos handlers por módulo
+│   │
+│   └── financeiro-java/            # Spring Boot 3 / Java 21 (módulos pesados: conciliação, fiscal, CNAB/remessa, relatórios)
+│       ├── pom.xml
+│       └── src/main/java/br/com/diskingressos/
+│
+├── firebase/
+│   ├── database.rules.json
+│   ├── seed.json
+│   ├── firebase.json
+│   └── .firebaserc
+│
+├── scripts/
+│   ├── setRole.js                  # Define custom claims (financeiro | produtor)
+│   └── new-module.js               # Scaffolder CLI: npm run new:module <nome>
+│
+└── docs/
+    ├── ADR/                        # Architecture Decision Records
+    └── modulos.md                  # Guia passo a passo para criar novos módulos
+```
+
+---
+
+## Comandos Principais
+
+### 1. Executar todos os testes (Motor + Golden Tests + Segurança de Bundles e RTDB)
 
 ```bash
 npm test
-# ou diretamente:
-node --test motorRepasse.test.js
 ```
 
-## Como Configurar Perfis (Custom Claims)
+### 2. Criar um novo módulo financeiro plugável
 
 ```bash
-export GOOGLE_APPLICATION_CREDENTIALS="/caminho/serviceAccountKey.json"
+# Módulo apenas para o Financeiro (Domínio + Contrato + Function + UI Financeiro + Teste)
+npm run new:module comissoes
 
-# Perfil Financeiro (acesso total)
-node setRole.js financeiro@diskingressos.com.br financeiro
-
-# Perfil Produtor (restrito à produtora)
-node setRole.js contato@produtoraexemplo.com.br produtor prod_exemplo
+# Módulo com projeção no Produtor e serviço Java
+npm run new:module conciliacao -- --produtor --java
 ```
 
-## Deploy no Firebase
+### 3. Configurar Custom Claims (`role`) no Firebase
 
 ```bash
-cd functions && npm install && cd ..
-firebase deploy
+npm run set-role -- financeiro@diskingressos.com.br financeiro
+npm run set-role -- contato@produtoraexemplo.com.br produtor prod_exemplo
 ```

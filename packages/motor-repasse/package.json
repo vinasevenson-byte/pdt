@@ -1,0 +1,25 @@
+{
+  "name": "@diskingressos/motor-repasse",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Motor de cálculo puro do Hub de Repasses DiskIngressos (PROIBIDO importar no app do Produtor)",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./ledger": "./src/ledger/index.js",
+    "./contas": "./src/contas/index.js",
+    "./advanced": "./src/advanced/index.js",
+    "./saldos": "./src/saldos/index.js",
+    "./rebate": "./src/rebate/index.js",
+    "./spread": "./src/spread/index.js",
+    "./fluxoCaixa": "./src/fluxoCaixa/index.js",
+    "./modules/*": "./src/modules/*/index.js"
+  },
+  "scripts": {
+    "test": "node --test test/motorRepasse.test.js"
+  }
+}

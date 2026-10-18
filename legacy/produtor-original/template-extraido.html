@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8">
+<title>Repasses — Produtor</title>
+<script src="e17c2bb5-edf6-417b-8538-14445d0fd3d0"></script>
+<meta name="hz:slide-selector" content="[data-canvas-width]"><meta name="hz:canvas-width" content="1440"><meta name="hz:canvas-height" content="1700"></head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwl1FgtIU.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwlRFgtIU.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwl9FgtIU.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwl5FgtIU.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("75956dd8-0bf0-4be5-8ad9-7e7600ad55c3") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl1FgtIU.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwlRFgtIU.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl9FgtIU.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAOwl5FgtIU.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fefb454a-9b10-435e-9321-cb8a437499e4") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggqxSuXd.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggOxSuXd.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggSxSuXd.woff2) format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggixSuXd.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggmxSuXd.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("6c04520b-fcb1-4b81-bcb0-e4e4e7be0fc2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggqxSuXd.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggOxSuXd.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggSxSuXd.woff2) format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggixSuXd.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggmxSuXd.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("6c04520b-fcb1-4b81-bcb0-e4e4e7be0fc2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggqxSuXd.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggOxSuXd.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggSxSuXd.woff2) format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggixSuXd.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggmxSuXd.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("6c04520b-fcb1-4b81-bcb0-e4e4e7be0fc2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggqxSuXd.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggOxSuXd.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggSxSuXd.woff2) format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggixSuXd.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggmxSuXd.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("6c04520b-fcb1-4b81-bcb0-e4e4e7be0fc2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggqxSuXd.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggOxSuXd.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggSxSuXd.woff2) format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggixSuXd.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggmxSuXd.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("6c04520b-fcb1-4b81-bcb0-e4e4e7be0fc2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+body{margin:0;background:#EEF1F7}
+a{color:#1e3a8a}a:hover{color:#142a66}
+.in{font:500 16px 'IBM Plex Mono',monospace;color:#0f1b3d;background:#fff;border:1px solid #c9cfdf;border-radius:10px;padding:12px 14px;min-height:48px;box-sizing:border-box;width:100%}
+.in:focus{outline:2px solid #1e3a8a;outline-offset:1px;border-color:#1e3a8a}
+.tx{font-family:'Manrope',sans-serif;font-weight:600;font-size:15px}
+.lb{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#3d4766;text-transform:uppercase;letter-spacing:.04em}
+.card{background:#fff;border:1px solid #dde2ee;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:16px}
+.h2{margin:0;font-size:17px;font-weight:800;color:#0f1b3d}
+.sub{font-size:13px;color:#5a6584}
+.num{font-family:'IBM Plex Mono',monospace;font-weight:600}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:14px;color:#3d4766;padding:5px 0}
+.pill{border:1px solid #c9cfdf;background:#fff;color:#0f1b3d;border-radius:10px;padding:12px 18px;min-height:48px;font:700 14px 'Manrope',sans-serif;cursor:pointer}
+.pillOn{border:2px solid #1e3a8a;background:#eef2ff;color:#1e3a8a;border-radius:10px;padding:12px 18px;min-height:48px;font:800 14px 'Manrope',sans-serif;cursor:pointer}
+.btn{border:0;border-radius:10px;padding:12px 20px;min-height:48px;font:800 15px 'Manrope',sans-serif;cursor:pointer}
+.btn:disabled{background:#c9cfdf;color:#5a6584;cursor:not-allowed}
+.kpi{background:#fff;border:1px solid #dde2ee;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:6px}
+.kpi span:first-child{font-size:12px;font-weight:700;color:#5a6584;text-transform:uppercase;letter-spacing:.05em}
+.grp{font-size:12px;font-weight:800;color:#3d4766;letter-spacing:.08em;text-transform:uppercase}
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px}
+.mod{display:flex;gap:20px;align-items:flex-start;text-align:left;background:#fff;border:1px solid #dde2ee;border-radius:12px;padding:24px;min-height:150px;cursor:pointer;font-family:'Manrope',sans-serif;width:100%;box-sizing:border-box}
+.mod:hover{border-color:#1e3a8a;box-shadow:0 4px 14px rgba(15,27,61,.08)}
+.ic{width:56px;height:56px;border-radius:12px;background:#e6ecfb;display:flex;align-items:center;justify-content:center;flex:none;color:#1e40af}
+.mtt{display:block;font-size:19px;font-weight:800;color:#0f1b3d;margin-bottom:8px}
+.mtd{display:block;font-size:14px;color:#4b5573;line-height:1.5}
+.bdg{display:inline-block;margin-top:12px;font-size:12px;font-weight:800;color:#065f46;background:#dcfce7;padding:5px 10px;border-radius:999px}
+.tab{border:0;border-bottom:3px solid transparent;background:transparent;color:#3d4766;padding:14px 16px;min-height:48px;font:700 14px 'Manrope',sans-serif;cursor:pointer}
+.tabOn{border:0;border-bottom:3px solid #c2410c;background:transparent;color:#0f1b3d;padding:14px 16px;min-height:48px;font:800 14px 'Manrope',sans-serif;cursor:pointer}
+</style>
+</helmet>
+<div style="font-family: 'Manrope', sans-serif; color: #0f1b3d; min-height: 100vh; box-sizing: border-box" data-canvas-width="1440" data-canvas-height="1700" data-document-role="page" data-label="Produtor — acesso limitado">
+<header style="background: #1e3a8a; color: #fff; padding: 20px 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #c7d2fe">DiskIngressos · Hub do Produtor</div>
+<div style="font-size: 24px; font-weight: 800">{{prodNome}}</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<span style="background: #fff; color: #1e3a8a; font-size: 12px; font-weight: 800; padding: 8px 14px; border-radius: 999px; text-transform: uppercase; letter-spacing: .06em">Produtor · acesso limitado</span>
+<a href="Main.dc.html" style="color: #fff; font-weight: 700; font-size: 14px; border: 1px solid #93a3d8; border-radius: 10px; padding: 12px 16px; text-decoration: none">← Visão Financeiro</a>
+</div>
+</header>
+<sc-if value="{{notHome}}" hint-placeholder-val="{{false}}">
+<nav aria-label="Menu financeiro do produtor" style="background: #fff; border-bottom: 1px solid #dde2ee; padding: 0 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px">
+<button class="btn" style="background: #eef2ff; color: #1e3a8a; margin-right: 12px; min-height: 44px; font-size: 14px" sc-camel-on-click="{{goHome}}">← Menu</button>
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+<sc-if value="{{t.on}}" hint-placeholder-val="{{false}}"><button class="tabOn" sc-camel-on-click="{{t.pick}}">{{t.label}}</button></sc-if>
+<sc-if value="{{t.off}}" hint-placeholder-val="{{true}}"><button class="tab" sc-camel-on-click="{{t.pick}}">{{t.label}}</button></sc-if>
+</sc-for>
+</nav>
+</sc-if>
+
+<div style="max-width: 1376px; margin: 0 auto; padding: 24px 32px 48px; display: flex; flex-direction: column; gap: 20px">
+
+<sc-if value="{{tHome}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 24px">
+<div class="grp">Visão geral</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px">
+<div class="kpi" style="border: 2px solid #047857"><span>Saldo disponível</span><span class="num" style="font-size: 22px; color: #065f46">{{k.saldo}}</span></div>
+<div class="kpi"><span>Liberável nos eventos</span><span class="num" style="font-size: 20px">{{k.libAll}}</span></div>
+<div class="kpi"><span>Retido pelas travas</span><span class="num" style="font-size: 20px; color: #9a3412">{{k.ret}}</span></div>
+<div class="kpi"><span>Repassado até hoje</span><span class="num" style="font-size: 20px">{{k.ja}}</span></div>
+<div class="kpi"><span>Eventos abertos</span><span class="num" style="font-size: 20px">{{k.nEv}}</span><span class="sub">{{k.pend}} repasse(s) em análise</span></div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+<section class="card" style="flex: 1 1 420px; min-width: 0">
+<div><h2 class="h2">Para onde vai o resultado dos eventos</h2><div class="sub" style="margin-top: 6px">Resultado + créditos de todos os eventos abertos.</div></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 28px">
+<div role="img" aria-label="Gráfico de rosca: {{dnHome.aria}}" style="position: relative; width: 176px; height: 176px; flex: none; border-radius: 50%; background: {{dnHome.grad}}">
+<div style="position: absolute; inset: 22px; border-radius: 50%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2px"><span style="font-size: 11px; font-weight: 800; color: #5a6584; text-transform: uppercase; letter-spacing: .06em">{{dnHome.centerLabel}}</span><span class="num" style="font-size: 15px; color: #0f1b3d">{{dnHome.centerTxt}}</span></div>
+</div>
+<div style="flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{dnHome.segs}}" as="g" hint-placeholder-count="3"><div style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: #3d4766"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; flex: none; background: {{g.cor}}"></span><span style="flex: 1">{{g.label}}</span><span class="num" style="color: #0f1b3d">{{g.vTxt}}</span><span style="width: 52px; text-align: right; font-size: 12px; color: #5a6584">{{g.pTxt}}</span></div></sc-for>
+</div>
+</div>
+</section>
+<section class="card" style="flex: 1 1 520px; min-width: 0">
+<div><h2 class="h2">Situação por evento</h2><div class="sub" style="margin-top: 6px">Passe o mouse nas barras para ver os valores.</div></div>
+<div style="display: flex; flex-direction: column; gap: 16px">
+<sc-for list="{{stk}}" as="b" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px; font-size: 14px"><span style="font-weight: 800">{{b.nome}}</span><span class="num" style="color: #5a6584">{{b.totTxt}}</span></div>
+<div role="img" aria-label="{{b.aria}}" style="display: flex; gap: 2px; height: 22px; background: #f4f6fb; border-radius: 4px">
+<sc-for list="{{b.segs}}" as="g" hint-placeholder-count="3"><div title="{{g.label}}: {{g.vTxt}} ({{g.pTxt}})" style="height: 100%; min-width: 3px; border-radius: 4px; background: {{g.cor}}; flex: {{g.f}} 1 0px"></div></sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #3d4766">
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; background: #2f55c4"></span>Já recebido</span>
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; background: #0f8a5f"></span>Liberável</span>
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; background: #e0661b"></span>Retido</span>
+</div>
+</section>
+</div>
+<section class="card" style="gap: 10px">
+<h2 class="h2">Vendas × travas de capacidade</h2>
+<sc-for list="{{evs}}" as="e" hint-placeholder-count="3">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 10px 0; border-top: 1px solid #eef1f7">
+<div style="flex: 2 1 200px; min-width: 0"><div style="font-weight: 800">{{e.nome}}</div><div class="sub">{{e.data}}</div></div>
+<span style="flex: 0 1 auto; font-size: 12px; font-weight: 800; padding: 6px 10px; border-radius: 999px; background: {{e.chipBg}}; color: {{e.chipFg}}">{{e.chip}}</span>
+<div style="flex: 2 1 180px; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<div style="position: relative; height: 12px; background: #e3e7f1; border-radius: 999px" title="{{e.pctTxt}} vendido"><div style="position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: #1e3a8a; width: {{e.barW}}%"></div><sc-for list="{{e.marks}}" as="k" hint-placeholder-count="3"><div style="position: absolute; top: -3px; width: 2px; height: 18px; background: #c2410c; left: {{k.g}}%"></div></sc-for></div>
+<span class="sub" style="font-size: 12px">{{e.pctTxt}} vendido · {{e.nextMsg}}</span>
+</div>
+<span class="num" style="flex: 1 1 120px; text-align: right; color: {{e.libCor}}">{{e.libTxt}}</span>
+</div>
+</sc-for>
+</section>
+<label style="display: flex; align-items: center; background: #fff; border: 1px solid #dde2ee; border-radius: 12px; overflow: hidden">
+<span aria-hidden="true" style="width: 60px; min-height: 52px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #dde2ee; color: #3d4766"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg></span>
+<input aria-label="Buscar módulo financeiro" value="{{q}}" sc-camel-on-change="{{setQ}}" placeholder="Buscar módulo financeiro..." style="border: 0; outline: none; flex: 1; font: 500 16px 'Manrope', sans-serif; padding: 14px 16px; min-height: 52px; color: #0f1b3d; background: transparent">
+</label>
+<div class="grp">Operações de caixa</div>
+<div class="mods">
+<sc-if value="{{m.saldo}}" hint-placeholder-val="{{true}}"><button class="mod" sc-camel-on-click="{{go.saldo}}"><span class="ic" aria-hidden="true"><svg width="26" height="26" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"></rect><path d="M3 10h18M16 15h2M6 6V4h12v2"></path></svg></span><span><span class="mtt">Saldo Consolidado</span><span class="mtd">Saldo geral acumulado dos seus eventos e exportes rápidos.</span><span class="bdg">{{k.saldo}}</span></span></button></sc-if>
+<sc-if value="{{m.sol}}" hint-placeholder-val="{{true}}"><button class="mod" sc-camel-on-click="{{go.sol}}"><span class="ic" aria-hidden="true"><svg width="26" height="26" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"></path><path d="M22 2l-7 20-4-9-9-4z"></path></svg></span><span><span class="mtt">Solicitar Repasse</span><span class="mtd">Escolha os eventos e solicite a transferência para sua conta.</span></span></button></sc-if>
+<sc-if value="{{m.contas}}" hint-placeholder-val="{{true}}"><button class="mod" sc-camel-on-click="{{go.contas}}"><span class="ic" aria-hidden="true"><svg width="26" height="26" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6"></path><path d="M5 10v8M9 10v8M15 10v8M19 10v8M3 21h18"></path></svg></span><span><span class="mtt">Contas Bancárias</span><span class="mtd">Cadastro e validação de contas correntes e chaves PIX.</span></span></button></sc-if>
+<sc-if value="{{m.ant}}" hint-placeholder-val="{{true}}"><button class="mod" sc-camel-on-click="{{go.ant}}"><span class="ic" aria-hidden="true"><svg width="26" height="26" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"></path><path d="M15 7h6v6"></path></svg></span><span><span class="mtt">Antecipações</span><span class="mtd">Antecipe parte do valor retido das vendas.</span></span></button></sc-if>
+<sc-if value="{{m.desp}}" hint-placeholder-val="{{true}}"><button class="mod" sc-camel-on-click="{{go.desp}}"><span class="ic" aria-hidden="true"><svg width="26" height="26" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"></path><path d="M15 17h6v-6"></path></svg></span><span><span class="mtt">Despesas</span><span class="mtd">Custos diretos, descontos operacionais e retenções do borderô.</span></span></button></sc-if>
+</div>
+<sc-if value="{{m.nada}}" hint-placeholder-val="{{false}}"><div class="sub">Nenhum módulo encontrado para "{{q}}".</div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{tSaldo}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px">
+<div class="kpi" style="border: 2px solid #047857"><span>Saldo disponível</span><span class="num" style="font-size: 22px; color: #065f46">{{k.saldo}}</span></div>
+<div class="kpi"><span>Liberável nos eventos</span><span class="num" style="font-size: 20px">{{k.libAll}}</span></div>
+<div class="kpi"><span>Retido pelas travas</span><span class="num" style="font-size: 20px; color: #9a3412">{{k.ret}}</span></div>
+<div class="kpi"><span>Repassado até hoje</span><span class="num" style="font-size: 20px">{{k.ja}}</span></div>
+</div>
+<section class="card">
+<div><h2 class="h2">Situação por evento</h2><div class="sub" style="margin-top: 6px">Já recebido, liberável e retido em cada evento.</div></div>
+<div style="display: flex; flex-direction: column; gap: 16px">
+<sc-for list="{{stk}}" as="b" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px; font-size: 14px"><span style="font-weight: 800">{{b.nome}}</span><span class="num" style="color: #5a6584">{{b.totTxt}}</span></div>
+<div role="img" aria-label="{{b.aria}}" style="display: flex; gap: 2px; height: 26px; background: #f4f6fb; border-radius: 4px">
+<sc-for list="{{b.segs}}" as="g" hint-placeholder-count="3"><div title="{{g.label}}: {{g.vTxt}} ({{g.pTxt}})" style="height: 100%; min-width: 3px; border-radius: 4px; background: {{g.cor}}; flex: {{g.f}} 1 0px"></div></sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #3d4766">
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; background: #2f55c4"></span>Já recebido</span>
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; background: #0f8a5f"></span>Liberável</span>
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; background: #e0661b"></span>Retido</span>
+</div>
+</section>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<section class="card" style="flex: 999 1 640px; min-width: 0">
+<div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; align-items: center">
+<h2 class="h2">Meus eventos</h2>
+<button class="btn" style="background: #fff; color: #1e3a8a; border: 1px solid #1e3a8a; min-height: 44px; font-size: 14px" sc-camel-on-click="{{exportar}}">Exportar extrato (CSV)</button>
+</div>
+<sc-if value="{{exportMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; font-weight: 700; color: #065f46">Extrato gerado com eventos, borderô e repasses.</div></sc-if>
+<div style="overflow-x: auto">
+<sc-raw-table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px">
+<sc-raw-thead><sc-raw-tr style="text-align: left; font-size: 12px; color: #5a6584; text-transform: uppercase"><sc-raw-th style="padding: 10px 8px">Evento</sc-raw-th><sc-raw-th style="padding: 10px 8px; text-align: right">% vendido</sc-raw-th><sc-raw-th style="padding: 10px 8px; text-align: right">Resultado</sc-raw-th><sc-raw-th style="padding: 10px 8px; text-align: right">Liberável</sc-raw-th><sc-raw-th style="padding: 10px 8px; text-align: right">Retido</sc-raw-th></sc-raw-tr></sc-raw-thead>
+<sc-raw-tbody>
+<sc-for list="{{evs}}" as="e" hint-placeholder-count="3">
+<sc-raw-tr style="border-top: 1px solid #eef1f7"><sc-raw-td style="padding: 10px 8px"><div style="font-weight: 800">{{e.nome}}</div><div class="sub">{{e.data}}</div></sc-raw-td><sc-raw-td class="num" style="padding: 10px 8px; text-align: right">{{e.pctTxt}}</sc-raw-td><sc-raw-td class="num" style="padding: 10px 8px; text-align: right">{{e.baseTxt}}</sc-raw-td><sc-raw-td class="num" style="padding: 10px 8px; text-align: right; color: #065f46">{{e.libTxt}}</sc-raw-td><sc-raw-td class="num" style="padding: 10px 8px; text-align: right; color: #9a3412">{{e.retTxt}}</sc-raw-td></sc-raw-tr>
+</sc-for>
+</sc-raw-tbody>
+</sc-raw-table>
+</div>
+</section>
+<section class="card" style="flex: 1 1 380px; min-width: 0; border: 2px solid #1e3a8a">
+<h2 class="h2">Composição do saldo</h2>
+<div style="display: flex; flex-direction: column">
+<div class="row"><span>Liberável nos eventos</span><span class="num" style="color: #0f1b3d">{{k.libAll}}</span></div>
+<sc-if value="{{temPatCons}}" hint-placeholder-val="{{true}}"><div class="row"><span>(+) {{patDesc}}</span><span class="num" style="color: #065f46">{{cons.pat}}</span></div></sc-if>
+<sc-if value="{{temAdvCons}}" hint-placeholder-val="{{true}}"><div class="row"><span>(−) Advanced (adiantamentos)</span><span class="num">{{cons.adv}}</span></div></sc-if>
+<sc-if value="{{temDev}}" hint-placeholder-val="{{false}}"><div class="row"><span>(−) Saldo devedor de eventos</span><span class="num">{{cons.dev}}</span></div></sc-if>
+<div class="row" style="border-top: 1px solid #dde2ee; margin-top: 6px; padding-top: 10px; font-weight: 800; color: #065f46"><span>Saldo disponível</span><span class="num" style="font-size: 18px">{{k.saldo}}</span></div>
+</div>
+<button class="btn" style="background: #047857; color: #fff" sc-camel-on-click="{{go.sol}}">Solicitar repasse</button>
+</section>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{tSol}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<section class="card">
+<div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: center">
+<div><h2 class="h2">1. Escolha de quais eventos solicitar</h2><div class="sub" style="margin-top: 6px">Combine vários eventos em um único repasse.</div></div>
+<button class="btn" style="background: #fff; color: #1e3a8a; border: 1px solid #1e3a8a; min-height: 44px; font-size: 14px" sc-camel-on-click="{{selTodos}}">Selecionar todos liberados</button>
+</div>
+<sc-for list="{{evs}}" as="e" hint-placeholder-count="3">
+<div style="border: 1px solid {{e.borda}}; border-radius: 12px; padding: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+<input type="checkbox" aria-label="Incluir evento no repasse" checked="{{e.checked}}" disabled="{{e.blocked}}" sc-camel-on-change="{{e.toggle}}" style="width: 22px; height: 22px">
+<div style="flex: 2 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 16px; font-weight: 800">{{e.nome}}</div>
+<div class="sub">{{e.data}} · {{e.local}}</div>
+<span style="align-self: flex-start; font-size: 12px; font-weight: 800; padding: 6px 10px; border-radius: 999px; background: {{e.chipBg}}; color: {{e.chipFg}}">{{e.chip}}</span>
+</div>
+<div style="flex: 2 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 700"><span>Vendido</span><span class="num">{{e.pctTxt}} de {{e.capTxt}}</span></div>
+<div style="position: relative; height: 10px; background: #e3e7f1; border-radius: 999px">
+<div style="position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: #1e3a8a; width: {{e.barW}}%"></div>
+<sc-for list="{{e.marks}}" as="k" hint-placeholder-count="3"><div style="position: absolute; top: -3px; width: 2px; height: 16px; background: #c2410c; left: {{k.g}}%"></div></sc-for>
+</div>
+<div style="font-size: 12px; color: #5a6584">{{e.nextMsg}}</div>
+</div>
+<div style="flex: 1 1 140px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px">
+<span style="font-size: 12px; color: #5a6584; font-weight: 700; text-transform: uppercase">Liberável</span>
+<span class="num" style="font-size: 18px; color: {{e.libCor}}">{{e.libTxt}}</span>
+<button class="btn" style="background: transparent; color: #1e3a8a; padding: 6px 0; min-height: 36px; font-size: 13px" sc-camel-on-click="{{e.ver}}">Ver demonstrativo</button>
+</div>
+</div>
+</sc-for>
+</section>
+
+<section class="card">
+<div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: baseline"><h2 class="h2">Demonstrativo · {{d.nome}}</h2><span class="sub">Somente leitura</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 24px">
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column">
+<div class="row"><span>Borderô do evento</span><span class="num" style="color: #0f1b3d">{{d.bord}}</span></div>
+<div class="row"><span>(−) Despesas pagas</span><span class="num">{{d.desp}}</span></div>
+<div class="row"><span>(−) Retenções (ISS, ECAD, Locação…)</span><span class="num" style="color: #b91c1c">{{d.retTot}}</span></div>
+<div class="row"><span>(−) Descontos operacionais</span><span class="num" style="color: #b91c1c">{{d.opsTot}}</span></div>
+<div class="row" style="border-top: 1px solid #dde2ee; margin-top: 6px; padding-top: 10px; font-weight: 800; color: #0f1b3d"><span>Resultado do evento</span><span class="num">{{d.base}}</span></div>
+<button class="btn" style="background: transparent; color: #1e3a8a; padding: 6px 0; min-height: 36px; font-size: 13px; align-self: flex-start" sc-camel-on-click="{{d.verDesp}}">Ver detalhes em Despesas →</button>
+</div>
+<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<div style="background: #f4f6fb; border-radius: 12px; padding: 16px; font-size: 14px; line-height: 1.5; color: #3d4766">{{d.regraTxt}}</div>
+<div class="row"><span>Liberado pela regra</span><span class="num" style="color: #0f1b3d">{{d.esc}}</span></div>
+<sc-if value="{{d.temReb}}" hint-placeholder-val="{{false}}"><div class="row"><span>(+) Rebate</span><span class="num" style="color: #065f46">{{d.reb}}</span></div></sc-if>
+<sc-if value="{{d.temPat}}" hint-placeholder-val="{{false}}"><div class="row"><span>(+) Patrocínio do evento</span><span class="num" style="color: #065f46">{{d.pat}}</span></div></sc-if>
+<div class="row"><span>(−) Já repassado</span><span class="num">{{d.ja}}</span></div>
+<sc-if value="{{d.temAdv}}" hint-placeholder-val="{{false}}"><div class="row"><span>(−) Advanced do evento</span><span class="num">{{d.adv}}</span></div></sc-if>
+<sc-if value="{{d.temAnt}}" hint-placeholder-val="{{false}}"><div class="row"><span>(−) Antecipação recebida</span><span class="num">{{d.ant}}</span></div></sc-if>
+<div style="background: #ecfdf5; border-radius: 12px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center"><span style="font-weight: 800; color: #065f46">Liberável no evento</span><span class="num" style="font-size: 20px; color: #065f46">{{d.lib}}</span></div>
+</div>
+</div>
+</section>
+
+<section class="card">
+<div><h2 class="h2">Do borderô ao liberável · {{d.nome}}</h2><div class="sub" style="margin-top: 6px">Cada barra mostra quanto sai ou entra até chegar no valor que você pode solicitar.</div></div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{wfDet}}" as="w" hint-placeholder-count="8">
+<div style="display: grid; grid-template-columns: minmax(130px, 220px) minmax(0, 1fr) 130px; gap: 14px; align-items: center; font-size: 13px">
+<span style="color: #3d4766; font-weight: {{w.fw}}">{{w.label}}</span>
+<div title="{{w.label}}: {{w.vTxt}}" style="position: relative; height: 24px; background: #f4f6fb; border-radius: 4px">
+<div style="position: absolute; top: 3px; bottom: 3px; border-radius: 4px; left: {{w.x}}%; width: {{w.w}}%; background: {{w.cor}}"></div>
+</div>
+<span class="num" style="text-align: right; color: #0f1b3d; font-weight: {{w.fw}}">{{w.vTxt}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section class="card">
+<h2 class="h2">Meus repasses</h2>
+<sc-for list="{{hist}}" as="h" hint-placeholder-count="2">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding: 12px 0; border-bottom: 1px solid #eef1f7; font-size: 14px">
+<span style="font-weight: 700; flex: 2 1 220px">{{h.evento}}</span>
+<span style="color: #5a6584; flex: 1 1 120px">{{h.forma}} · {{h.data}}</span>
+<span class="num" style="flex: 1 1 120px; text-align: right">{{h.valor}}</span>
+<span style="flex: 0 0 110px; text-align: right; font-weight: 800; color: {{h.cor}}">{{h.status}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+
+<aside style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<section class="card" style="border: 2px solid #1e3a8a">
+<h2 class="h2">Consolidado da seleção</h2>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{selRows}}" as="x" hint-placeholder-count="2"><div class="row"><span>{{x.nome}}</span><span class="num" style="color: #0f1b3d">{{x.v}}</span></div></sc-for>
+<sc-if value="{{nenhum}}" hint-placeholder-val="{{false}}"><div class="sub">Nenhum evento selecionado.</div></sc-if>
+<sc-if value="{{temPatCons}}" hint-placeholder-val="{{true}}"><div class="row"><span>(+) {{patDesc}}</span><span class="num" style="color: #065f46">{{cons.pat}}</span></div></sc-if>
+<sc-if value="{{temAdvCons}}" hint-placeholder-val="{{true}}"><div class="row"><span>(−) Advanced (adiantamentos)</span><span class="num">{{cons.adv}}</span></div></sc-if>
+<sc-if value="{{temDev}}" hint-placeholder-val="{{false}}"><div class="row"><span>(−) Saldo devedor de eventos</span><span class="num">{{cons.dev}}</span></div></sc-if>
+<div class="row" style="border-top: 1px solid #dde2ee; margin-top: 6px; padding-top: 10px; font-weight: 800; color: #065f46"><span>Disponível para repasse</span><span class="num" style="font-size: 18px">{{cons.disp}}</span></div>
+</div>
+</section>
+<section class="card">
+<h2 class="h2">2. Conta de destino</h2>
+<sc-for list="{{contasOk}}" as="ct" hint-placeholder-count="1">
+<sc-if value="{{ct.sel}}" hint-placeholder-val="{{true}}"><button class="btn" style="text-align: left; background: #eef2ff; border: 2px solid #1e3a8a; color: #0f1b3d; display: flex; flex-direction: column; gap: 4px; font-weight: 700" sc-camel-on-click="{{ct.pick}}"><span style="font-size: 16px; font-weight: 800">{{ct.banco}}</span><span class="num" style="font-size: 13px; color: #5a6584">Ag {{ct.ag}} · CC {{ct.cc}}</span><span style="font-size: 13px; color: #065f46">{{ct.tag}}</span></button></sc-if>
+<sc-if value="{{ct.notSel}}" hint-placeholder-val="{{false}}"><button class="btn" style="text-align: left; background: #fff; border: 1px solid #c9cfdf; color: #0f1b3d; display: flex; flex-direction: column; gap: 4px; font-weight: 700" sc-camel-on-click="{{ct.pick}}"><span style="font-size: 16px; font-weight: 800">{{ct.banco}}</span><span class="num" style="font-size: 13px; color: #5a6584">Ag {{ct.ag}} · CC {{ct.cc}}</span><span style="font-size: 13px; color: #5a6584">{{ct.tag}}</span></button></sc-if>
+</sc-for>
+<button class="btn" style="background: transparent; color: #1e3a8a; padding: 4px 0; min-height: 36px; font-size: 13px; align-self: flex-start" sc-camel-on-click="{{go.contas}}">Gerenciar contas →</button>
+</section>
+<section class="card">
+<h2 class="h2">3. Valor a transferir</h2>
+<div style="display: flex; gap: 8px">
+<label class="lb" style="flex: 1">Valor (R$)<input class="in" value="{{valor}}" sc-camel-on-change="{{setValor}}" inputmode="decimal" placeholder="0,00"></label>
+<button class="btn" style="align-self: flex-end; background: #fff; color: #1e3a8a; border: 1px solid #1e3a8a" sc-camel-on-click="{{usarTotal}}">Total</button>
+</div>
+<h2 class="h2">4. Forma de pagamento</h2>
+<div style="display: flex; gap: 10px">
+<sc-for list="{{formas}}" as="m" hint-placeholder-count="2">
+<sc-if value="{{m.on}}" hint-placeholder-val="{{false}}"><button class="pillOn" style="flex: 1" sc-camel-on-click="{{m.pick}}">{{m.label}}</button></sc-if>
+<sc-if value="{{m.off}}" hint-placeholder-val="{{true}}"><button class="pill" style="flex: 1" sc-camel-on-click="{{m.pick}}">{{m.label}}</button></sc-if>
+</sc-for>
+</div>
+<div style="background: #f4f6fb; border-radius: 12px; padding: 16px; display: flex; flex-direction: column">
+<div class="row"><span>Valor solicitado</span><span class="num" style="color: #0f1b3d">{{r.bruto}}</span></div>
+<div class="row"><span>Prazo</span><span style="font-weight: 700; color: #0f1b3d">{{r.prazo}}</span></div>
+</div>
+<label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; min-height: 44px"><input type="checkbox" checked="{{ac1}}" sc-camel-on-change="{{tAc1}}" style="width: 20px; height: 20px; margin-top: 1px">Declaro que as informações bancárias estão corretas.</label>
+<label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; min-height: 44px"><input type="checkbox" checked="{{ac2}}" sc-camel-on-change="{{tAc2}}" style="width: 20px; height: 20px; margin-top: 1px">Concordo com os termos de repasse e com os descontos do borderô.</label>
+<sc-if value="{{temErro}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; font-weight: 700; color: #b91c1c">{{erro}}</div></sc-if>
+<sc-if value="{{enviado}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; font-weight: 700; color: #065f46; background: #ecfdf5; padding: 12px; border-radius: 10px">Solicitação enviada para análise do Financeiro.</div></sc-if>
+<div style="display: flex; gap: 10px">
+<button class="btn" style="flex: 1; background: #fff; color: #1e3a8a; border: 1px solid #c9cfdf" sc-camel-on-click="{{limpar}}">Cancelar</button>
+<button class="btn" style="flex: 2; background: #047857; color: #fff" disabled="{{bloqEnvio}}" sc-camel-on-click="{{enviar}}">Solicitar repasse</button>
+</div>
+</section>
+</aside>
+</div>
+</sc-if>
+
+<sc-if value="{{tContas}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<section class="card" style="flex: 999 1 640px; min-width: 0">
+<h2 class="h2">Minhas contas</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px">
+<sc-for list="{{contas}}" as="ct" hint-placeholder-count="2">
+<div style="border: 1px solid #dde2ee; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center"><span style="font-size: 16px; font-weight: 800">{{ct.banco}}</span><span style="font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 999px; background: {{ct.bg}}; color: {{ct.fg}}">{{ct.status}}</span></div>
+<div class="num" style="font-size: 13px; color: #5a6584">Ag {{ct.ag}} · CC {{ct.cc}}</div>
+<div style="font-size: 13px; color: #3d4766">PIX: {{ct.pix}}</div>
+<sc-if value="{{ct.padrao}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; font-weight: 800; color: #065f46">Conta padrão de repasse</div></sc-if>
+<sc-if value="{{ct.pend}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; color: #9a3412">Aguardando validação do Financeiro. Ainda não recebe repasses.</div></sc-if>
+</div>
+</sc-for>
+</div>
+</section>
+<section class="card" style="flex: 1 1 380px; min-width: 0">
+<h2 class="h2">Cadastrar nova conta</h2>
+<label class="lb">Banco<input class="in tx" value="{{nc.banco}}" sc-camel-on-change="{{ncH.banco}}" placeholder="Nome e código do banco"></label>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<label class="lb">Agência<input class="in" value="{{nc.ag}}" sc-camel-on-change="{{ncH.ag}}"></label>
+<label class="lb">Conta corrente<input class="in" value="{{nc.cc}}" sc-camel-on-change="{{ncH.cc}}"></label>
+</div>
+<label class="lb">Chave PIX<input class="in tx" value="{{nc.pix}}" sc-camel-on-change="{{ncH.pix}}" placeholder="CNPJ, e-mail, telefone ou aleatória"></label>
+<div class="sub">A conta precisa ter a mesma titularidade (CNPJ) da produtora.</div>
+<button class="btn" style="background: #1e3a8a; color: #fff" disabled="{{ncBloq}}" sc-camel-on-click="{{addConta}}">Enviar para validação</button>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{tAnt}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<section class="card" style="flex: 1 1 420px; min-width: 0">
+<div><h2 class="h2">Solicitar antecipação</h2><div class="sub" style="margin-top: 6px">Antecipe até {{antPctLim}}% do valor ainda retido pelas travas do evento.</div></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{antEvs}}" as="e" hint-placeholder-count="3">
+<sc-if value="{{e.on}}" hint-placeholder-val="{{false}}"><button class="pillOn" sc-camel-on-click="{{e.pick}}">{{e.nome}}</button></sc-if>
+<sc-if value="{{e.off}}" hint-placeholder-val="{{true}}"><button class="pill" sc-camel-on-click="{{e.pick}}">{{e.nome}}</button></sc-if>
+</sc-for>
+</div>
+<div style="background: #f4f6fb; border-radius: 12px; padding: 16px; display: flex; flex-direction: column">
+<div class="row"><span>Retido pelas travas</span><span class="num" style="color: #0f1b3d">{{a.retido}}</span></div>
+<div class="row"><span>Já antecipado</span><span class="num">{{a.ja}}</span></div>
+<div class="row" style="font-weight: 800; color: #0f1b3d"><span>Limite disponível</span><span class="num">{{a.lim}}</span></div>
+</div>
+<label class="lb">Valor a antecipar (R$)<input class="in" value="{{antValor}}" sc-camel-on-change="{{setAntValor}}" inputmode="decimal" placeholder="0,00"></label>
+<div style="display: flex; flex-direction: column">
+<div class="row"><span>Taxa de antecipação ({{a.taxaPct}}%)</span><span class="num" style="color: #b91c1c">{{a.taxa}}</span></div>
+<div class="row" style="font-weight: 800; color: #065f46"><span>Você recebe agora</span><span class="num">{{a.valor}}</span></div>
+<div class="row"><span>Será abatido do evento</span><span class="num">{{a.abate}}</span></div>
+</div>
+<sc-if value="{{a.temErro}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; font-weight: 700; color: #b91c1c">O valor ultrapassa o limite disponível.</div></sc-if>
+<sc-if value="{{antOk}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; font-weight: 700; color: #065f46; background: #ecfdf5; padding: 12px; border-radius: 10px">Antecipação solicitada. O Financeiro vai analisar.</div></sc-if>
+<button class="btn" style="background: #047857; color: #fff" disabled="{{a.bloq}}" sc-camel-on-click="{{pedirAnt}}">Solicitar antecipação</button>
+</section>
+<section class="card" style="flex: 999 1 560px; min-width: 0">
+<h2 class="h2">Minhas antecipações</h2>
+<sc-for list="{{antHist}}" as="h" hint-placeholder-count="2">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding: 12px 0; border-bottom: 1px solid #eef1f7; font-size: 14px">
+<span style="font-weight: 700; flex: 2 1 200px">{{h.evento}}</span>
+<span style="color: #5a6584; flex: 1 1 100px">{{h.data}}</span>
+<span class="num" style="flex: 1 1 120px; text-align: right">{{h.valor}}</span>
+<span class="sub" style="flex: 1 1 120px; text-align: right">taxa {{h.taxa}}</span>
+<span style="flex: 0 0 100px; text-align: right; font-weight: 800; color: {{h.cor}}">{{h.status}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{tDesp}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<span style="font-size: 13px; font-weight: 700; color: #3d4766; margin-right: 6px">Evento:</span>
+<sc-for list="{{despEvs}}" as="e" hint-placeholder-count="3">
+<sc-if value="{{e.on}}" hint-placeholder-val="{{false}}"><button class="pillOn" sc-camel-on-click="{{e.pick}}">{{e.nome}}</button></sc-if>
+<sc-if value="{{e.off}}" hint-placeholder-val="{{true}}"><button class="pill" sc-camel-on-click="{{e.pick}}">{{e.nome}}</button></sc-if>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px">
+<div class="kpi"><span>Despesas pagas</span><span class="num" style="font-size: 20px">{{x.pago}}</span></div>
+<div class="kpi"><span>Despesas a pagar</span><span class="num" style="font-size: 20px; color: #9a3412">{{x.aPagar}}</span></div>
+<div class="kpi"><span>Descontos operacionais</span><span class="num" style="font-size: 20px">{{x.ops}}</span></div>
+<div class="kpi"><span>Retenções</span><span class="num" style="font-size: 20px">{{x.ret}}</span></div>
+</div>
+<section class="card">
+<div><h2 class="h2">Composição das deduções</h2><div class="sub" style="margin-top: 6px">Tudo o que sai do borderô deste evento antes do resultado.</div></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 28px">
+<div role="img" aria-label="Gráfico de rosca: {{dnDesp.aria}}" style="position: relative; width: 176px; height: 176px; flex: none; border-radius: 50%; background: {{dnDesp.grad}}">
+<div style="position: absolute; inset: 22px; border-radius: 50%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2px"><span style="font-size: 11px; font-weight: 800; color: #5a6584; text-transform: uppercase; letter-spacing: .06em">{{dnDesp.centerLabel}}</span><span class="num" style="font-size: 15px; color: #0f1b3d">{{dnDesp.centerTxt}}</span></div>
+</div>
+<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{dnDesp.segs}}" as="g" hint-placeholder-count="3"><div style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: #3d4766"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; flex: none; background: {{g.cor}}"></span><span style="flex: 1">{{g.label}}</span><span class="num" style="color: #0f1b3d">{{g.vTxt}}</span><span style="width: 52px; text-align: right; font-size: 12px; color: #5a6584">{{g.pTxt}}</span></div></sc-for>
+</div>
+</div>
+</section>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<section class="card" style="flex: 999 1 560px; min-width: 0">
+<h2 class="h2">Despesas lançadas</h2>
+<sc-for list="{{x.lista}}" as="dp" hint-placeholder-count="2">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding: 12px 0; border-bottom: 1px solid #eef1f7; font-size: 14px">
+<span style="font-weight: 700; flex: 2 1 180px">{{dp.cat}}</span>
+<span style="color: #5a6584; flex: 1 1 140px">{{dp.forn}} · {{dp.data}}</span>
+<span class="num" style="flex: 1 1 110px; text-align: right">{{dp.valor}}</span>
+<span style="flex: 0 0 90px; text-align: right; font-weight: 800; color: {{dp.cor}}">{{dp.status}}</span>
+</div>
+</sc-for>
+<sc-if value="{{x.semDesp}}" hint-placeholder-val="{{false}}"><div class="sub">Nenhuma despesa lançada neste evento.</div></sc-if>
+<div class="sub" style="font-size: 12px">Só as despesas pagas entram no borderô.</div>
+</section>
+<aside style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<section class="card">
+<h2 class="h2">Descontos operacionais</h2>
+<sc-for list="{{x.opsLista}}" as="o" hint-placeholder-count="3"><div class="row"><span>{{o.nome}} <span class="sub" style="font-size: 12px">{{o.qtd}}</span></span><span class="num" style="color: #b91c1c">{{o.v}}</span></div></sc-for>
+<sc-if value="{{x.semOps}}" hint-placeholder-val="{{false}}"><div class="sub">Sem descontos operacionais.</div></sc-if>
+</section>
+<section class="card">
+<h2 class="h2">Retenções</h2>
+<sc-for list="{{x.retLista}}" as="r" hint-placeholder-count="3"><div class="row"><span>{{r.nome}} <span style="font-size: 11px; font-weight: 800; color: {{r.tagCor}}; text-transform: uppercase; margin-left: 6px">{{r.tag}}</span></span><span class="num" style="color: #b91c1c">{{r.v}}</span></div></sc-for>
+</section>
+</aside>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1700}}">
+function num(v){ var s = String(v == null ? '' : v).trim(); if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.'); var n = parseFloat(s); return isNaN(n) ? 0 : n; }
+function BRL(v){ return (v < -0.004 ? '− ' : '') + 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+function P(v){ return v.toLocaleString('pt-BR', {maximumFractionDigits: 1}) + '%'; }
+function R(id, nome, tipo, base, pct, fixo, unit, fixed, ativo){ return {id: id, nome: nome, tipo: tipo, base: base, pct: pct, fixo: fixo, unit: unit, resp: 'disk', status: 'provisionado', fixed: fixed, ativo: ativo !== false}; }
+function O(id, nome, on, qtd, unit, fixed){ return {id: id, nome: nome, on: on, qtd: qtd, unit: unit, fixed: fixed}; }
+function RG(){ return {modo: 'MIN', pctA: '60', reserva: '0', teto: '', dmais: '2', credTrava: false, faixas: [{g: '30', l: '20'}, {g: '50', l: '40'}, {g: '80', l: '70'}]}; }
+function OPS(a){ var n = ['Bilheteiros', 'Técnicos', 'Validadores', 'Hospedagem', 'Deslocamento'], k = ['bil', 'tec', 'val', 'hos', 'des']; return k.map(function(id, i){ var x = a[i] || [false, '0', '0']; return O(id, n[i], x[0], x[1], x[2], true); }); }
+var ANT_PCT = 50, ANT_TAXA = 2;
+function seed(){ return {
+  prod: {nome: '[Produtora Exemplo]', patOn: true, patDesc: 'Patrocínio master da temporada', patValor: '1000'},
+  evs: {
+    polaquedo: {nome: 'Polaquedo', data: '03/10/2026', local: '[Local do evento] · Curitiba/PR', liberado: true, capLocal: '500', capModo: 'local', capManual: '', setores: [{nome: 'Pista', cap: 500, aberto: true}], vend: '150', cort: '20', contaCort: false, fat: '6000', desp: '0', ja: '0', admOn: true, admPct: '5',
+      neg: {opTipo: 'porIngresso', opValor: '2'},
+      rets: [R('iss', 'ISS', 'percentual', 'bruto', '5', '', '', true), R('ecad', 'ECAD', 'percentual', 'bruto', '10', '', '', true), R('loc', 'Locação', 'maiorEntre', 'bruto', '15', '2000', '', true), R('o1', 'Segurança', 'fixo', 'bruto', '', '800', '', false)],
+      ops: OPS([[true, '2', '150'], [false, '0', '0'], [true, '2', '100']]), rebOn: false, rebTipo: 'percentual', rebValor: '0', patOn: false, patValor: '0', regra: RG()},
+    festival: {nome: 'Festival de Inverno', data: '22/11/2026', local: '[Teatro] · Curitiba/PR', liberado: true, capLocal: '2173', capModo: 'setores', capManual: '', setores: [{nome: 'Plateia', cap: 1200, aberto: true}, {nome: 'Balcão', cap: 973, aberto: false}], vend: '720', cort: '40', contaCort: false, fat: '72000', desp: '0', ja: '5000', admOn: true, admPct: '5',
+      neg: {opTipo: 'percentual', opValor: '3'},
+      rets: [R('iss', 'ISS', 'percentual', 'bruto', '5', '', '', true), R('ecad', 'ECAD', 'percentual', 'bruto', '10', '', '', true), R('loc', 'Locação', 'maiorEntre', 'bruto', '10', '15000', '', true), R('o2', 'Brigada', 'fixo', 'bruto', '', '1500', '', false)],
+      ops: OPS([[true, '4', '150'], [true, '2', '400'], [true, '6', '100'], [true, '2', '350'], [true, '1', '1200']]), rebOn: true, rebTipo: 'percentual', rebValor: '1', patOn: true, patValor: '2000', regra: RG()},
+    standup: {nome: 'Noite de Stand-up', data: '14/12/2026', local: '[Local do evento] · Curitiba/PR', liberado: true, capLocal: '800', capModo: 'local', capManual: '', setores: [{nome: 'Plateia', cap: 800, aberto: true}], vend: '60', cort: '0', contaCort: false, fat: '3600', desp: '0', ja: '0', admOn: true, admPct: '5',
+      neg: {opTipo: 'fixo', opValor: '300'},
+      rets: [R('iss', 'ISS', 'percentual', 'bruto', '5', '', '', true), R('ecad', 'ECAD', 'percentual', 'bruto', '10', '', '', true, false), R('loc', 'Locação', 'fixo', 'bruto', '', '1500', '', true)],
+      ops: OPS([]), rebOn: false, rebTipo: 'percentual', rebValor: '0', patOn: false, patValor: '0', regra: RG()}
+  },
+  adv: [{id: 'a1', valor: '2000', escopo: 'consolidado', on: true}, {id: 'a2', valor: '1500', escopo: 'festival', on: false}],
+  ant: [{id: 'n1', data: '10/10/2026', evento: 'festival', valor: '6000', taxa: '2', on: true}],
+  desps: [{evento: 'festival', data: '02/10/2026', cat: 'Material gráfico', forn: '[Fornecedor]', valor: '1200', status: 'Pago'}, {evento: 'festival', data: '06/10/2026', cat: 'Som e luz extra', forn: '[Fornecedor]', valor: '800', status: 'Pago'}, {evento: 'polaquedo', data: '12/10/2026', cat: 'Camarim', forn: '[Fornecedor]', valor: '500', status: 'A pagar'}],
+  contas: [{id: 'c1', banco: '[Banco principal]', ag: '[0000]', cc: '[00000-0]', pix: '[chave PIX · CNPJ]', status: 'Validada', padrao: true}, {id: 'c2', banco: '[Banco secundário]', ag: '[0000]', cc: '[00000-0]', pix: '[chave PIX · e-mail]', status: 'Pendente', padrao: false}]
+}; }
+var CO = {rep: '#2f55c4', lib: '#0f8a5f', ret: '#e0661b', disk: '#7c3aed', rtc: '#0891b2', cus: '#c2307a', tot: '#1e3a8a'};
+function stack(segs){ var tot = segs.reduce(function(t, g){ return t + Math.max(0, g.v); }, 0) || 1; return segs.filter(function(g){ return g.v > 0.004; }).map(function(g){ return {label: g.label, cor: g.cor, vTxt: BRL(g.v), pTxt: P(g.v / tot * 100), f: (g.v / tot).toFixed(4)}; }); }
+function ariaOf(segs){ return segs.map(function(g){ return g.label + ' ' + g.vTxt; }).join(', '); }
+function donut(segs, centerLabel, centerV){
+  var tot = segs.reduce(function(t, g){ return t + Math.max(0, g.v); }, 0), acc = 0, parts = [];
+  var out = segs.filter(function(g){ return g.v > 0.004; }).map(function(g){
+    var a = acc / tot * 100, b = (acc + g.v) / tot * 100, e = Math.max(a, b - 0.8); acc += g.v;
+    parts.push(g.cor + ' ' + a.toFixed(2) + '% ' + e.toFixed(2) + '%', '#ffffff ' + e.toFixed(2) + '% ' + b.toFixed(2) + '%');
+    return {label: g.label, cor: g.cor, vTxt: BRL(g.v), pTxt: P(g.v / tot * 100)};
+  });
+  return {segs: out, aria: ariaOf(out), grad: 'conic-gradient(' + (parts.length ? parts.join(', ') : '#eef1f7 0% 100%') + ')', centerLabel: centerLabel, centerTxt: BRL(centerV)};
+}
+function wfBuild(steps){
+  steps = steps.filter(function(s){ return s.kind === 'start' || s.kind === 'total' || s.v > 0.004; });
+  var run = 0, max = 0;
+  steps.forEach(function(s){ if (s.kind === 'start' || s.kind === 'total') run = s.v; else if (s.kind === 'dec') run -= s.v; else run += s.v; max = Math.max(max, run); });
+  max = max || 1; run = 0;
+  return steps.map(function(s){
+    var a = run, b, x, w;
+    if (s.kind === 'start' || s.kind === 'total') { b = s.v; x = 0; w = Math.max(0, b) / max * 100; }
+    else if (s.kind === 'dec') { b = a - s.v; x = Math.max(0, b) / max * 100; w = (Math.max(0, a) - Math.max(0, b)) / max * 100; }
+    else { b = a + s.v; x = Math.max(0, a) / max * 100; w = (Math.max(0, b) - Math.max(0, a)) / max * 100; }
+    run = b;
+    var big = s.kind === 'start' || s.kind === 'total';
+    return {label: s.label, x: x.toFixed(2), w: Math.max(w, 0.8).toFixed(2), cor: s.cor, vTxt: s.kind === 'dec' ? BRL(-s.v) : s.kind === 'inc' ? '+ ' + BRL(s.v) : BRL(s.v), fw: big ? '800' : '600'};
+  });
+}
+function opCalc(ev){ var n = ev.neg, ov = num(n.opValor), bil = num(ev.fat); return n.opTipo === 'porIngresso' ? num(ev.vend) * ov : n.opTipo === 'percentual' ? bil * ov / 100 : ov; }
+function calcEv(ev, advEv, antEv){
+  var cap = ev.capModo === 'manual' ? num(ev.capManual) : ev.capModo === 'setores' ? ev.setores.filter(function(s){ return s.aberto; }).reduce(function(t, s){ return t + s.cap; }, 0) : num(ev.capLocal);
+  var ing = num(ev.vend) + (ev.contaCort ? num(ev.cort) : 0), pct = cap ? ing / cap * 100 : 0;
+  var bil = num(ev.fat), desp = num(ev.desp), ja = num(ev.ja);
+  var adm = ev.admOn ? bil * num(ev.admPct) / 100 : 0, op = opCalc(ev);
+  var rets = ev.rets.map(function(r){
+    var b = r.base === 'liquido' ? bil - adm - op : bil, v = 0;
+    if (r.tipo === 'percentual') v = b * num(r.pct) / 100;
+    else if (r.tipo === 'fixo') v = num(r.fixo);
+    else if (r.tipo === 'maiorEntre') v = Math.max(num(r.fixo), b * num(r.pct) / 100);
+    else if (r.tipo === 'porIngresso') v = num(ev.vend) * num(r.unit);
+    else if (r.tipo === 'porCapacidade') v = cap * num(r.unit);
+    var conta = r.ativo && r.resp === 'disk' && r.status === 'provisionado';
+    return {r: r, v: conta ? v : 0};
+  });
+  var totRet = rets.reduce(function(t, x){ return t + x.v; }, 0);
+  var ops = ev.ops.map(function(o){ return {o: o, v: o.on ? num(o.qtd) * num(o.unit) : 0}; });
+  var totOps = ops.reduce(function(t, x){ return t + x.v; }, 0);
+  var reserva = bil * num(ev.regra.reserva) / 100;
+  var base = bil - adm - op - desp - totRet - totOps - reserva;
+  var reb = ev.rebOn ? (ev.rebTipo === 'percentual' ? bil * num(ev.rebValor) / 100 : num(ev.rebValor)) : 0;
+  reb = Math.min(reb, adm);
+  var pat = Math.min(ev.patOn ? num(ev.patValor) : 0, adm - reb), admLiq = adm - reb - pat, cred = reb + pat, trava = !!ev.regra.credTrava;
+  var bp = Math.max(0, base + (trava ? cred : 0));
+  var A = bp * num(ev.regra.pctA) / 100;
+  var fx = ev.regra.faixas.map(function(f){ return {g: num(f.g), l: num(f.l)}; }).sort(function(a, b){ return a.g - b.g; });
+  var pctB = 0, next = null;
+  fx.forEach(function(f){ if (pct >= f.g) pctB = f.l; else if (!next) next = f; });
+  var B = bp * pctB / 100, m = ev.regra.modo;
+  var esc = m === 'A' ? A : m === 'B' ? B : Math.min(A, B), teto = num(ev.regra.teto);
+  if (teto > 0) esc = Math.min(esc, teto);
+  var libRegra = esc + (trava ? 0 : cred);
+  var raw = libRegra - ja - advEv - antEv;
+  var lib = Math.max(0, raw), dev = Math.max(0, -raw);
+  var retido = Math.max(0, Math.max(0, base) + cred - libRegra);
+  var falta = next ? Math.max(0, Math.ceil(next.g / 100 * cap - ing)) : 0;
+  return {cap: cap, pct: pct, bil: bil, desp: desp, ja: ja, adm: adm, op: op, rets: rets, totRet: totRet, ops: ops, totOps: totOps, base: base, reb: reb, pat: pat, admLiq: admLiq, pctB: pctB, fx: fx, esc: esc, lib: lib, dev: dev, retido: retido, next: next, falta: falta, advEv: advEv, antEv: antEv, pctA: num(ev.regra.pctA)};
+}
+function calcAll(st){
+  var res = {}, advCons = 0;
+  st.adv.forEach(function(a){ if (a.on && a.escopo === 'consolidado') advCons += num(a.valor); });
+  Object.keys(st.evs).forEach(function(id){
+    var advEv = st.adv.filter(function(a){ return a.on && a.escopo === id; }).reduce(function(t, a){ return t + num(a.valor); }, 0);
+    var antEv = st.ant.filter(function(a){ return a.on && a.evento === id; }).reduce(function(t, a){ return t + num(a.valor) * (1 + num(a.taxa) / 100); }, 0);
+    var dsum = st.desps.filter(function(d){ return d.evento === id && d.status === 'Pago'; }).reduce(function(t, d){ return t + num(d.valor); }, 0);
+    res[id] = calcEv(Object.assign({}, st.evs[id], {desp: String(dsum)}), advEv, antEv);
+  });
+  var admLiqTot = 0;
+  Object.keys(res).forEach(function(id){ if (st.evs[id].liberado) admLiqTot += res[id].admLiq; });
+  var patRaw = st.prod.patOn ? num(st.prod.patValor) : 0;
+  return {ev: res, advCons: advCons, patCons: Math.min(patRaw, admLiqTot)};
+}
+
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.data = seed();
+    this.state = {tab: 'home', q: '', checked: {}, det: 'polaquedo', valor: '', forma: 'PIX', ac1: false, ac2: false, enviado: false, exportMsg: false,
+      contas: this.data.contas, contaSel: 'c1', nc: {banco: '', ag: '', cc: '', pix: ''},
+      antEv: 'festival', antValor: '', antOk: false, antReqs: [],
+      despEv: 'festival',
+      hist: [{evento: 'Festival de Inverno', forma: 'TED', data: '05/10/2026', valor: 5000, status: 'Pago'}]};
+  }
+  renderVals(){
+    var self = this, s = this.state, D = this.data, all = calcAll(D);
+    var ids = Object.keys(D.evs).filter(function(id){ return D.evs[id].liberado; });
+    var defs = [['saldo', 'Saldo Consolidado', 'saldo geral acumulado exportes extrato'], ['sol', 'Solicitar Repasse', 'transferencia repasse conta'], ['contas', 'Contas Bancárias', 'conta corrente pix validacao banco'], ['ant', 'Antecipações', 'antecipacao vendas prazo'], ['desp', 'Despesas', 'custos infraestrutura descontos retencoes']];
+    var norm = function(x){ return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); };
+    var qn = norm(s.q), m = {}, go = {}, any = false;
+    defs.forEach(function(t){ m[t[0]] = !qn || norm(t[1] + ' ' + t[2]).indexOf(qn) >= 0; if (m[t[0]]) any = true; go[t[0]] = function(){ self.setState({tab: t[0]}); }; });
+    m.nada = !any;
+    var tabs = defs.map(function(t){ return {label: t[1], on: s.tab === t[0], off: s.tab !== t[0], pick: go[t[0]]}; });
+
+    var libSel = 0, libAll = 0, ret = 0, devAll = 0, jaAll = 0, nSel = 0, selRows = [];
+    var evs = ids.map(function(id){
+      var e = D.evs[id], c = all.ev[id], blocked = c.lib <= 0, checked = !!s.checked[id] && !blocked;
+      libAll += c.lib; ret += c.retido; devAll += c.dev; jaAll += c.ja;
+      if (checked) { libSel += c.lib; nSel++; selRows.push({nome: e.nome, v: BRL(c.lib)}); }
+      var chip = blocked ? (c.pctB === 0 ? 'Bloqueado · abaixo de ' + c.fx[0].g + '% vendido' : 'Sem saldo liberável') : c.next ? 'Liberado parcial · ' + c.pctB + '% do resultado' : 'Liberado';
+      return {nome: e.nome, data: e.data, local: e.local, checked: checked, blocked: blocked, borda: id === s.det ? '#1e3a8a' : '#dde2ee',
+        chip: chip, chipBg: blocked ? '#ffedd5' : '#dcfce7', chipFg: blocked ? '#9a3412' : '#065f46',
+        pctTxt: P(c.pct), capTxt: c.cap.toLocaleString('pt-BR') + ' lugares', barW: Math.min(100, c.pct).toFixed(1), marks: c.fx.map(function(f){ return {g: Math.min(100, f.g)}; }),
+        nextMsg: c.next ? 'Faltam ' + c.falta.toLocaleString('pt-BR') + ' ingressos para liberar ' + c.next.l + '%' : 'Faixa máxima atingida',
+        libTxt: BRL(c.lib), libCor: blocked ? '#9a3412' : '#065f46', baseTxt: BRL(c.base), retTxt: BRL(c.retido),
+        toggle: function(){ self.setState(function(p){ var ch = Object.assign({}, p.checked); ch[id] = !ch[id]; return {checked: ch, enviado: false}; }); },
+        ver: function(){ self.setState({det: id}); }};
+    });
+    var saldo = Math.max(0, libAll + all.patCons - all.advCons - devAll);
+    var disp = nSel ? Math.max(0, libSel + all.patCons - all.advCons - devAll) : 0;
+
+    var de = D.evs[s.det], dc = all.ev[s.det];
+    var regraTxt = dc.pctB === 0
+      ? 'Repasse liberado a partir de ' + dc.fx[0].g + '% da capacidade vendida. Hoje: ' + P(dc.pct) + '.'
+      : 'Faixa atual: ' + dc.pctB + '% do resultado (capacidade vendida ' + P(dc.pct) + '). Vale o menor entre esse valor e ' + dc.pctA + '% do resultado.';
+    var v = num(s.valor), erro = '';
+    if (s.valor !== '' && v > disp) erro = 'O valor ultrapassa o disponível na seleção.';
+
+    var stCor = function(st){ return st === 'Validada' || st === 'Pago' || st === 'Paga' || st === 'Aprovada' ? '#065f46' : st === 'Recusada' ? '#991b1b' : '#9a3412'; };
+    var stBg = function(st){ return st === 'Validada' ? '#dcfce7' : st === 'Recusada' ? '#fee2e2' : '#ffedd5'; };
+    var contas = s.contas.map(function(x){ return {banco: x.banco, ag: x.ag, cc: x.cc, pix: x.pix, status: x.status, padrao: !!x.padrao, pend: x.status === 'Pendente', bg: stBg(x.status), fg: stCor(x.status)}; });
+    var contasOk = s.contas.filter(function(x){ return x.status === 'Validada'; }).map(function(x){ return {banco: x.banco, ag: x.ag, cc: x.cc, tag: x.padrao ? 'Conta padrão' : 'Conta validada', sel: s.contaSel === x.id, notSel: s.contaSel !== x.id, pick: function(){ self.setState({contaSel: x.id}); }}; });
+    var ncH = {};
+    ['banco', 'ag', 'cc', 'pix'].forEach(function(k){ ncH[k] = function(e){ var val = e.target.value; self.setState(function(p){ var n = Object.assign({}, p.nc); n[k] = val; return {nc: n}; }); }; });
+
+    var ae = all.ev[s.antEv];
+    var jaAnt = D.ant.filter(function(a){ return a.evento === s.antEv; }).reduce(function(t, a){ return t + num(a.valor); }, 0) + s.antReqs.filter(function(a){ return a.ev === s.antEv; }).reduce(function(t, a){ return t + a.valor; }, 0);
+    var lim = Math.max(0, ae.retido * ANT_PCT / 100 - jaAnt), av = num(s.antValor), taxa = av * ANT_TAXA / 100;
+    var antHist = s.antReqs.map(function(a){ return {evento: D.evs[a.ev].nome, data: a.data, valor: BRL(a.valor), taxa: BRL(a.valor * ANT_TAXA / 100), status: 'Solicitada', cor: stCor('Solicitada')}; })
+      .concat(D.ant.map(function(a){ return {evento: D.evs[a.evento].nome, data: a.data, valor: BRL(num(a.valor)), taxa: BRL(num(a.valor) * num(a.taxa) / 100), status: 'Paga', cor: stCor('Paga')}; }));
+
+    var xe = all.ev[s.despEv], pago = 0, ap = 0;
+    var lista = D.desps.filter(function(d){ return d.evento === s.despEv; }).map(function(d){ if (d.status === 'Pago') pago += num(d.valor); else ap += num(d.valor); return {cat: d.cat, forn: d.forn, data: d.data, valor: BRL(num(d.valor)), status: d.status, cor: d.status === 'Pago' ? '#065f46' : '#9a3412'}; });
+    var opsLista = xe.ops.filter(function(o){ return o.o.on; }).map(function(o){ return {nome: o.o.nome, qtd: o.o.qtd + ' × ' + BRL(num(o.o.unit)), v: BRL(-o.v)}; });
+    var pill = function(cur, key){ return ids.map(function(id){ return {nome: D.evs[id].nome, on: cur === id, off: cur !== id, pick: function(){ var o = {}; o[key] = id; if (key === 'antEv') { o.antValor = ''; o.antOk = false; } self.setState(o); }}; }); };
+    var ncOk = s.nc.banco && s.nc.ag && s.nc.cc;
+
+    var tRep = 0, tLib = 0, tRet = 0;
+    var stk = ids.map(function(id){ var c = all.ev[id], rep = Math.max(0, c.ja + c.advEv + c.antEv - c.dev); tRep += rep; tLib += c.lib; tRet += c.retido;
+      var sg = stack([{label: 'Já recebido', v: rep, cor: CO.rep}, {label: 'Liberável', v: c.lib, cor: CO.lib}, {label: 'Retido', v: c.retido, cor: CO.ret}]);
+      return {nome: D.evs[id].nome, totTxt: BRL(rep + c.lib + c.retido), segs: sg, aria: D.evs[id].nome + ': ' + ariaOf(sg)}; });
+    var dnHome = donut([{label: 'Já recebido', v: tRep, cor: CO.rep}, {label: 'Liberável agora', v: tLib, cor: CO.lib}, {label: 'Retido pelas travas', v: tRet, cor: CO.ret}], 'Total', tRep + tLib + tRet);
+    var wfDet = wfBuild([
+      {label: 'Borderô do evento', kind: 'start', v: dc.bil - dc.adm - dc.op, cor: CO.tot},
+      {label: 'Despesas pagas', kind: 'dec', v: dc.desp, cor: CO.cus},
+      {label: 'Retenções', kind: 'dec', v: dc.totRet, cor: CO.rtc},
+      {label: 'Descontos operacionais', kind: 'dec', v: dc.totOps, cor: CO.cus},
+      {label: 'Resultado', kind: 'total', v: dc.base, cor: CO.tot},
+      {label: 'Créditos (rebate, patrocínio)', kind: 'inc', v: dc.reb + dc.pat, cor: CO.lib},
+      {label: 'Retido pelas travas', kind: 'dec', v: dc.retido, cor: CO.ret},
+      {label: 'Já recebido', kind: 'dec', v: dc.ja + dc.advEv + dc.antEv, cor: CO.rep},
+      {label: 'Liberável agora', kind: 'total', v: dc.lib, cor: CO.lib}]);
+    var dnDesp = donut([{label: 'Despesas pagas', v: pago, cor: CO.cus}, {label: 'Retenções', v: xe.totRet, cor: CO.rtc}, {label: 'Descontos operacionais', v: xe.totOps, cor: CO.rep}], 'Deduções', pago + xe.totRet + xe.totOps);
+    return {
+      stk: stk, dnHome: dnHome, wfDet: wfDet, dnDesp: dnDesp,
+      prodNome: D.prod.nome, tHome: s.tab === 'home', notHome: s.tab !== 'home', tSaldo: s.tab === 'saldo', tSol: s.tab === 'sol', tContas: s.tab === 'contas', tAnt: s.tab === 'ant', tDesp: s.tab === 'desp',
+      q: s.q, setQ: function(e){ self.setState({q: e.target.value}); }, m: m, go: go, tabs: tabs, goHome: function(){ self.setState({tab: 'home'}); },
+      evs: evs, selRows: selRows, nenhum: nSel === 0,
+      temPatCons: all.patCons > 0, patDesc: D.prod.patDesc, temAdvCons: all.advCons > 0, temDev: devAll > 0,
+      cons: {pat: BRL(all.patCons), adv: BRL(-all.advCons), dev: BRL(-devAll), disp: BRL(disp)},
+      k: {libAll: BRL(libAll), ret: BRL(ret), saldo: BRL(saldo), ja: BRL(jaAll), nEv: String(ids.length), pend: s.hist.filter(function(h){ return h.status === 'Solicitado'; }).length},
+      exportMsg: s.exportMsg, exportar: function(){ self.setState({exportMsg: true}); },
+      valor: s.valor, ac1: s.ac1, ac2: s.ac2, enviado: s.enviado, erro: erro, temErro: erro !== '', bloqEnvio: !(v > 0 && v <= disp && s.ac1 && s.ac2),
+      selTodos: function(){ var ch = {}; ids.forEach(function(id){ if (all.ev[id].lib > 0) ch[id] = true; }); self.setState({checked: ch, enviado: false}); },
+      setValor: function(e){ self.setState({valor: e.target.value, enviado: false}); },
+      usarTotal: function(){ self.setState({valor: disp.toFixed(2).replace('.', ','), enviado: false}); },
+      tAc1: function(){ self.setState({ac1: !self.state.ac1}); },
+      tAc2: function(){ self.setState({ac2: !self.state.ac2}); },
+      limpar: function(){ self.setState({checked: {}, valor: '', ac1: false, ac2: false, enviado: false}); },
+      enviar: function(){
+        var nomes = ids.filter(function(id){ return s.checked[id] && all.ev[id].lib > 0; }).map(function(id){ return D.evs[id].nome; }).join(' + ');
+        self.setState(function(p){ return {hist: [{evento: nomes, forma: p.forma, data: '13/10/2026', valor: v, status: 'Solicitado'}].concat(p.hist), valor: '', checked: {}, ac1: false, ac2: false, enviado: true}; });
+      },
+      formas: [['PIX', 'PIX'], ['TED', 'TED']].map(function(f){ return {label: f[1], on: s.forma === f[0], off: s.forma !== f[0], pick: function(){ self.setState({forma: f[0]}); }}; }),
+      r: {bruto: BRL(v), prazo: s.forma === 'PIX' ? 'Mesmo dia após aprovação' : 'Até 1 dia útil após aprovação'},
+      d: {nome: de.nome, bord: BRL(dc.bil - dc.adm - dc.op), desp: BRL(-dc.desp), retTot: BRL(-dc.totRet), opsTot: BRL(-dc.totOps), base: BRL(dc.base), esc: BRL(dc.esc),
+        reb: BRL(dc.reb), temReb: dc.reb > 0, pat: BRL(dc.pat), temPat: dc.pat > 0, ja: BRL(-dc.ja), adv: BRL(-dc.advEv), temAdv: dc.advEv > 0, ant: BRL(-dc.antEv), temAnt: dc.antEv > 0,
+        lib: BRL(dc.lib), regraTxt: regraTxt, verDesp: function(){ self.setState({tab: 'desp', despEv: s.det}); }},
+      hist: s.hist.map(function(h){ return {evento: h.evento, forma: h.forma, data: h.data, valor: BRL(h.valor), status: h.status, cor: stCor(h.status)}; }),
+      contas: contas, contasOk: contasOk, nc: s.nc, ncH: ncH, ncBloq: !ncOk,
+      addConta: function(){ self.setState(function(p){ return {contas: p.contas.concat([{id: 'c' + (p.contas.length + 1), banco: p.nc.banco, ag: p.nc.ag, cc: p.nc.cc, pix: p.nc.pix || '—', status: 'Pendente', padrao: false}]), nc: {banco: '', ag: '', cc: '', pix: ''}}; }); },
+      antPctLim: ANT_PCT, antEvs: pill(s.antEv, 'antEv'), antValor: s.antValor, antOk: s.antOk, antHist: antHist,
+      setAntValor: function(e){ self.setState({antValor: e.target.value, antOk: false}); },
+      a: {retido: BRL(ae.retido), ja: BRL(-jaAnt), lim: BRL(lim), taxaPct: ANT_TAXA, taxa: BRL(-taxa), valor: BRL(av - taxa), abate: BRL(-av), temErro: av > lim, bloq: !(av > 0 && av <= lim)},
+      pedirAnt: function(){ self.setState(function(p){ return {antReqs: [{ev: p.antEv, data: '13/10/2026', valor: av}].concat(p.antReqs), antValor: '', antOk: true}; }); },
+      despEvs: pill(s.despEv, 'despEv'),
+      x: {pago: BRL(pago), aPagar: BRL(ap), ops: BRL(xe.totOps), ret: BRL(xe.totRet), lista: lista, semDesp: lista.length === 0, opsLista: opsLista, semOps: opsLista.length === 0,
+        retLista: xe.rets.filter(function(r){ return r.r.ativo && r.r.resp === 'disk'; }).map(function(r){ var pg = r.r.status === 'pago'; return {nome: r.r.nome, tag: pg ? 'pago' : 'provisionado', tagCor: pg ? '#065f46' : '#5a6584', v: BRL(-r.v)}; })}
+    };
+  }
+}
+</script>
+
+
+</body></html>
