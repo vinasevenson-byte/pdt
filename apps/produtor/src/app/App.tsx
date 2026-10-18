@@ -28,6 +28,7 @@ const TABS = [
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('inicio');
+  const [despesaEventoId, setDespesaEventoId] = useState<string | undefined>(undefined);
   const [sessao, setSessao] = useState<SessaoProdutor | null>(null);
   const [verificandoAuth, setVerificandoAuth] = useState<boolean>(firebaseConfigurado);
   const [dados, setDados] = useState<EstadoProdutorRTDB>(() => criarEstadoProdutorVazio());
@@ -63,6 +64,16 @@ export function App() {
       setErroLogin(err instanceof Error ? err.message : 'Credenciais inválidas.');
     }
   }
+
+  function handleNavigate(tabId: string, eventoId?: string) {
+    if (eventoId) {
+      setDespesaEventoId(eventoId);
+    }
+    setActiveTab(tabId);
+  }
+
+  const host = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : '127.0.0.1';
+  const urlVisaoFinanceiro = `http://${host}:5173`;
 
   return (
     <div style={{ fontFamily: "'Manrope', sans-serif", color: '#0f1b3d', minHeight: '100vh', boxSizing: 'border-box' }}>
@@ -101,6 +112,21 @@ export function App() {
           >
             Produtor · acesso limitado
           </span>
+          <a
+            href={urlVisaoFinanceiro}
+            style={{
+              background: 'rgba(255,255,255,0.14)',
+              color: '#fff',
+              border: '1px solid rgba(255,255,255,0.35)',
+              fontSize: '13px',
+              fontWeight: 700,
+              padding: '10px 16px',
+              borderRadius: '10px',
+              textDecoration: 'none'
+            }}
+          >
+            ← Visão Financeiro
+          </a>
           {sessao && (
             <button
               className="btn"
@@ -179,12 +205,12 @@ export function App() {
           )}
 
           <div style={{ maxWidth: '1376px', margin: '0 auto', padding: '24px 32px 48px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {activeTab === 'inicio' && <InicioProdutorModule dados={dados} onNavigate={setActiveTab} />}
-            {activeTab === 'saldo' && <SaldoProdutorModule dados={dados} onSolicitarRepasse={() => setActiveTab('repasses')} />}
-            {activeTab === 'repasses' && <RepassesProdutorModule dados={dados} />}
+            {activeTab === 'inicio' && <InicioProdutorModule dados={dados} onNavigate={handleNavigate} />}
+            {activeTab === 'saldo' && <SaldoProdutorModule dados={dados} onSolicitarRepasse={() => handleNavigate('repasses')} />}
+            {activeTab === 'repasses' && <RepassesProdutorModule dados={dados} onNavigate={handleNavigate} />}
             {activeTab === 'contas' && <ContasProdutorModule dados={dados} />}
             {activeTab === 'antecipacoes' && <AntecipacoesProdutorModule dados={dados} />}
-            {activeTab === 'despesas' && <DespesasProdutorModule dados={dados} />}
+            {activeTab === 'despesas' && <DespesasProdutorModule dados={dados} initialEventoId={despesaEventoId} />}
             {activeTab === 'bordero' && <BorderoProdutorModule dados={dados} />}
           </div>
         </>

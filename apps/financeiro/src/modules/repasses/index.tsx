@@ -8,7 +8,10 @@ export const repassesModule: FinancialModulePlugin = {
   description: 'Aprovação, recusa, registro de protocolo (PIX/TED) e rateio proporcional ou manual com memória de cálculo.',
   rtdbNode: 'repasses',
   render: (dados) => {
-    const lista = Object.entries(dados?.repasses || {}).map(([id, r]) => ({ id, ...r }));
+    const lista: Array<Record<string, unknown> & { id: string }> = Object.entries(dados?.repasses || {}).map(([id, r]) => ({
+      id,
+      ...(r as Record<string, unknown>)
+    }));
     return (
       <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>

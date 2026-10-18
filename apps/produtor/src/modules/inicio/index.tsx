@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatBRL } from '../../shared/formatters';
 import type { EstadoProdutorRTDB } from '../../shared/dadosProdutor';
+import { DonutChart, StackedEventsChart, SearchIconSvg, ModuleIconSvg } from '../../shared/charts';
 
 export interface InicioProdutorProps {
   dados: EstadoProdutorRTDB;
@@ -13,6 +14,7 @@ export function InicioProdutorModule({ dados, onNavigate }: InicioProdutorProps)
 
   const retidoTotal = eventos.reduce((acc, e) => acc + e.retido, 0);
   const jaRepassadoTotal = eventos.reduce((acc, e) => acc + e.jaRepassado, 0);
+  const resultadoTotal = jaRepassadoTotal + consolidado.liberavelEventos + retidoTotal;
   const pendentesCount = repasses.filter(r => r.status === 'Solicitado').length;
 
   const cards = [
@@ -76,6 +78,25 @@ export function InicioProdutorModule({ dados, onNavigate }: InicioProdutorProps)
         </div>
       </div>
 
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'stretch' }}>
+        <section className="card" style={{ flex: '1 1 420px', minWidth: 0 }}>
+          <h2 className="h2">Para onde vai o resultado dos eventos</h2>
+          <DonutChart
+            slices={[
+              { label: 'Já recebido', v: jaRepassadoTotal, color: '#2f55c4' },
+              { label: 'Liberável agora', v: consolidado.liberavelEventos, color: '#0f8a5f' },
+              { label: 'Retido pelas travas', v: retidoTotal, color: '#e0661b' }
+            ]}
+            centerTop="Total eventos"
+            centerVal={formatBRL(resultadoTotal)}
+          />
+        </section>
+        <section className="card" style={{ flex: '1 1 460px', minWidth: 0 }}>
+          <h2 className="h2">Situação por evento</h2>
+          <StackedEventsChart eventos={eventos} />
+        </section>
+      </div>
+
       <section className="card" style={{ gap: '10px' }}>
         <h2 className="h2">Vendas × travas de capacidade</h2>
         {eventos.length === 0 ? (
@@ -100,8 +121,34 @@ export function InicioProdutorModule({ dados, onNavigate }: InicioProdutorProps)
                   {chip}
                 </span>
                 <div style={{ flex: '2 1 180px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ position: 'relative', height: '12px', background: '#e3e7f1', borderRadius: '999px' }} title={`${pctTxt} vendido`}>
-                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: '999px', background: '#1e3a8a', width: `${Math.min(100, e.pctVendido)}%` }} />
+                  <div
+                    style={{ position: 'relative', height: '12px', background: '#e3e7f1', borderRadius: '999px' }}
+                    title={`${pctTxt} vendido · travas em 30%, 50% e 80%`}
+                  >
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        borderRadius: '999px',
+                        background: '#1e3a8a',
+                        width: `${Math.min(100, e.pctVendido)}%`
+                      }}
+                    />
+                    {[30, 50, 80].map(g => (
+                      <div
+                        key={g}
+                        style={{
+                          position: 'absolute',
+                          top: '-2px',
+                          bottom: '-2px',
+                          width: '2px',
+                          background: '#c2410c',
+                          left: `${g}%`
+                        }}
+                      />
+                    ))}
                   </div>
                   <span className="sub" style={{ fontSize: '12px' }}>{pctTxt} vendido · {nextMsg}</span>
                 </div>
@@ -115,12 +162,15 @@ export function InicioProdutorModule({ dados, onNavigate }: InicioProdutorProps)
       </section>
 
       <label style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #dde2ee', borderRadius: '12px', overflow: 'hidden' }}>
+        <span style={{ width: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a6584' }}>
+          <SearchIconSvg />
+        </span>
         <input
           aria-label="Buscar módulo financeiro"
           value={q}
           onChange={ev => setQ(ev.target.value)}
           placeholder="Buscar módulo financeiro..."
-          style={{ border: 0, outline: 'none', flex: 1, font: "500 16px 'Manrope', sans-serif", padding: '14px 16px', minHeight: '52px', color: '#0f1b3d', background: 'transparent' }}
+          style={{ border: 0, outline: 'none', flex: 1, font: "500 16px 'Manrope', sans-serif", padding: '14px 16px 14px 0', minHeight: '52px', color: '#0f1b3d', background: 'transparent' }}
         />
       </label>
 
@@ -128,6 +178,9 @@ export function InicioProdutorModule({ dados, onNavigate }: InicioProdutorProps)
       <div className="mods">
         {cardsFiltrados.map(c => (
           <button key={c.id} className="mod" onClick={() => onNavigate(c.id)}>
+            <span className="ic">
+              <ModuleIconSvg id={c.id} />
+            </span>
             <span>
               <span className="mtt">{c.title}</span>
               <span className="mtd">{c.desc}</span>

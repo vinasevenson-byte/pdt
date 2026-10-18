@@ -79,7 +79,7 @@ export interface RepasseHistoricoProdutor {
   valorLiquido: number;
   forma: 'PIX' | 'TED';
   contaId: string;
-  status: 'Solicitado' | 'Aprovado' | 'Pago' | 'Recusado';
+  status: 'Solicitado' | 'Aprovado' | 'Pago' | 'Liquidado' | 'Recusado';
   solicitadoEm: string;
   protocoloBancario?: string;
   comprovanteUrl?: string;

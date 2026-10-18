@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatBRL } from '../../shared/formatters';
 import type { EstadoProdutorRTDB } from '../../shared/dadosProdutor';
+import { StackedEventsChart } from '../../shared/charts';
 
 export interface SaldoProdutorProps {
   dados: EstadoProdutorRTDB;
@@ -34,6 +35,11 @@ export function SaldoProdutorModule({ dados, onSolicitarRepasse }: SaldoProdutor
           <span className="num" style={{ fontSize: '20px' }}>{formatBRL(jaRepassadoTotal)}</span>
         </div>
       </div>
+
+      <section className="card">
+        <h2 className="h2">Situação por evento</h2>
+        <StackedEventsChart eventos={eventos} />
+      </section>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
         <section className="card" style={{ flex: '999 1 640px', minWidth: 0 }}>
@@ -100,6 +106,12 @@ export function SaldoProdutorModule({ dados, onSolicitarRepasse }: SaldoProdutor
               <div className="row">
                 <span>(−) Advanced (adiantamentos)</span>
                 <span className="num">{formatBRL(consolidado.advConsolidado)}</span>
+              </div>
+            )}
+            {consolidado.devedores > 0 && (
+              <div className="row">
+                <span>(−) Saldo devedor de eventos</span>
+                <span className="num" style={{ color: '#b91c1c' }}>{formatBRL(consolidado.devedores)}</span>
               </div>
             )}
             <div className="row" style={{ borderTop: '1px solid #dde2ee', marginTop: '6px', paddingTop: '10px', fontWeight: 800, color: '#065f46' }}>
