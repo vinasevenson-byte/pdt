@@ -1,0 +1,14 @@
+{
+  "name": "@diskingressos/firebase-client",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Configuração compartilhada do Firebase SDK, helpers de Custom Claims (role) e auditoria",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  }
+}

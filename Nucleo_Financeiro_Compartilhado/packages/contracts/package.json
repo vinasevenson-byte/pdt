@@ -1,0 +1,15 @@
+{
+  "name": "@diskingressos/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Contratos, tipos e validadores de schema do RTDB compartilhados no monorepo",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./*": "./src/*/index.js"
+  }
+}

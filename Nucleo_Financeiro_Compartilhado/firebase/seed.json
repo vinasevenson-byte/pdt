@@ -1,0 +1,920 @@
+{
+  "config": {
+    "antecipacao": {
+      "pctLimite": 50,
+      "taxaPct": 2
+    },
+    "transferencia": {
+      "pixValor": 0,
+      "tedValor": 10
+    }
+  },
+  "produtoras": {
+    "prod_exemplo": {
+      "nome": "Produtora Exemplo Curitiba Ltda",
+      "cnpj": "14.890.321/0001-55",
+      "patrocinio": {
+        "ativo": true,
+        "descricao": "Patrocínio master da temporada",
+        "valor": 1000
+      }
+    }
+  },
+  "locais": {
+    "loc_polaquedo": {
+      "nome": "Espaço Cultural Polaquedo",
+      "cidade": "Curitiba",
+      "uf": "PR",
+      "capacidadeTotal": 500,
+      "setores": [
+        {
+          "nome": "Pista",
+          "capacidade": 500
+        }
+      ]
+    },
+    "loc_teatro": {
+      "nome": "Teatro Guaíra",
+      "cidade": "Curitiba",
+      "uf": "PR",
+      "capacidadeTotal": 2173,
+      "setores": [
+        {
+          "nome": "Plateia",
+          "capacidade": 1200
+        },
+        {
+          "nome": "Balcão",
+          "capacidade": 973
+        }
+      ]
+    },
+    "loc_comedy": {
+      "nome": "Auditório Curitiba Comedy",
+      "cidade": "Curitiba",
+      "uf": "PR",
+      "capacidadeTotal": 800,
+      "setores": [
+        {
+          "nome": "Plateia",
+          "capacidade": 800
+        }
+      ]
+    }
+  },
+  "eventos": {
+    "polaquedo": {
+      "produtoraId": "prod_exemplo",
+      "nome": "Polaquedo",
+      "data": "03/10/2026",
+      "localId": "loc_polaquedo",
+      "liberadoParaSolicitacao": true,
+      "capacidade": {
+        "modo": "local",
+        "setoresAbertos": [
+          "Pista"
+        ],
+        "manual": 500,
+        "contarCortesias": false
+      },
+      "vendas": {
+        "vendidos": 150,
+        "cortesias": 20
+      },
+      "bilheteria": 6000,
+      "jaRepassado": 0
+    },
+    "festival": {
+      "produtoraId": "prod_exemplo",
+      "nome": "Festival de Inverno",
+      "data": "22/11/2026",
+      "localId": "loc_teatro",
+      "liberadoParaSolicitacao": true,
+      "capacidade": {
+        "modo": "setores",
+        "setoresAbertos": [
+          "Plateia"
+        ],
+        "manual": 1200,
+        "contarCortesias": false
+      },
+      "vendas": {
+        "vendidos": 720,
+        "cortesias": 40
+      },
+      "bilheteria": 72000,
+      "jaRepassado": 5000
+    },
+    "standup": {
+      "produtoraId": "prod_exemplo",
+      "nome": "Noite de Stand-up",
+      "data": "14/12/2026",
+      "localId": "loc_comedy",
+      "liberadoParaSolicitacao": true,
+      "capacidade": {
+        "modo": "local",
+        "setoresAbertos": [
+          "Plateia"
+        ],
+        "manual": 800,
+        "contarCortesias": false
+      },
+      "vendas": {
+        "vendidos": 60,
+        "cortesias": 0
+      },
+      "bilheteria": 3600,
+      "jaRepassado": 0
+    }
+  },
+  "eventos_fin": {
+    "polaquedo": {
+      "taxaAdm": {
+        "ativo": true,
+        "percentual": 5
+      },
+      "retencoes": [
+        {
+          "id": "iss",
+          "nome": "ISS",
+          "ativo": true,
+          "tipo": "percentual",
+          "base": "bruto",
+          "percentual": 5,
+          "valorFixo": 0,
+          "valorUnitario": 0,
+          "responsavel": "disk",
+          "status": "provisionado"
+        },
+        {
+          "id": "ecad",
+          "nome": "ECAD",
+          "ativo": true,
+          "tipo": "percentual",
+          "base": "bruto",
+          "percentual": 10,
+          "valorFixo": 0,
+          "valorUnitario": 0,
+          "responsavel": "disk",
+          "status": "provisionado"
+        },
+        {
+          "id": "loc",
+          "nome": "Locação",
+          "ativo": true,
+          "tipo": "maiorEntre",
+          "base": "bruto",
+          "percentual": 15,
+          "valorFixo": 2000,
+          "valorUnitario": 0,
+          "responsavel": "disk",
+          "status": "provisionado"
+        },
+        {
+          "id": "seg",
+          "nome": "Segurança",
+          "ativo": true,
+          "tipo": "fixo",
+          "base": "bruto",
+          "percentual": 0,
+          "valorFixo": 800,
+          "valorUnitario": 0,
+          "responsavel": "disk",
+          "status": "provisionado"
+        }
+      ],
+      "descontosOperacionais": [
+        {
+          "id": "bil",
+          "nome": "Bilheteiros",
+          "ativo": true,
+          "quantidade": 2,
+          "valorUnitario": 150
+        },
+        {
+          "id": "tec",
+          "nome": "Técnicos",
+          "ativo": false,
+          "quantidade": 0,
+          "valorUnitario": 0
+        },
+        {
+          "id": "val",
+          "nome": "Validadores",
+          "ativo": true,
+          "quantidade": 2,
+          "valorUnitario": 100
+        },
+        {
+          "id": "hos",
+          "nome": "Hospedagem",
+          "ativo": false,
+          "quantidade": 0,
+          "valorUnitario": 0
+        },
+        {
+          "id": "des",
+          "nome": "Deslocamento",
+          "ativo": false,
+          "quantidade": 0,
+          "valorUnitario": 0
+        }
+      ],
+      "rebate": {
+        "ativo": false,
+        "tipo": "percentual",
+        "valor": 0
+      },
+      "patrocinioEvento": {
+        "ativo": false,
+        "descricao": "",
+        "valor": 0
+      },
+      "regra": {
+        "modo": "MIN",
+        "pctResultado": 60,
+        "reservaReembolsoPct": 0,
+        "teto": 0,
+        "liberaTotalDmais": 2,
+        "creditosSujeitosTrava": false,
+        "abaterDespesasAPagar": false,
+        "faixas": [
+          {
+            "gatilhoPct": 30,
+            "liberaPct": 20
+          },
+          {
+            "gatilhoPct": 50,
+            "liberaPct": 40
+          },
+          {
+            "gatilhoPct": 80,
+            "liberaPct": 70
+          }
+        ]
+      }
+    },
+    "festival": {
+      "taxaAdm": {
+        "ativo": true,
+        "percentual": 5
+      },
+      "retencoes": [
+        {
+          "id": "iss",
+          "nome": "ISS",
+          "ativo": true,
+          "tipo": "percentual",
+          "base": "bruto",
+          "percentual": 5,
+          "valorFixo": 0,
+          "valorUnitario": 0,
+          "responsavel": "disk",
+          "status": "provisionado"
+        },
+        {
+          "id": "ecad",
+          "nome": "ECAD",
+          "ativo": true,
+          "tipo": "percentual",
+          "base": "bruto",
+          "percentual": 10,
+          "valorFixo": 0,
+          "valorUnitario": 0,
+          "responsavel": "disk",
+          "status": "provisionado"
+        },
+        {
+          "id": "loc",
+          "nome": "Locação",
+          "ativo": true,
+          "tipo": "maiorEntre",
+          "base": "bruto",
+          "percentual": 10,
+          "valorFixo": 15000,
+          "valorUnitario": 0,
+          "responsavel": "disk",
+          "status": "provisionado"
+        },
+        {
+          "id": "bri",
+          "nome": "Brigada",
+          "ativo": true,
+          "tipo": "fixo",
+          "base": "bruto",
+          "percentual": 0,
+          "valorFixo": 1500,
+          "valorUnitario": 0,
+          "responsavel": "disk",
+          "status": "provisionado"
+        }
+      ],
+      "descontosOperacionais": [
+        {
+          "id": "bil",
+          "nome": "Bilheteiros",
+          "ativo": true,
+          "quantidade": 4,
+          "valorUnitario": 150
+        },
+        {
+          "id": "tec",
+          "nome": "Técnicos",
+          "ativo": true,
+          "quantidade": 2,
+          "valorUnitario": 400
+        },
+        {
+          "id": "val",
+          "nome": "Validadores",
+          "ativo": true,
+          "quantidade": 6,
+          "valorUnitario": 100
+        },
+        {
+          "id": "hos",
+          "nome": "Hospedagem",
+          "ativo": true,
+          "quantidade": 2,
+          "valorUnitario": 350
+        },
+        {
+          "id": "des",
+          "nome": "Deslocamento",
+          "ativo": true,
+          "quantidade": 1,
+          "valorUnitario": 1200
+        }
+      ],
+      "rebate": {
+        "ativo": true,
+        "tipo": "percentual",
+        "valor": 1
+      },
+      "patrocinioEvento": {
+        "ativo": true,
+        "descricao": "Cota Apresenta Inverno",
+        "valor": 2000
+      },
+      "regra": {
+        "modo": "MIN",
+        "pctResultado": 60,
+        "reservaReembolsoPct": 0,
+        "teto": 0,
+        "liberaTotalDmais": 2,
+        "creditosSujeitosTrava": false,
+        "abaterDespesasAPagar": true,
+        "faixas": [
+          {
+            "gatilhoPct": 30,
+            "liberaPct": 20
+          },
+          {
+            "gatilhoPct": 50,
+            "liberaPct": 40
+          },
+          {
+            "gatilhoPct": 80,
+            "liberaPct": 70
+          }
+        ]
+      }
+    },
+    "standup": {
+      "taxaAdm": {
+        "ativo": true,
+        "percentual": 5
+      },
+      "retencoes": [
+        {
+          "id": "iss",
+          "nome": "ISS",
+          "ativo": true,
+          "tipo": "percentual",
+          "base": "bruto",
+          "percentual": 5,
+          "valorFixo": 0,
+          "valorUnitario": 0,
+          "responsavel": "disk",
+          "status": "provisionado"
+        },
+        {
+          "id": "ecad",
+          "nome": "ECAD",
+          "ativo": false,
+          "tipo": "percentual",
+          "base": "bruto",
+          "percentual": 10,
+          "valorFixo": 0,
+          "valorUnitario": 0,
+          "responsavel": "disk",
+          "status": "provisionado"
+        },
+        {
+          "id": "loc",
+          "nome": "Locação",
+          "ativo": true,
+          "tipo": "fixo",
+          "base": "bruto",
+          "percentual": 0,
+          "valorFixo": 1500,
+          "valorUnitario": 0,
+          "responsavel": "disk",
+          "status": "provisionado"
+        }
+      ],
+      "descontosOperacionais": [
+        {
+          "id": "bil",
+          "nome": "Bilheteiros",
+          "ativo": false,
+          "quantidade": 0,
+          "valorUnitario": 0
+        },
+        {
+          "id": "tec",
+          "nome": "Técnicos",
+          "ativo": false,
+          "quantidade": 0,
+          "valorUnitario": 0
+        },
+        {
+          "id": "val",
+          "nome": "Validadores",
+          "ativo": false,
+          "quantidade": 0,
+          "valorUnitario": 0
+        },
+        {
+          "id": "hos",
+          "nome": "Hospedagem",
+          "ativo": false,
+          "quantidade": 0,
+          "valorUnitario": 0
+        },
+        {
+          "id": "des",
+          "nome": "Deslocamento",
+          "ativo": false,
+          "quantidade": 0,
+          "valorUnitario": 0
+        }
+      ],
+      "rebate": {
+        "ativo": false,
+        "tipo": "percentual",
+        "valor": 0
+      },
+      "patrocinioEvento": {
+        "ativo": false,
+        "descricao": "",
+        "valor": 0
+      },
+      "regra": {
+        "modo": "MIN",
+        "pctResultado": 60,
+        "reservaReembolsoPct": 0,
+        "teto": 0,
+        "liberaTotalDmais": 2,
+        "creditosSujeitosTrava": false,
+        "abaterDespesasAPagar": true,
+        "faixas": [
+          {
+            "gatilhoPct": 30,
+            "liberaPct": 20
+          },
+          {
+            "gatilhoPct": 50,
+            "liberaPct": 40
+          },
+          {
+            "gatilhoPct": 80,
+            "liberaPct": 70
+          }
+        ]
+      }
+    }
+  },
+  "negociacoes": {
+    "polaquedo": {
+      "status": "Ativa",
+      "taxaOp": {
+        "tipo": "porIngresso",
+        "valor": 2
+      },
+      "conveniencia": {
+        "percentual": 12
+      },
+      "observacoes": "Taxa operacional R$ 2,00 por ingresso vendido."
+    },
+    "festival": {
+      "status": "Ativa",
+      "taxaOp": {
+        "tipo": "percentual",
+        "valor": 3
+      },
+      "conveniencia": {
+        "percentual": 15
+      },
+      "observacoes": "Festival de Inverno — apenas setor Plateia aberto."
+    },
+    "standup": {
+      "status": "Ativa",
+      "taxaOp": {
+        "tipo": "fixo",
+        "valor": 300
+      },
+      "conveniencia": {
+        "percentual": 10
+      },
+      "observacoes": "Taxa operacional fixa de R$ 300,00."
+    }
+  },
+  "despesas": {
+    "desp_1": {
+      "eventoId": "festival",
+      "produtoraId": "prod_exemplo",
+      "data": "02/10/2026",
+      "categoria": "Material gráfico",
+      "fornecedor": "Gráfica Curitiba",
+      "valor": 1200,
+      "status": "Pago",
+      "nfCodigo": "NF-e 000.418.220",
+      "comprovanteUrl": "https://diskingressos.com.br/comprovantes/nf-418220-grafica.pdf"
+    },
+    "desp_2": {
+      "eventoId": "festival",
+      "produtoraId": "prod_exemplo",
+      "data": "06/10/2026",
+      "categoria": "Som e luz extra",
+      "fornecedor": "AudioSul Locação",
+      "valor": 800,
+      "status": "Pago",
+      "nfCodigo": "NFS-e 2026/8891",
+      "comprovanteUrl": "https://diskingressos.com.br/comprovantes/nfse-8891-audiosul.pdf"
+    },
+    "desp_3": {
+      "eventoId": "polaquedo",
+      "produtoraId": "prod_exemplo",
+      "data": "12/10/2026",
+      "categoria": "Camarim",
+      "fornecedor": "Buffet Eventos PR",
+      "valor": 500,
+      "status": "A pagar",
+      "nfCodigo": "Orçamento #991",
+      "comprovanteUrl": ""
+    }
+  },
+  "advanced": {
+    "adv_1": {
+      "produtoraId": "prod_exemplo",
+      "data": "01/10/2026",
+      "descricao": "Adiantamento contratual de turnê",
+      "valor": 2000,
+      "escopo": "consolidado",
+      "abaterNoProximo": true
+    },
+    "adv_2": {
+      "produtoraId": "prod_exemplo",
+      "data": "04/10/2026",
+      "descricao": "Adiantamento técnico Festival",
+      "valor": 1500,
+      "escopo": "festival",
+      "abaterNoProximo": false
+    }
+  },
+  "antecipacoes": {
+    "ant_1": {
+      "produtoraId": "prod_exemplo",
+      "eventoId": "festival",
+      "data": "10/10/2026",
+      "valor": 6000,
+      "taxaPct": 2,
+      "abaterNoProximo": true,
+      "status": "Aprovada"
+    }
+  },
+  "contas": {
+    "prod_exemplo": {
+      "c1": {
+        "banco": "341 · Itaú Unibanco",
+        "agencia": "0392",
+        "conta": "44910-8",
+        "pix": "14.890.321/0001-55 (CNPJ)",
+        "titular": "Produtora Exemplo Curitiba Ltda",
+        "status": "Validada",
+        "padrao": true
+      },
+      "c2": {
+        "banco": "756 · Sicoob Sul",
+        "agencia": "4102",
+        "conta": "88210-3",
+        "pix": "financeiro@produtoraexemplo.com.br",
+        "titular": "Produtora Exemplo Curitiba Ltda",
+        "status": "Pendente",
+        "padrao": false
+      }
+    }
+  },
+  "repasses": {
+    "rep_hist_1": {
+      "produtoraId": "prod_exemplo",
+      "eventoIds": [
+        "festival"
+      ],
+      "valorSolicitado": 5000,
+      "tarifaTransferencia": 10,
+      "valorLiquido": 4990,
+      "forma": "TED",
+      "contaId": "c1",
+      "status": "Pago",
+      "modoRateio": "proporcional",
+      "protocoloBancario": "TED-ITAU-20261005-994812",
+      "comprovanteUrl": "https://diskingressos.com.br/comprovantes/ted-994812.pdf",
+      "solicitadoEm": "05/10/2026 14:15",
+      "decididoPor": "financeiro@diskingressos.com.br",
+      "decididoEm": "05/10/2026 16:40",
+      "pagoPor": "financeiro@diskingressos.com.br",
+      "pagoEm": "05/10/2026 16:45",
+      "memoriaCalculo": {
+        "aprovadoPor": "financeiro@diskingressos.com.br",
+        "aprovadoEm": "05/10/2026 16:40",
+        "disponivelNoMomento": 9816,
+        "modoRateio": "proporcional",
+        "rateioAplicado": {
+          "festival": 5000
+        }
+      }
+    }
+  },
+  "auditoria": {
+    "aud_1": {
+      "dataHora": "05/10/2026 16:40:12",
+      "usuario": "financeiro@diskingressos.com.br",
+      "modulo": "Repasses",
+      "eventoId": "festival",
+      "acao": "Aprovação e Pagamento de Repasse",
+      "resumo": "Repasse rep_hist_1 (Pago) — R$ 5.000,00 via TED (rateio proporcional). Protocolo: TED-ITAU-20261005-994812."
+    },
+    "aud_2": {
+      "dataHora": "06/10/2026 11:20:05",
+      "usuario": "financeiro@diskingressos.com.br",
+      "modulo": "Travas e Taxas",
+      "eventoId": "festival",
+      "acao": "Atualização de Regra de Liberação",
+      "resumo": "Modo MIN (60% do resultado vs faixa por capacidade); liberação 100% em D+2 dias úteis bancários; abater despesas A pagar: Sim."
+    }
+  },
+  "borderos_produtor": {
+    "prod_exemplo": {
+      "polaquedo": {
+        "borderoEvento": 5400,
+        "despesas": 0,
+        "despesasPagas": 0,
+        "despesasAPagar": 500,
+        "retencoes": [
+          {
+            "nome": "ISS",
+            "valor": 300,
+            "status": "provisionado"
+          },
+          {
+            "nome": "ECAD",
+            "valor": 600,
+            "status": "provisionado"
+          },
+          {
+            "nome": "Locação",
+            "valor": 2000,
+            "status": "provisionado"
+          },
+          {
+            "nome": "Segurança",
+            "valor": 800,
+            "status": "provisionado"
+          }
+        ],
+        "descontosOperacionais": [
+          {
+            "nome": "Bilheteiros",
+            "qtd": 2,
+            "unit": 150,
+            "valor": 300
+          },
+          {
+            "nome": "Validadores",
+            "qtd": 2,
+            "unit": 100,
+            "valor": 200
+          }
+        ],
+        "resultado": 1200,
+        "regraTexto": "Faixa atual: 20% do resultado (capacidade vendida 30%). Vale o menor entre esse valor e 60% do resultado. Liberação de 100% em 06/10/2026 (D+2 dias úteis bancários).",
+        "faixaAtual": {
+          "gatilhoPct": 30,
+          "liberaPct": 20
+        },
+        "faixas": [
+          {
+            "gatilhoPct": 30,
+            "liberaPct": 20
+          },
+          {
+            "gatilhoPct": 50,
+            "liberaPct": 40
+          },
+          {
+            "gatilhoPct": 80,
+            "liberaPct": 70
+          }
+        ],
+        "pctVendido": 30,
+        "vendidosAtuais": 150,
+        "capacidadeUsada": 500,
+        "pctResultadoRegra": 60,
+        "modoRegra": "MIN",
+        "proximaFaixa": {
+          "gatilhoPct": 50,
+          "liberaPct": 40,
+          "ingressosFaltantes": 100
+        },
+        "liberaTotalDmais": 2,
+        "dataLiberacaoTotal": "06/10/2026",
+        "escolhido": 240,
+        "rebate": 0,
+        "patrocinio": 0,
+        "jaRepassado": 0,
+        "advEv": 0,
+        "antEv": 0,
+        "liberavel": 240,
+        "retido": 960
+      },
+      "festival": {
+        "borderoEvento": 66240,
+        "despesas": 2000,
+        "despesasPagas": 2000,
+        "despesasAPagar": 0,
+        "retencoes": [
+          {
+            "nome": "ISS",
+            "valor": 3600,
+            "status": "provisionado"
+          },
+          {
+            "nome": "ECAD",
+            "valor": 7200,
+            "status": "provisionado"
+          },
+          {
+            "nome": "Locação",
+            "valor": 15000,
+            "status": "provisionado"
+          },
+          {
+            "nome": "Brigada",
+            "valor": 1500,
+            "status": "provisionado"
+          }
+        ],
+        "descontosOperacionais": [
+          {
+            "nome": "Bilheteiros",
+            "qtd": 4,
+            "unit": 150,
+            "valor": 600
+          },
+          {
+            "nome": "Técnicos",
+            "qtd": 2,
+            "unit": 400,
+            "valor": 800
+          },
+          {
+            "nome": "Validadores",
+            "qtd": 6,
+            "unit": 100,
+            "valor": 600
+          },
+          {
+            "nome": "Hospedagem",
+            "qtd": 2,
+            "unit": 350,
+            "valor": 700
+          },
+          {
+            "nome": "Deslocamento",
+            "qtd": 1,
+            "unit": 1200,
+            "valor": 1200
+          }
+        ],
+        "resultado": 33040,
+        "regraTexto": "Faixa atual: 40% do resultado (capacidade vendida 60%). Vale o menor entre esse valor e 60% do resultado. Liberação de 100% em 24/11/2026 (D+2 dias úteis bancários).",
+        "faixaAtual": {
+          "gatilhoPct": 50,
+          "liberaPct": 40
+        },
+        "faixas": [
+          {
+            "gatilhoPct": 30,
+            "liberaPct": 20
+          },
+          {
+            "gatilhoPct": 50,
+            "liberaPct": 40
+          },
+          {
+            "gatilhoPct": 80,
+            "liberaPct": 70
+          }
+        ],
+        "pctVendido": 60,
+        "vendidosAtuais": 720,
+        "capacidadeUsada": 1200,
+        "pctResultadoRegra": 60,
+        "modoRegra": "MIN",
+        "proximaFaixa": {
+          "gatilhoPct": 80,
+          "liberaPct": 70,
+          "ingressosFaltantes": 240
+        },
+        "liberaTotalDmais": 2,
+        "dataLiberacaoTotal": "24/11/2026",
+        "escolhido": 13216,
+        "rebate": 720,
+        "patrocinio": 2000,
+        "jaRepassado": 5000,
+        "advEv": 0,
+        "antEv": 6120,
+        "liberavel": 4816,
+        "retido": 19824
+      },
+      "standup": {
+        "borderoEvento": 3120,
+        "despesas": 0,
+        "despesasPagas": 0,
+        "despesasAPagar": 0,
+        "retencoes": [
+          {
+            "nome": "ISS",
+            "valor": 180,
+            "status": "provisionado"
+          },
+          {
+            "nome": "Locação",
+            "valor": 1500,
+            "status": "provisionado"
+          }
+        ],
+        "descontosOperacionais": [],
+        "resultado": 1440,
+        "regraTexto": "Repasse liberado a partir de 30% da capacidade vendida. Hoje: 7,5%. Liberação de 100% em 16/12/2026 (D+2 dias úteis bancários).",
+        "faixaAtual": null,
+        "faixas": [
+          {
+            "gatilhoPct": 30,
+            "liberaPct": 20
+          },
+          {
+            "gatilhoPct": 50,
+            "liberaPct": 40
+          },
+          {
+            "gatilhoPct": 80,
+            "liberaPct": 70
+          }
+        ],
+        "pctVendido": 7.5,
+        "vendidosAtuais": 60,
+        "capacidadeUsada": 800,
+        "pctResultadoRegra": 60,
+        "modoRegra": "MIN",
+        "proximaFaixa": {
+          "gatilhoPct": 30,
+          "liberaPct": 20,
+          "ingressosFaltantes": 180
+        },
+        "liberaTotalDmais": 2,
+        "dataLiberacaoTotal": "16/12/2026",
+        "escolhido": 0,
+        "rebate": 0,
+        "patrocinio": 0,
+        "jaRepassado": 0,
+        "advEv": 0,
+        "antEv": 0,
+        "liberavel": 0,
+        "retido": 1440
+      },
+      "_consolidado": {
+        "liberavelEventos": 5056,
+        "patrocinioProdutora": 1000,
+        "patrocinioDescricao": "Patrocínio master da temporada",
+        "advConsolidado": 2000,
+        "devedores": 0,
+        "saldoDisponivel": 4056,
+        "tarifaPix": 0,
+        "tarifaTed": 10
+      }
+    }
+  }
+}

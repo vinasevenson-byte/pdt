@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { EstadoFinanceiroRTDB, SessaoFinanceiro } from './firebaseFinanceiro';
 
 export interface FinancialModulePlugin {
   id: string;
@@ -6,5 +7,5 @@ export interface FinancialModulePlugin {
   description: string;
   rtdbNode: string;
   requiresJavaService?: boolean;
-  render: () => ReactNode;
+  render: (dados?: EstadoFinanceiroRTDB, sessao?: SessaoFinanceiro | null) => ReactNode;
 }
