@@ -3,6 +3,7 @@
  * - Exige rigorosamente Custom Claim `role === 'financeiro'`
  * - Assina em tempo real os nós operacionais e contábeis do RTDB
  * - Aciona `decidirRepasse` (aprovação, recusa, rateio e registro contábil sem movimentação bancária externa automática)
+ * - Quando VITE_FIREBASE_API_KEY não está definida no .env, conecta automaticamente ao servidor RTDB local (:9005)
  */
 
 import { initializeApp, getApps } from 'firebase/app';
@@ -44,6 +45,11 @@ export const firebaseFinanceiroConfigurado = Boolean(
 
 let emuladoresConectados = false;
 
+function obterUrlServidorLocal(): string {
+  const host = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : '127.0.0.1';
+  return `http://${host}:9005`;
+}
+
 function obterServicosFirebase() {
   const app = getApps().length
     ? getApps()[0]
@@ -71,10 +77,26 @@ export interface SessaoFinanceiro {
   autorizado: boolean;
 }
 
+const ouvintesSessaoLocal = new Set<(sessao: SessaoFinanceiro | null) => void>();
+let sessaoLocalAtual: SessaoFinanceiro | null = {
+  uid: 'uid_financeiro_local',
+  email: 'financeiro@diskingressos.com.br',
+  role: 'financeiro',
+  autorizado: true
+};
+const ouvintesDadosLocais = new Set<() => void>();
+
+function notificarDadosLocais() {
+  ouvintesDadosLocais.forEach(fn => fn());
+}
+
 export function observarSessaoFinanceiro(callback: (sessao: SessaoFinanceiro | null) => void): () => void {
   if (!firebaseFinanceiroConfigurado) {
-    callback(null);
-    return () => {};
+    ouvintesSessaoLocal.add(callback);
+    callback(sessaoLocalAtual);
+    return () => {
+      ouvintesSessaoLocal.delete(callback);
+    };
   }
   const { auth } = obterServicosFirebase();
   return onAuthStateChanged(auth, async (user: User | null) => {
@@ -94,11 +116,27 @@ export function observarSessaoFinanceiro(callback: (sessao: SessaoFinanceiro | n
 }
 
 export async function autenticarFinanceiroEmailSenha(email: string, senha: string) {
+  if (!firebaseFinanceiroConfigurado) {
+    const role = email.toLowerCase().includes('produtor') ? 'produtor' : 'financeiro';
+    sessaoLocalAtual = {
+      uid: 'uid_financeiro_local',
+      email: email.trim() || 'financeiro@diskingressos.com.br',
+      role,
+      autorizado: role === 'financeiro'
+    };
+    ouvintesSessaoLocal.forEach(cb => cb(sessaoLocalAtual));
+    return;
+  }
   const { auth } = obterServicosFirebase();
   await signInWithEmailAndPassword(auth, email, senha);
 }
 
 export async function encerrarSessaoFinanceiro() {
+  if (!firebaseFinanceiroConfigurado) {
+    sessaoLocalAtual = null;
+    ouvintesSessaoLocal.forEach(cb => cb(null));
+    return;
+  }
   const { auth } = obterServicosFirebase();
   await signOut(auth);
 }
@@ -148,6 +186,29 @@ export function criarEstadoFinanceiroVazio(): EstadoFinanceiroRTDB {
 export function assinarDadosFinanceiroRTDB(
   onUpdate: (estado: EstadoFinanceiroRTDB) => void
 ): () => void {
+  if (!firebaseFinanceiroConfigurado) {
+    let ativo = true;
+    const buscar = async () => {
+      try {
+        const resp = await fetch(`${obterUrlServidorLocal()}/rtdb/financeiro`);
+        if (resp.ok && ativo) {
+          const data = (await resp.json()) as EstadoFinanceiroRTDB;
+          onUpdate(data);
+        }
+      } catch {
+        // Ignora erro de rede temporário
+      }
+    };
+    buscar();
+    ouvintesDadosLocais.add(buscar);
+    const timer = setInterval(buscar, 2500);
+    return () => {
+      ativo = false;
+      ouvintesDadosLocais.delete(buscar);
+      clearInterval(timer);
+    };
+  }
+
   const { db } = obterServicosFirebase();
   const acumulado = criarEstadoFinanceiroVazio();
 
@@ -191,6 +252,16 @@ export async function chamarDecidirRepasse(payload: {
   protocoloBancario?: string;
   comprovanteUrl?: string;
 }) {
+  if (!firebaseFinanceiroConfigurado) {
+    const resp = await fetch(`${obterUrlServidorLocal()}/callable/decidirRepasse`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    notificarDadosLocais();
+    return data;
+  }
   const { functions } = obterServicosFirebase();
   const fn = httpsCallable(functions, 'decidirRepasse');
   const res = await fn(payload);
@@ -203,6 +274,15 @@ export async function atualizarStatusContaBancariaRTDB(
   status: 'Validada' | 'Pendente' | 'Recusada',
   usuarioEmail: string
 ) {
+  if (!firebaseFinanceiroConfigurado) {
+    await fetch(`${obterUrlServidorLocal()}/rtdb/validarConta`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ produtoraId, contaId, status, usuarioEmail })
+    });
+    notificarDadosLocais();
+    return;
+  }
   const { db } = obterServicosFirebase();
   await update(ref(db, `/contas/${produtoraId}/${contaId}`), { status });
   const audRef = push(ref(db, '/auditoria'));
@@ -221,6 +301,15 @@ export async function decidirAntecipacaoRTDB(
   status: 'Aprovada' | 'Recusada' | 'Paga',
   usuarioEmail: string
 ) {
+  if (!firebaseFinanceiroConfigurado) {
+    await fetch(`${obterUrlServidorLocal()}/rtdb/decidirAntecipacao`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ antecipacaoId, status, usuarioEmail })
+    });
+    notificarDadosLocais();
+    return;
+  }
   const { db } = obterServicosFirebase();
   await update(ref(db, `/antecipacoes/${antecipacaoId}`), { status });
   const audRef = push(ref(db, '/auditoria'));

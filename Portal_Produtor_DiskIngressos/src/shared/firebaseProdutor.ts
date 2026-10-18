@@ -3,6 +3,7 @@
  * - Valida rigorosamente Custom Claims (`role === 'produtor'` e `produtoraId`)
  * - Lê exclusivamente os nós autorizados no RTDB para a produtora autenticada
  * - Aciona os callables reais `solicitarRepasse` e `solicitarAntecipacao`
+ * - Quando VITE_FIREBASE_API_KEY não está definida no .env, conecta ao servidor RTDB local (:9005)
  */
 
 import { initializeApp, getApps } from 'firebase/app';
@@ -53,6 +54,11 @@ export const firebaseConfigurado = Boolean(firebaseConfig.apiKey || env.VITE_USE
 
 let emuladoresConectados = false;
 
+function obterUrlServidorLocal(): string {
+  const host = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : '127.0.0.1';
+  return `http://${host}:9005`;
+}
+
 function obterServicosFirebase() {
   const app = getApps().length ? getApps()[0] : initializeApp(
     firebaseConfig.apiKey ? firebaseConfig : { ...firebaseConfig, apiKey: 'emulator-api-key' }
@@ -79,10 +85,27 @@ export interface SessaoProdutor {
   autorizado: boolean;
 }
 
+const ouvintesSessaoLocal = new Set<(sessao: SessaoProdutor | null) => void>();
+let sessaoLocalAtual: SessaoProdutor | null = {
+  uid: 'uid_produtor_local',
+  email: 'produtor@produtoraexemplo.com.br',
+  role: 'produtor',
+  produtoraId: 'prod_exemplo',
+  autorizado: true
+};
+const ouvintesDadosLocais = new Set<() => void>();
+
+function notificarDadosLocais() {
+  ouvintesDadosLocais.forEach(fn => fn());
+}
+
 export function observarSessaoProdutor(callback: (sessao: SessaoProdutor | null) => void): () => void {
   if (!firebaseConfigurado) {
-    callback(null);
-    return () => {};
+    ouvintesSessaoLocal.add(callback);
+    callback(sessaoLocalAtual);
+    return () => {
+      ouvintesSessaoLocal.delete(callback);
+    };
   }
   const { auth } = obterServicosFirebase();
   return onAuthStateChanged(auth, async (user: User | null) => {
@@ -104,11 +127,27 @@ export function observarSessaoProdutor(callback: (sessao: SessaoProdutor | null)
 }
 
 export async function autenticarProdutorEmailSenha(email: string, senha: string) {
+  if (!firebaseConfigurado) {
+    sessaoLocalAtual = {
+      uid: 'uid_produtor_local',
+      email: email.trim() || 'produtor@produtoraexemplo.com.br',
+      role: 'produtor',
+      produtoraId: 'prod_exemplo',
+      autorizado: true
+    };
+    ouvintesSessaoLocal.forEach(cb => cb(sessaoLocalAtual));
+    return;
+  }
   const { auth } = obterServicosFirebase();
   await signInWithEmailAndPassword(auth, email, senha);
 }
 
 export async function encerrarSessaoProdutor() {
+  if (!firebaseConfigurado) {
+    sessaoLocalAtual = null;
+    ouvintesSessaoLocal.forEach(cb => cb(null));
+    return;
+  }
   const { auth } = obterServicosFirebase();
   await signOut(auth);
 }
@@ -120,6 +159,29 @@ export function assinarDadosProdutorRTDB(
   produtoraId: string,
   onUpdate: (estado: EstadoProdutorRTDB) => void
 ): () => void {
+  if (!firebaseConfigurado) {
+    let ativo = true;
+    const buscar = async () => {
+      try {
+        const resp = await fetch(`${obterUrlServidorLocal()}/rtdb/produtor/${encodeURIComponent(produtoraId)}`);
+        if (resp.ok && ativo) {
+          const data = (await resp.json()) as EstadoProdutorRTDB;
+          onUpdate(data);
+        }
+      } catch {
+        // Ignora erro de rede temporário
+      }
+    };
+    buscar();
+    ouvintesDadosLocais.add(buscar);
+    const timer = setInterval(buscar, 2500);
+    return () => {
+      ativo = false;
+      ouvintesDadosLocais.delete(buscar);
+      clearInterval(timer);
+    };
+  }
+
   const { db } = obterServicosFirebase();
   const acumulado: EstadoProdutorRTDB = criarEstadoProdutorVazio(produtoraId);
 
@@ -297,6 +359,16 @@ export async function chamarSolicitarRepasse(payload: {
   aceiteBancario: boolean;
   aceiteTermosBordero: boolean;
 }) {
+  if (!firebaseConfigurado) {
+    const resp = await fetch(`${obterUrlServidorLocal()}/callable/solicitarRepasse`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, produtoraId: sessaoLocalAtual?.produtoraId || 'prod_exemplo' })
+    });
+    const data = await resp.json();
+    notificarDadosLocais();
+    return data;
+  }
   const { functions } = obterServicosFirebase();
   const fn = httpsCallable(functions, 'solicitarRepasse');
   const res = await fn(payload);
@@ -304,6 +376,16 @@ export async function chamarSolicitarRepasse(payload: {
 }
 
 export async function chamarSolicitarAntecipacao(payload: { eventoId: string; valor: number }) {
+  if (!firebaseConfigurado) {
+    const resp = await fetch(`${obterUrlServidorLocal()}/callable/solicitarAntecipacao`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, produtoraId: sessaoLocalAtual?.produtoraId || 'prod_exemplo' })
+    });
+    const data = await resp.json();
+    notificarDadosLocais();
+    return data;
+  }
   const { functions } = obterServicosFirebase();
   const fn = httpsCallable(functions, 'solicitarAntecipacao');
   const res = await fn(payload);
@@ -315,6 +397,15 @@ export async function cadastrarContaBancariaRTDB(
   titular: string,
   novaConta: { banco: string; agencia: string; conta: string; pix: string }
 ) {
+  if (!firebaseConfigurado) {
+    await fetch(`${obterUrlServidorLocal()}/rtdb/conta`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ produtoraId, titular, ...novaConta })
+    });
+    notificarDadosLocais();
+    return;
+  }
   const { db } = obterServicosFirebase();
   const novaRef = push(ref(db, `/contas/${produtoraId}`));
   await set(novaRef, {
