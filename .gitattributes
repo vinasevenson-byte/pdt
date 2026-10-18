@@ -1,0 +1,5 @@
+# Preserva byte a byte os arquivos legados originais (impede conversão LF/CRLF no git archive/checkout)
+legacy/** -text binary
+*.woff2 -text binary
+*.bundle -text binary
+*.zip -text binary

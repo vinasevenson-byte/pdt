@@ -204,13 +204,26 @@ exports.solicitarRepasse = onCall(async (request) => {
   }
 
   const produtoraId = auth.token.produtoraId;
-  const { eventoIds, valor, forma, contaId } = request.data || {};
+  const {
+    eventoIds,
+    valor,
+    forma,
+    contaId,
+    aceiteBancario = true,
+    aceiteTermosBordero = true
+  } = request.data || {};
 
   if (!Array.isArray(eventoIds) || eventoIds.length === 0) {
     throw new HttpsError('invalid-argument', 'Selecione ao menos um evento liberado para solicitar o repasse.');
   }
   if (!['PIX', 'TED'].includes(forma)) {
     throw new HttpsError('invalid-argument', 'A forma de pagamento deve ser exclusivamente PIX ou TED.');
+  }
+  if (!aceiteBancario || !aceiteTermosBordero) {
+    throw new HttpsError(
+      'failed-precondition',
+      'É obrigatório confirmar a exatidão dos dados bancários e concordar com os termos de repasse e borderô.'
+    );
   }
   const valorSolicitado = Number(valor || 0);
   if (!Number.isFinite(valorSolicitado) || valorSolicitado <= 0) {
@@ -245,8 +258,20 @@ exports.solicitarRepasse = onCall(async (request) => {
   }
 
   const transf = calcTransferencia(valorSolicitado, forma, cfgTransferencia);
+  const agora = formatarDataHoraBR();
+  const solicitanteEmail = auth.token.email || auth.uid;
 
   const novoRepRef = db.ref('/repasses').push();
+  const repasseId = novoRepRef.key;
+  const assinaturaSolicitante = {
+    uid: auth.uid,
+    email: solicitanteEmail,
+    produtoraId,
+    aceiteBancario: Boolean(aceiteBancario),
+    aceiteTermosBordero: Boolean(aceiteTermosBordero),
+    assinadoEm: agora
+  };
+
   const payload = {
     produtoraId,
     eventoIds,
@@ -256,13 +281,35 @@ exports.solicitarRepasse = onCall(async (request) => {
     forma: transf.forma,
     contaId,
     status: 'Solicitado',
-    solicitadoEm: formatarDataHoraBR()
+    solicitadoEm: agora,
+    assinaturaSolicitante
   };
 
   await novoRepRef.set(payload);
-  logger.info(`[solicitarRepasse] Repasse ${novoRepRef.key} criado para ${produtoraId}`, payload);
+  await db.ref(`/contas_pagar/cp_rep_${repasseId}`).set({
+    id: `cp_rep_${repasseId}`,
+    produtoraId,
+    eventoId: eventoIds[0],
+    repasseId,
+    categoria: 'Repasse Produtor',
+    fornecedor: produtoraId,
+    valorOriginal: transf.valorLiquido,
+    valorPago: 0,
+    status: 'Prevista',
+    criadoEm: agora
+  });
+  await db.ref('/auditoria').push({
+    dataHora: agora,
+    usuario: solicitanteEmail,
+    modulo: 'Repasses',
+    eventoId: eventoIds.join(', '),
+    acao: 'Solicitação de Repasse Assinada',
+    resumo: `Repasse ${repasseId} solicitado por ${solicitanteEmail} (${produtoraId}) — R$ ${transf.valorBruto.toFixed(2)} via ${transf.forma}.`
+  });
 
-  return { id: novoRepRef.key, ...payload };
+  logger.info(`[solicitarRepasse] Repasse ${repasseId} criado para ${produtoraId}`, payload);
+
+  return { id: repasseId, ...payload };
 });
 
 // ============================================================================
@@ -296,9 +343,16 @@ exports.decidirRepasse = onCall(async (request) => {
       status: 'Recusado',
       motivoRecusa: String(motivo).trim(),
       decididoPor: usuarioEmail,
-      decididoEm: agora
+      decididoEm: agora,
+      assinaturaFinanceiro: {
+        uid: auth.uid,
+        email: usuarioEmail,
+        acao: 'recusar',
+        assinadoEm: agora
+      }
     };
     await db.ref(`/repasses/${repasseId}`).update(updRecusa);
+    await db.ref(`/contas_pagar/cp_rep_${repasseId}/status`).set('Cancelada');
     await db.ref('/auditoria').push({
       dataHora: agora,
       usuario: usuarioEmail,
@@ -313,23 +367,52 @@ exports.decidirRepasse = onCall(async (request) => {
 
   // Caso o repasse já esteja Aprovado e a ação seja apenas liquidar ('pagar') anexando protocolo/comprovante
   if (repasse.status === 'Aprovado' && acao === 'pagar') {
+    const proto = String(protocoloBancario || repasse.protocoloBancario || '').trim();
+    const compr = String(comprovanteUrl || repasse.comprovanteUrl || '').trim();
     const updPago = {
       status: 'Pago',
       pagoPor: usuarioEmail,
       pagoEm: agora,
-      protocoloBancario: String(protocoloBancario || repasse.protocoloBancario || '').trim(),
-      comprovanteUrl: String(comprovanteUrl || repasse.comprovanteUrl || '').trim()
+      protocoloBancario: proto,
+      comprovanteUrl: compr,
+      assinaturaLiquidacao: {
+        uid: auth.uid,
+        email: usuarioEmail,
+        protocoloBancario: proto,
+        assinadoEm: agora
+      }
     };
     await db.ref(`/repasses/${repasseId}`).update(updPago);
+    await db.ref(`/contas_pagar/cp_rep_${repasseId}`).update({
+      status: 'Paga',
+      valorPago: Number(repasse.valorLiquido || repasse.valorSolicitado || 0),
+      pagoEm: agora,
+      protocoloBancario: proto
+    });
+    await db.ref(`/lancamentos/lnc_rep_${repasseId}`).set({
+      id: `lnc_rep_${repasseId}`,
+      competencia: new Date().toISOString().slice(0, 7),
+      dataLancamento: new Date().toISOString().slice(0, 10),
+      produtoraId: repasse.produtoraId,
+      eventoId: (repasse.eventoIds || [])[0] || null,
+      origemModulo: 'Repasses',
+      origemId: repasseId,
+      contaDebito: '2.1.01.01 - Obrigações de Repasse Produtor',
+      contaCredito: '1.1.01.02 - Conta Movimento Bancária Disk',
+      valor: Number(repasse.valorSolicitado || 0),
+      historico: `Liquidação bancária repasse ${repasseId} (${proto || 'PIX/TED'})`,
+      usuario: usuarioEmail,
+      criadoEm: agora
+    });
     await db.ref('/auditoria').push({
       dataHora: agora,
       usuario: usuarioEmail,
       modulo: 'Repasses',
       eventoId: (repasse.eventoIds || []).join(', '),
       acao: 'Liquidação Bancária (Pago)',
-      resumo: `Repasse ${repasseId} marcado como Pago. Protocolo: ${updPago.protocoloBancario || 'N/A'}`
+      resumo: `Repasse ${repasseId} marcado como Pago. Protocolo: ${proto || 'N/A'}`
     });
-    return { status: 'Pago', protocoloBancario: updPago.protocoloBancario };
+    return { status: 'Pago', protocoloBancario: proto };
   }
 
   // Aprovar (ou Aprovar & Pagar direto): recalcula tudo NO MOMENTO da aprovação
@@ -360,7 +443,8 @@ exports.decidirRepasse = onCall(async (request) => {
   }
 
   const updates = {};
-  const rateioEventos = rateioRes.rateio;
+  const rateioEventos = rateioRes.quotasPorEvento || rateioRes.rateio || {};
+  const modoRateioFinal = rateioRes.modoRateio || rateioRes.modo || 'proporcional';
 
   for (const evCalc of selecionados) {
     const quota = Number(rateioEventos[evCalc.id] || 0);
@@ -383,7 +467,7 @@ exports.decidirRepasse = onCall(async (request) => {
     aprovadoPor: usuarioEmail,
     aprovadoEm: agora,
     disponivelNoMomento: disponivelAtual,
-    modoRateio: rateioRes.modo,
+    modoRateio: modoRateioFinal,
     rateioAplicado: rateioEventos,
     consolidadoSnapshot: {
       liberavelEventos: cons.liberavelEventos,
@@ -395,15 +479,42 @@ exports.decidirRepasse = onCall(async (request) => {
   };
 
   const statusFinal = acao === 'pagar' ? 'Pago' : 'Aprovado';
+  const proto = String(protocoloBancario || '').trim();
+  const compr = String(comprovanteUrl || '').trim();
+
   updates[`/repasses/${repasseId}/status`] = statusFinal;
   updates[`/repasses/${repasseId}/decididoPor`] = usuarioEmail;
   updates[`/repasses/${repasseId}/decididoEm`] = agora;
-  updates[`/repasses/${repasseId}/modoRateio`] = rateioRes.modo;
-  updates[`/repasses/${repasseId}/protocoloBancario`] = String(protocoloBancario || '').trim();
-  updates[`/repasses/${repasseId}/comprovanteUrl`] = String(comprovanteUrl || '').trim();
+  updates[`/repasses/${repasseId}/modoRateio`] = modoRateioFinal;
+  updates[`/repasses/${repasseId}/protocoloBancario`] = proto;
+  updates[`/repasses/${repasseId}/comprovanteUrl`] = compr;
+  updates[`/repasses/${repasseId}/assinaturaFinanceiro`] = {
+    uid: auth.uid,
+    email: usuarioEmail,
+    acao: statusFinal === 'Pago' ? 'aprovar_e_pagar' : 'aprovar',
+    assinadoEm: agora
+  };
+  updates[`/contas_pagar/cp_rep_${repasseId}/status`] = statusFinal === 'Pago' ? 'Paga' : 'Aprovada';
+
   if (statusFinal === 'Pago') {
     updates[`/repasses/${repasseId}/pagoPor`] = usuarioEmail;
     updates[`/repasses/${repasseId}/pagoEm`] = agora;
+    updates[`/contas_pagar/cp_rep_${repasseId}/valorPago`] = Number(repasse.valorLiquido || repasse.valorSolicitado || 0);
+    updates[`/lancamentos/lnc_rep_${repasseId}`] = {
+      id: `lnc_rep_${repasseId}`,
+      competencia: new Date().toISOString().slice(0, 7),
+      dataLancamento: new Date().toISOString().slice(0, 10),
+      produtoraId: repasse.produtoraId,
+      eventoId: (repasse.eventoIds || [])[0] || null,
+      origemModulo: 'Repasses',
+      origemId: repasseId,
+      contaDebito: '2.1.01.01 - Obrigações de Repasse Produtor',
+      contaCredito: '1.1.01.02 - Conta Movimento Bancária Disk',
+      valor: Number(repasse.valorSolicitado || 0),
+      historico: `Aprovação e liquidação bancária repasse ${repasseId}`,
+      usuario: usuarioEmail,
+      criadoEm: agora
+    };
   }
   updates[`/repasses/${repasseId}/memoriaCalculo`] = memoriaCalculo;
 
@@ -414,7 +525,7 @@ exports.decidirRepasse = onCall(async (request) => {
     modulo: 'Repasses',
     eventoId: (repasse.eventoIds || []).join(', '),
     acao: statusFinal === 'Pago' ? 'Aprovação e Pagamento de Repasse' : 'Aprovação de Repasse',
-    resumo: `Repasse ${repasseId} (${statusFinal}) — R$ ${Number(repasse.valorSolicitado).toFixed(2)} via ${repasse.forma} (rateio ${rateioRes.modo}).`
+    resumo: `Repasse ${repasseId} (${statusFinal}) — R$ ${Number(repasse.valorSolicitado).toFixed(2)} via ${repasse.forma} (rateio ${modoRateioFinal}).`
   });
   await recalcularTodaProdutora(repasse.produtoraId);
 
@@ -477,6 +588,14 @@ exports.solicitarAntecipacao = onCall(async (request) => {
   };
 
   await novaAntRef.set(payload);
+  await db.ref('/auditoria').push({
+    dataHora: formatarDataHoraBR(),
+    usuario: auth.token.email || auth.uid,
+    modulo: 'Antecipacoes',
+    eventoId,
+    acao: 'Solicitação de Antecipação',
+    resumo: `Antecipação ${novaAntRef.key} solicitada por ${produtoraId} — R$ ${payload.valor.toFixed(2)}.`
+  });
   logger.info(`[solicitarAntecipacao] Antecipação ${novaAntRef.key} solicitada por ${produtoraId}`, payload);
   return { id: novaAntRef.key, ...payload };
 });

@@ -1,34 +1,38 @@
 import { useState } from 'react';
-import { PROJECAO_INICIAL_PRODUTOR } from '../../shared/dadosProdutor';
+import type { EstadoProdutorRTDB } from '../../shared/dadosProdutor';
+import { cadastrarContaBancariaRTDB } from '../../shared/firebaseProdutor';
 
-export function ContasProdutorModule() {
-  const [contas, setContas] = useState(PROJECAO_INICIAL_PRODUTOR.contas);
+export interface ContasProdutorProps {
+  dados: EstadoProdutorRTDB;
+}
+
+export function ContasProdutorModule({ dados }: ContasProdutorProps) {
+  const { contas, produtoraId, produtoraNome } = dados;
   const [banco, setBanco] = useState('');
   const [agencia, setAgencia] = useState('');
   const [conta, setConta] = useState('');
   const [pix, setPix] = useState('');
+  const [salvando, setSalvando] = useState(false);
 
-  const bloq = !banco.trim() || !agencia.trim() || !conta.trim() || !pix.trim();
+  const bloq = !banco.trim() || !agencia.trim() || !conta.trim() || !pix.trim() || salvando;
 
-  function adicionarConta() {
+  async function adicionarConta() {
     if (bloq) return;
-    setContas(prev => [
-      ...prev,
-      {
-        id: `c_${prev.length + 1}`,
-        banco: banco.trim(),
-        agencia: agencia.trim(),
-        conta: conta.trim(),
-        pix: pix.trim(),
-        titular: PROJECAO_INICIAL_PRODUTOR.produtoraNome,
-        status: 'Pendente',
-        padrao: false
-      }
-    ]);
-    setBanco('');
-    setAgencia('');
-    setConta('');
-    setPix('');
+    setSalvando(true);
+    try {
+      await cadastrarContaBancariaRTDB(produtoraId, produtoraNome, {
+        banco,
+        agencia,
+        conta,
+        pix
+      });
+      setBanco('');
+      setAgencia('');
+      setConta('');
+      setPix('');
+    } finally {
+      setSalvando(false);
+    }
   }
 
   return (
@@ -87,7 +91,7 @@ export function ContasProdutorModule() {
         </label>
         <div className="sub">A conta precisa ter a mesma titularidade (CNPJ) da produtora.</div>
         <button className="btn" style={{ background: '#1e3a8a', color: '#fff' }} disabled={bloq} onClick={adicionarConta}>
-          Enviar para validação
+          {salvando ? 'Enviando...' : 'Enviar para validação'}
         </button>
       </section>
     </div>

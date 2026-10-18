@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { formatBRL } from '../../shared/formatters';
-import { PROJECAO_INICIAL_PRODUTOR } from '../../shared/dadosProdutor';
+import type { EstadoProdutorRTDB } from '../../shared/dadosProdutor';
 
 export interface SaldoProdutorProps {
+  dados: EstadoProdutorRTDB;
   onSolicitarRepasse?: () => void;
 }
 
-export function SaldoProdutorModule({ onSolicitarRepasse }: SaldoProdutorProps) {
+export function SaldoProdutorModule({ dados, onSolicitarRepasse }: SaldoProdutorProps) {
   const [exportMsg, setExportMsg] = useState(false);
-  const { consolidado, eventos } = PROJECAO_INICIAL_PRODUTOR;
+  const { consolidado, eventos } = dados;
 
   const retidoTotal = eventos.reduce((acc, e) => acc + e.retido, 0);
   const jaRepassadoTotal = eventos.reduce((acc, e) => acc + e.jaRepassado, 0);

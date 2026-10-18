@@ -2,6 +2,7 @@ node_modules/
 dist/
 target/
 .firebase/
+backups/
 firebase-debug.log
 firebase-debug.*.log
 *.local

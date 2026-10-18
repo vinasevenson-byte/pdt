@@ -1,17 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatBRL } from '../../shared/formatters';
-import { PROJECAO_INICIAL_PRODUTOR } from '../../shared/dadosProdutor';
+import type { EstadoProdutorRTDB } from '../../shared/dadosProdutor';
+import { chamarSolicitarRepasse } from '../../shared/firebaseProdutor';
 
-export function RepassesProdutorModule() {
-  const { eventos, consolidado, contas, repasses } = PROJECAO_INICIAL_PRODUTOR;
-  const [selecionados, setSelecionados] = useState<string[]>(['polaquedo', 'festival']);
-  const [eventoDetalheId, setEventoDetalheId] = useState<string>('festival');
-  const [contaId, setContaId] = useState<string>('c1');
+export interface RepassesProdutorProps {
+  dados: EstadoProdutorRTDB;
+}
+
+export function RepassesProdutorModule({ dados }: RepassesProdutorProps) {
+  const { eventos, consolidado, contas, repasses } = dados;
+  const contasValidadas = contas.filter(c => c.status === 'Validada');
+
+  const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [eventoDetalheId, setEventoDetalheId] = useState<string>('');
+  const [contaId, setContaId] = useState<string>('');
   const [forma, setForma] = useState<'PIX' | 'TED'>('PIX');
-  const [valorStr, setValorStr] = useState<string>('4056,00');
+  const [valorStr, setValorStr] = useState<string>('0,00');
   const [ac1, setAc1] = useState(false);
   const [ac2, setAc2] = useState(false);
+  const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [erroEnvio, setErroEnvio] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!eventoDetalheId && eventos.length > 0) {
+      setEventoDetalheId(eventos[0].id);
+    }
+  }, [eventos, eventoDetalheId]);
+
+  useEffect(() => {
+    if (!contaId && contasValidadas.length > 0) {
+      const padrao = contasValidadas.find(c => c.padrao) || contasValidadas[0];
+      setContaId(padrao.id);
+    }
+  }, [contasValidadas, contaId]);
 
   const det = eventos.find(e => e.id === eventoDetalheId) || eventos[0];
   const somaSel = eventos
@@ -21,12 +43,34 @@ export function RepassesProdutorModule() {
     ? Math.max(0, somaSel + consolidado.patrocinioProdutora - consolidado.advConsolidado - consolidado.devedores)
     : 0;
 
-  const retTot = det.retencoes.reduce((acc, r) => acc + r.valor, 0);
-  const opsTot = det.descontosOperacionais.reduce((acc, d) => acc + d.valor, 0);
-  const contasValidadas = contas.filter(c => c.status === 'Validada');
+  const retTot = det ? det.retencoes.reduce((acc, r) => acc + r.valor, 0) : 0;
+  const opsTot = det ? det.descontosOperacionais.reduce((acc, d) => acc + d.valor, 0) : 0;
 
   function toggleEvento(id: string) {
     setSelecionados(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+  }
+
+  async function submeterSolicitacao() {
+    if (!ac1 || !ac2 || selecionados.length === 0 || !contaId) return;
+    const valorNum = Number(valorStr.replace(/\./g, '').replace(',', '.')) || 0;
+    setEnviando(true);
+    setErroEnvio(null);
+    setEnviado(false);
+    try {
+      await chamarSolicitarRepasse({
+        eventoIds: selecionados,
+        valor: valorNum,
+        forma,
+        contaId,
+        aceiteBancario: ac1,
+        aceiteTermosBordero: ac2
+      });
+      setEnviado(true);
+    } catch (err) {
+      setErroEnvio(err instanceof Error ? err.message : 'Falha ao enviar solicitação de repasse.');
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -91,38 +135,40 @@ export function RepassesProdutorModule() {
           })}
         </section>
 
-        <section className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', alignItems: 'baseline' }}>
-            <h2 className="h2">Demonstrativo · {det.nome}</h2>
-            <span className="sub">Somente leitura (/borderos_produtor)</span>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
-            <div style={{ flex: '1 1 300px', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-              <div className="row"><span>Borderô do evento</span><span className="num" style={{ color: '#0f1b3d' }}>{formatBRL(det.borderoEvento)}</span></div>
-              <div className="row"><span>(−) Despesas</span><span className="num">{formatBRL(det.despesas)}</span></div>
-              <div className="row"><span>(−) Retenções (ISS, ECAD, Locação…)</span><span className="num" style={{ color: '#b91c1c' }}>{formatBRL(retTot)}</span></div>
-              <div className="row"><span>(−) Descontos operacionais</span><span className="num" style={{ color: '#b91c1c' }}>{formatBRL(opsTot)}</span></div>
-              <div className="row" style={{ borderTop: '1px solid #dde2ee', marginTop: '6px', paddingTop: '10px', fontWeight: 800, color: '#0f1b3d' }}>
-                <span>Resultado do evento</span>
-                <span className="num">{formatBRL(det.resultado)}</span>
+        {det && (
+          <section className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', alignItems: 'baseline' }}>
+              <h2 className="h2">Demonstrativo · {det.nome}</h2>
+              <span className="sub">Somente leitura (/borderos_produtor)</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
+              <div style={{ flex: '1 1 300px', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <div className="row"><span>Borderô do evento</span><span className="num" style={{ color: '#0f1b3d' }}>{formatBRL(det.borderoEvento)}</span></div>
+                <div className="row"><span>(−) Despesas</span><span className="num">{formatBRL(det.despesas)}</span></div>
+                <div className="row"><span>(−) Retenções (ISS, ECAD, Locação…)</span><span className="num" style={{ color: '#b91c1c' }}>{formatBRL(retTot)}</span></div>
+                <div className="row"><span>(−) Descontos operacionais</span><span className="num" style={{ color: '#b91c1c' }}>{formatBRL(opsTot)}</span></div>
+                <div className="row" style={{ borderTop: '1px solid #dde2ee', marginTop: '6px', paddingTop: '10px', fontWeight: 800, color: '#0f1b3d' }}>
+                  <span>Resultado do evento</span>
+                  <span className="num">{formatBRL(det.resultado)}</span>
+                </div>
+              </div>
+              <div style={{ flex: '1 1 260px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ background: '#f4f6fb', borderRadius: '12px', padding: '16px', fontSize: '14px', lineHeight: 1.5, color: '#3d4766' }}>
+                  {det.regraTexto}
+                </div>
+                <div className="row"><span>Liberado pela regra</span><span className="num" style={{ color: '#0f1b3d' }}>{formatBRL(det.escolhido)}</span></div>
+                {det.rebate > 0 && <div className="row"><span>(+) Rebate</span><span className="num" style={{ color: '#065f46' }}>{formatBRL(det.rebate)}</span></div>}
+                {det.patrocinio > 0 && <div className="row"><span>(+) Patrocínio do evento</span><span className="num" style={{ color: '#065f46' }}>{formatBRL(det.patrocinio)}</span></div>}
+                <div className="row"><span>(−) Já repassado</span><span className="num">{formatBRL(det.jaRepassado)}</span></div>
+                {det.antEv > 0 && <div className="row"><span>(−) Antecipação recebida</span><span className="num">{formatBRL(det.antEv)}</span></div>}
+                <div style={{ background: '#ecfdf5', borderRadius: '12px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 800, color: '#065f46' }}>Liberável no evento</span>
+                  <span className="num" style={{ fontSize: '20px', color: '#065f46' }}>{formatBRL(det.liberavel)}</span>
+                </div>
               </div>
             </div>
-            <div style={{ flex: '1 1 260px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ background: '#f4f6fb', borderRadius: '12px', padding: '16px', fontSize: '14px', lineHeight: 1.5, color: '#3d4766' }}>
-                {det.regraTexto}
-              </div>
-              <div className="row"><span>Liberado pela regra</span><span className="num" style={{ color: '#0f1b3d' }}>{formatBRL(det.escolhido)}</span></div>
-              {det.rebate > 0 && <div className="row"><span>(+) Rebate</span><span className="num" style={{ color: '#065f46' }}>{formatBRL(det.rebate)}</span></div>}
-              {det.patrocinio > 0 && <div className="row"><span>(+) Patrocínio do evento</span><span className="num" style={{ color: '#065f46' }}>{formatBRL(det.patrocinio)}</span></div>}
-              <div className="row"><span>(−) Já repassado</span><span className="num">{formatBRL(det.jaRepassado)}</span></div>
-              {det.antEv > 0 && <div className="row"><span>(−) Antecipação recebida</span><span className="num">{formatBRL(det.antEv)}</span></div>}
-              <div style={{ background: '#ecfdf5', borderRadius: '12px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: 800, color: '#065f46' }}>Liberável no evento</span>
-                <span className="num" style={{ fontSize: '20px', color: '#065f46' }}>{formatBRL(det.liberavel)}</span>
-              </div>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         <section className="card">
           <h2 className="h2">Meus repasses</h2>
@@ -217,6 +263,12 @@ export function RepassesProdutorModule() {
             Concordo com os termos de repasse e com os descontos do borderô.
           </label>
 
+          {erroEnvio && (
+            <div style={{ fontSize: '13px', fontWeight: 700, color: '#b91c1c', background: '#fef2f2', padding: '12px', borderRadius: '10px' }}>
+              {erroEnvio}
+            </div>
+          )}
+
           {enviado && (
             <div style={{ fontSize: '13px', fontWeight: 700, color: '#065f46', background: '#ecfdf5', padding: '12px', borderRadius: '10px' }}>
               Solicitação enviada para análise do Financeiro (callable solicitarRepasse).
@@ -226,10 +278,10 @@ export function RepassesProdutorModule() {
           <button
             className="btn"
             style={{ background: '#047857', color: '#fff' }}
-            disabled={!ac1 || !ac2 || selecionados.length === 0}
-            onClick={() => setEnviado(true)}
+            disabled={!ac1 || !ac2 || selecionados.length === 0 || !contaId || enviando}
+            onClick={submeterSolicitacao}
           >
-            Solicitar repasse
+            {enviando ? 'Enviando solicitação...' : 'Solicitar repasse'}
           </button>
         </section>
       </aside>

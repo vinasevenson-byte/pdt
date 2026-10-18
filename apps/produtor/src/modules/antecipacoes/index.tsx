@@ -1,22 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatBRL } from '../../shared/formatters';
-import { PROJECAO_INICIAL_PRODUTOR } from '../../shared/dadosProdutor';
+import type { EstadoProdutorRTDB } from '../../shared/dadosProdutor';
+import { chamarSolicitarAntecipacao } from '../../shared/firebaseProdutor';
 
-export function AntecipacoesProdutorModule() {
-  const { eventos, antecipacoes, antecipacaoConfig } = PROJECAO_INICIAL_PRODUTOR;
-  const [eventoId, setEventoId] = useState(eventos[1].id);
+export interface AntecipacoesProdutorProps {
+  dados: EstadoProdutorRTDB;
+}
+
+export function AntecipacoesProdutorModule({ dados }: AntecipacoesProdutorProps) {
+  const { eventos, antecipacoes, antecipacaoConfig } = dados;
+  const [eventoId, setEventoId] = useState('');
   const [valorStr, setValorStr] = useState('1000');
   const [antOk, setAntOk] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [erroEnvio, setErroEnvio] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!eventoId && eventos.length > 0) {
+      setEventoId(eventos[0].id);
+    }
+  }, [eventos, eventoId]);
 
   const ev = eventos.find(e => e.id === eventoId) || eventos[0];
-  const jaAntecipado = antecipacoes
-    .filter(a => a.eventoId === ev.id && a.status !== 'Recusada')
-    .reduce((acc, a) => acc + a.valor, 0);
-  const limite = Math.max(0, ev.retido * (antecipacaoConfig.pctLimite / 100) - jaAntecipado);
+  const jaAntecipado = ev
+    ? antecipacoes
+        .filter(a => a.eventoId === ev.id && a.status !== 'Recusada')
+        .reduce((acc, a) => acc + a.valor, 0)
+    : 0;
+  const retidoEv = ev ? ev.retido : 0;
+  const limite = Math.max(0, retidoEv * (antecipacaoConfig.pctLimite / 100) - jaAntecipado);
   const valorNum = Number(valorStr.replace(',', '.')) || 0;
   const encargo = (valorNum * antecipacaoConfig.percentualEncargo) / 100;
   const abate = valorNum + encargo;
   const temErro = valorNum > limite + 0.009;
+
+  async function solicitarAntecipacao() {
+    if (!ev || valorNum <= 0 || temErro) return;
+    setEnviando(true);
+    setErroEnvio(null);
+    setAntOk(false);
+    try {
+      await chamarSolicitarAntecipacao({
+        eventoId: ev.id,
+        valor: valorNum
+      });
+      setAntOk(true);
+    } catch (err) {
+      setErroEnvio(err instanceof Error ? err.message : 'Falha ao solicitar antecipação.');
+    } finally {
+      setEnviando(false);
+    }
+  }
 
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
@@ -40,7 +74,7 @@ export function AntecipacoesProdutorModule() {
         </div>
 
         <div style={{ background: '#f4f6fb', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div className="row"><span>Retido pelas travas</span><span className="num" style={{ color: '#0f1b3d' }}>{formatBRL(ev.retido)}</span></div>
+          <div className="row"><span>Retido pelas travas</span><span className="num" style={{ color: '#0f1b3d' }}>{formatBRL(retidoEv)}</span></div>
           <div className="row"><span>Já antecipado</span><span className="num">{formatBRL(jaAntecipado)}</span></div>
           <div className="row" style={{ fontWeight: 800, color: '#0f1b3d' }}><span>Limite disponível</span><span className="num">{formatBRL(limite)}</span></div>
         </div>
@@ -57,6 +91,7 @@ export function AntecipacoesProdutorModule() {
         </div>
 
         {temErro && <div style={{ fontSize: '13px', fontWeight: 700, color: '#b91c1c' }}>O valor ultrapassa o limite disponível.</div>}
+        {erroEnvio && <div style={{ fontSize: '13px', fontWeight: 700, color: '#b91c1c' }}>{erroEnvio}</div>}
         {antOk && (
           <div style={{ fontSize: '13px', fontWeight: 700, color: '#065f46', background: '#ecfdf5', padding: '12px', borderRadius: '10px' }}>
             Antecipação solicitada. O Financeiro vai analisar.
@@ -66,10 +101,10 @@ export function AntecipacoesProdutorModule() {
         <button
           className="btn"
           style={{ background: '#047857', color: '#fff' }}
-          disabled={valorNum <= 0 || temErro}
-          onClick={() => setAntOk(true)}
+          disabled={!ev || valorNum <= 0 || temErro || enviando}
+          onClick={solicitarAntecipacao}
         >
-          Solicitar antecipação
+          {enviando ? 'Enviando...' : 'Solicitar antecipação'}
         </button>
       </section>
 
