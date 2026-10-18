@@ -5,9 +5,9 @@
   "type": "module",
   "description": "Painel do Produtor (Acesso Limitado à Projeção Limpa /borderos_produtor) — Hub de Repasses DiskIngressos",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5174",
+    "dev": "vite --host 0.0.0.0 --port 5174",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --host 0.0.0.0 --port 5174"
   },
   "dependencies": {
     "firebase": "^10.14.0",
