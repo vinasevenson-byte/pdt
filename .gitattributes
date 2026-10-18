@@ -1,2 +1,6 @@
-legacy/** -text binary
-Portal_Produtor_DiskIngressos/referencia-original/** -text binary
+legacy/produtor-original/*.html -text binary
+Portal_Produtor_DiskIngressos/referencia-original/*.html -text binary
+Financeiro_Disk/*.html -text binary
+Portal_Produtor/*.html -text binary
+financeiro.html -text binary
+produtor.html -text binary
