@@ -1,34 +1,45 @@
-# Guia de Criação de Novos Módulos Financeiros
+# Guia de Módulos Verticais com Manifesto (v2)
 
-Cada novo módulo financeiro (ex.: `conciliacao`, `fiscal`, `comissoes`, `remessa`) entra no monorepo como um plugin padronizado em até 7 camadas.
+Cada módulo de negócio vive isolado em `modules/<dominio>/<modulo>/` com um `manifest.json` declarativo. O passo de build valida o manifesto e gera automaticamente as regras do RTDB, o registro de UI (Financeiro e Produtor), o índice de Cloud Functions e o catálogo.
 
-## Gerador Automático (`new:module`)
-
-Execute na raiz do repositório:
+## Comandos
 
 ```bash
-# Módulo exclusivo do Financeiro (Node + React Financeiro)
-npm run new:module comissoes
+# Criar módulo financeiro apenas servidor/interno (Node)
+npm run module:new -- financeiro/estornos --no estornos
 
-# Módulo com projeção limpa no Produtor e serviço pesado em Java
-npm run new:module conciliacao -- --produtor --java
+# Criar módulo financeiro com backend Java (Spring Boot)
+npm run module:new -- financeiro/conciliacao --no conciliacoes --java
+
+# Criar módulo comercial com leitura do próprio produtor no RTDB e UI no Portal do Produtor
+npm run module:new -- comercial/contratos --no contratos --produtor dono
+
+# Validar manifestos e regenerar regras, registros de UI/Functions e catálogo
+npm run module:build
+
+# Verificar se os artefatos gerados estão sincronizados (CI / pre-deploy)
+npm run module:check
 ```
 
-## Camadas de um Módulo
+## Estrutura Gerada por Módulo
 
-| Camada | Caminho | Responsabilidade |
-|---|---|---|
-| **Domínio** | `packages/motor-repasse/src/modules/<modulo>/index.js` | Funções puras de cálculo (sem I/O, sem Firebase) |
-| **Contrato** | `packages/contracts/src/<modulo>/index.js` | Nome do nó no RTDB e validação de schema |
-| **Regras RTDB** | `firebase/database.rules.json` | Controle de leitura/escrita por `auth.token.role` |
-| **Backend** | `services/functions/src/modules/<modulo>` ou `services/financeiro-java/.../<modulo>` | Callables/triggers Node ou endpoints REST Spring Boot |
-| **UI Financeiro** | `apps/financeiro/src/modules/<modulo>/index.tsx` | Aba/página que implementa `FinancialModulePlugin` |
-| **UI Produtor** | `apps/produtor/src/modules/<modulo>/index.tsx` | *(Opcional)* Somente leitura da projeção limpa |
-| **Testes** | `packages/motor-repasse/test/<modulo>.test.js` | Testes unitários + checagem de segurança |
+```text
+modules/<dominio>/<modulo>/
+├── manifest.json        # id, domínio, camada, rtdb (nó, leituraProdutor, escritaCliente), ui, dependências
+├── domain/index.js      # funções puras em centavos inteiros
+├── contract/index.js    # schema e validador do nó RTDB
+├── functions/index.js   # callable Node com RBAC e auditoria (ou java/<Modulo>Service.java se --java)
+├── ui/index.tsx         # plugin React para o portal Financeiro
+├── ui-produtor/         # (opcional, se --produtor) componente limpo para o Portal do Produtor
+└── test/module.test.js  # testes unitários do módulo
+```
 
-## Checklist Obrigatório antes do Deploy
+## Travas de Segurança do `module:build`
 
-1. O módulo grava todas as decisões/alterações em `/auditoria`?
-2. O nó em `firebase/database.rules.json` exige `auth.token.role === 'financeiro'` para escrita?
-3. Se houver visualização para o produtor, ela evita 100% os termos `taxaAdm`, `taxaOp`, `conveniencia`, `eventos_fin` e `negociacoes`?
-4. `npm test` passa sem erros?
+O compilador bloqueia automaticamente:
+1. **Colisão de nó RTDB** com nós do núcleo (`firebase/rules.core.json`) ou com outro módulo.
+2. **Dependência inexistente ou cíclica** entre módulos (detecção por busca em profundidade — DFS).
+3. **UI do Produtor sem permissão de leitura declarada** (`ui.produtor: true` exige `rtdb.leituraProdutor: "dono"` ou `"projecao"`).
+4. **Vazamento de termos internos na UI do Produtor** (`taxaAdm`, `taxaOp`, `conveniencia`, `eventos_fin`, `negociacoes`, `motorRepasse`).
+5. **Divergência entre pasta e manifesto** (`dominio` ou `modulo` diferente da estrutura de diretórios).
+6. **Escrita direta do cliente desabilitada por padrão** (`rtdb.escritaCliente: "nenhuma"`).

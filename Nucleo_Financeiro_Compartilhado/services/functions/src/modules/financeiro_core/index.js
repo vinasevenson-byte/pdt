@@ -7,10 +7,11 @@
 
 'use strict';
 
-const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const {
   db,
+  httpsV2,
   formatarDataHoraBR,
+  obterDataAtualBR,
   registrarAuditoria,
   somarDiasUteis,
   calcFluxoCaixa,
@@ -18,19 +19,21 @@ const {
   gerarEstornoLancamento
 } = require('../../shared/recalculo');
 
-async function atualizarSnapshotFluxoCaixa() {
+const { onCall, HttpsError } = httpsV2;
+
+async function atualizarSnapshotFluxoCaixa(customDb = db) {
   const [crSnap, cpSnap] = await Promise.all([
-    db.ref('/contas_receber').get(),
-    db.ref('/contas_pagar').get()
+    customDb.ref('/contas_receber').get(),
+    customDb.ref('/contas_pagar').get()
   ]);
   const snapshot = calcFluxoCaixa({
     contasReceber: crSnap.val() || {},
     contasPagar: cpSnap.val() || {},
     saldoInicial: 0,
-    dataReferencia: new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+    dataReferencia: obterDataAtualBR(),
     somarDiasUteisFn: somarDiasUteis
   });
-  await db.ref('/fluxo_caixa').set({
+  await customDb.ref('/fluxo_caixa').set({
     ...snapshot,
     atualizadoEm: formatarDataHoraBR()
   });
@@ -66,7 +69,7 @@ exports.registrarBaixaTitulo = onCall(async (request) => {
       { id: tituloId, natureza, ...titSnap.val() },
       {
         lancamentoId: novoLancRef.key,
-        dataBaixa: dataBaixa || new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+        dataBaixa: dataBaixa || obterDataAtualBR(),
         contaBanco,
         historico,
         usuario
@@ -124,7 +127,7 @@ exports.estornarLancamento = onCall(async (request) => {
       {
         id: estornoRef.key,
         motivo,
-        data: dataEstorno || new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+        data: dataEstorno || obterDataAtualBR(),
         usuario
       },
       fechSnap.val() || {}
@@ -154,6 +157,11 @@ exports.fecharCompetencia = onCall(async (request) => {
   const { competencia, observacoes = '' } = request.data || {};
   if (!competencia || !/^\d{4}-\d{2}$/.test(competencia)) {
     throw new HttpsError('invalid-argument', 'Informe a competência no formato YYYY-MM.');
+  }
+
+  const fechSnap = await db.ref(`/fechamentos/${competencia}`).get();
+  if (fechSnap.exists() && fechSnap.val().fechado === true) {
+    throw new HttpsError('failed-precondition', `A competência ${competencia} já se encontra encerrada.`);
   }
 
   const usuario = auth.token.email || auth.uid;

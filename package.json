@@ -9,11 +9,14 @@
     "services/functions"
   ],
   "scripts": {
-    "test": "node --test packages/motor-repasse/test/motorRepasse.test.js packages/motor-repasse/test/novosModulos.test.js tests/base-original.test.mjs tests/security.test.mjs motorRepasse.test.js",
+    "test": "node --test packages/motor-repasse/test/motorRepasse.test.js packages/motor-repasse/test/novosModulos.test.js tests/base-original.test.mjs tests/security.test.mjs tests/fase0-saneamento.test.mjs motorRepasse.test.js",
     "test:motor": "node --test packages/motor-repasse/test/motorRepasse.test.js packages/motor-repasse/test/novosModulos.test.js",
-    "test:security": "node --test tests/security.test.mjs tests/base-original.test.mjs",
+    "test:security": "node --test tests/security.test.mjs tests/base-original.test.mjs tests/fase0-saneamento.test.mjs",
     "legado:visualizar": "node scripts/visualizar-legado.mjs",
     "new:module": "node scripts/new-module.js",
+    "module:new": "node scripts/module-scaffolder.mjs",
+    "module:build": "node scripts/module-build.mjs",
+    "module:check": "node scripts/module-build.mjs --check",
     "set-role": "node scripts/setRole.js",
     "dev:financeiro": "npm --workspace=@diskingressos/app-financeiro run dev",
     "dev:produtor": "npm --workspace=@diskingressos/app-produtor run dev",

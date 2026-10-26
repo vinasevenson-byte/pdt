@@ -4,7 +4,7 @@
   },
   "functions": [
     {
-      "source": "functions",
+      "source": "services/functions",
       "codebase": "default",
       "ignore": [
         "node_modules",
@@ -25,10 +25,27 @@
       "setRole.js",
       "motorRepasse.test.js",
       "package.json",
+      "package-lock.json",
       "README.md",
+      "LEIA-ME-PRIMEIRO.md",
+      "*.log",
       "**/.*",
       "**/node_modules/**",
-      "functions/**"
+      "apps/**",
+      "packages/**",
+      "services/**",
+      "functions/**",
+      "firebase/**",
+      "docs/**",
+      "legacy/**",
+      "scripts/**",
+      "tests/**",
+      "backups/**",
+      "Financeiro_Disk/**",
+      "Financeiro_DiskIngressos/**",
+      "Portal_Produtor/**",
+      "Portal_Produtor_DiskIngressos/**",
+      "Nucleo_Financeiro_Compartilhado/**"
     ]
   }
 }

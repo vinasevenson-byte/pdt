@@ -1,10 +1,40 @@
 /**
- * Motor do Ledger Imutável (/lancamentos) com Partida Dobrada e Bloqueio por /fechamentos
+ * Motor do Ledger Imutável (/lancamentos) com Partida Dobrada, Plano de Contas e Bloqueio por /fechamentos
  */
 
 'use strict';
 
 const { toCents, fromCents } = require('../shared/money');
+
+/**
+ * Plano de Contas Oficial do Núcleo Financeiro DiskIngressos
+ */
+const PLANO_CONTAS = Object.freeze({
+  BANCO_CONTA_MOVIMENTO: '1.1.01.001 - Conta Movimento Bancária Disk',
+  CLIENTES_ADQUIRENTES_RECEBER: '1.1.02.001 - Clientes e Adquirentes a Receber',
+  OBRIGACOES_REPASSES_PRODUTOR: '2.1.01.001 - Obrigações de Repasse Produtor',
+  OBRIGACOES_RETENCOES_RECOLHER: '2.1.01.002 - Retenções de Eventos a Recolher',
+  RECEITA_TAXAS_DISK: '3.1.01.001 - Receita de Taxas (Adm/Op) Disk',
+  RECEITA_TARIFA_TRANSFERENCIA: '4.1.02.01 - Receita de Tarifa de Transferência (TED)'
+});
+
+/**
+ * Formata uma instância Date para DD/MM/YYYY no fuso America/Sao_Paulo (evita virada de dia/mês em UTC).
+ */
+function obterDataAtualBR(date = new Date()) {
+  const dt = date instanceof Date ? date : new Date(date);
+  const parts = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).formatToParts(dt);
+  const map = {};
+  for (const p of parts) {
+    map[p.type] = p.value;
+  }
+  return `${map.day}/${map.month}/${map.year}`;
+}
 
 function extrairCompetencia(dataStr) {
   if (!dataStr || typeof dataStr !== 'string') return '';
@@ -14,6 +44,13 @@ function extrairCompetencia(dataStr) {
   const mISO = /^(\d{4})-(\d{2})/.exec(limpo);
   if (mISO) return `${mISO[1]}-${mISO[2]}`;
   return '';
+}
+
+/**
+ * Retorna a competência contábil (YYYY-MM) no fuso America/Sao_Paulo.
+ */
+function obterCompetenciaAtualBR(date = new Date()) {
+  return extrairCompetencia(obterDataAtualBR(date));
 }
 
 function competenciaEstaFechada(competencia, fechamentosMap = {}) {
@@ -27,18 +64,19 @@ function competenciaEstaFechada(competencia, fechamentosMap = {}) {
  */
 function criarLancamentoPartidaDobrada(params = {}, fechamentosMap = {}) {
   const valorCents = params.valorCents !== undefined ? Math.round(Number(params.valorCents)) : toCents(params.valor);
-  const competencia = params.competencia || extrairCompetencia(params.data);
+  const dataEfetiva = params.data || params.dataLancamento || obterDataAtualBR();
+  const competencia = params.competencia || extrairCompetencia(dataEfetiva);
 
-  if (valorCents <= 0) {
+  if (!Number.isFinite(valorCents) || valorCents <= 0) {
     throw new Error('O lançamento de partida dobrada exige valor maior que zero.');
   }
   if (!params.contaDebito || !params.contaCredito) {
     throw new Error('Informe obrigatoriamente contaDebito e contaCredito.');
   }
-  if (params.contaDebito === params.contaCredito) {
+  if (String(params.contaDebito).trim() === String(params.contaCredito).trim()) {
     throw new Error('contaDebito e contaCredito devem ser distintas na partida dobrada.');
   }
-  if (!competencia) {
+  if (!competencia || !/^\d{4}-\d{2}$/.test(competencia)) {
     throw new Error('Competência (YYYY-MM) ou data válida (DD/MM/YYYY) é obrigatória.');
   }
   if (competenciaEstaFechada(competencia, fechamentosMap)) {
@@ -47,10 +85,11 @@ function criarLancamentoPartidaDobrada(params = {}, fechamentosMap = {}) {
 
   return {
     id: params.id || null,
-    data: params.data,
+    data: dataEfetiva,
+    dataLancamento: dataEfetiva,
     competencia,
-    contaDebito: String(params.contaDebito),
-    contaCredito: String(params.contaCredito),
+    contaDebito: String(params.contaDebito).trim(),
+    contaCredito: String(params.contaCredito).trim(),
     valorCents,
     valor: fromCents(valorCents),
     produtoraId: params.produtoraId || null,
@@ -60,7 +99,9 @@ function criarLancamentoPartidaDobrada(params = {}, fechamentosMap = {}) {
     historico: String(params.historico || ''),
     tipo: params.estornoDeId ? 'estorno' : 'original',
     estornoDeId: params.estornoDeId || null,
-    criadoPor: String(params.criadoPor || 'financeiro'),
+    criadoPor: String(params.criadoPor || params.usuario || 'financeiro'),
+    usuario: String(params.usuario || params.criadoPor || 'financeiro'),
+    criadoEm: params.criadoEm || dataEfetiva,
     imutavel: true
   };
 }
@@ -76,7 +117,7 @@ function gerarEstornoLancamento(lancamentoOriginal = {}, dadosEstorno = {}, fech
     throw new Error('Motivo do estorno é obrigatório.');
   }
 
-  const dataEstorno = dadosEstorno.data || lancamentoOriginal.data;
+  const dataEstorno = dadosEstorno.data || lancamentoOriginal.data || obterDataAtualBR();
   const competenciaEstorno = dadosEstorno.competencia || extrairCompetencia(dataEstorno);
 
   return criarLancamentoPartidaDobrada(
@@ -93,13 +134,17 @@ function gerarEstornoLancamento(lancamentoOriginal = {}, dadosEstorno = {}, fech
       origemId: lancamentoOriginal.origemId,
       historico: `ESTORNO (#${lancamentoOriginal.id}): ${String(dadosEstorno.motivo).trim()}`,
       estornoDeId: lancamentoOriginal.id,
-      criadoPor: dadosEstorno.usuario || 'financeiro'
+      criadoPor: dadosEstorno.usuario || 'financeiro',
+      criadoEm: dadosEstorno.criadoEm || dataEstorno
     },
     fechamentosMap
   );
 }
 
 module.exports = {
+  PLANO_CONTAS,
+  obterDataAtualBR,
+  obterCompetenciaAtualBR,
   extrairCompetencia,
   competenciaEstaFechada,
   criarLancamentoPartidaDobrada,

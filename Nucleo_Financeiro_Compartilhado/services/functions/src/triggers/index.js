@@ -4,11 +4,13 @@
 
 'use strict';
 
-const { onValueWritten } = require('firebase-functions/v2/database');
 const {
+  databaseV2,
   recalcularTodaProdutora,
   processarRecalculoProdutoraPorEvento
 } = require('../shared/recalculo');
+
+const { onValueWritten } = databaseV2;
 
 exports.recalcularPorEvento = onValueWritten('/eventos/{id}', async (event) => {
   await processarRecalculoProdutoraPorEvento(event.params.id);

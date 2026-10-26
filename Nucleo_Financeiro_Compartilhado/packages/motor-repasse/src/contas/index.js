@@ -6,7 +6,7 @@
 'use strict';
 
 const { toCents, fromCents } = require('../shared/money');
-const { criarLancamentoPartidaDobrada } = require('../ledger');
+const { PLANO_CONTAS, criarLancamentoPartidaDobrada } = require('../ledger');
 
 function parseDataUTC(dataStr) {
   if (!dataStr || typeof dataStr !== 'string') return null;
@@ -142,10 +142,10 @@ function baixarTitulo(titulo = {}, dadosBaixa = {}, fechamentosMap = {}) {
     ? Math.round(Number(dadosBaixa.valorPagoCents))
     : (titulo.valorCents !== undefined ? titulo.valorCents : toCents(titulo.valor));
 
-  const contaBanco = dadosBaixa.contaBanco || '1.1.01.001-Banco-Conta-Movimento';
+  const contaBanco = dadosBaixa.contaBanco || PLANO_CONTAS.BANCO_CONTA_MOVIMENTO;
   const contaContrapartida = isPagar
-    ? (dadosBaixa.contaObrigacao || '2.1.01.001-Obrigações-Repasses-e-Retenções')
-    : (dadosBaixa.contaDireito || '1.1.02.001-Clientes-e-Adquirentes-a-Receber');
+    ? (dadosBaixa.contaObrigacao || (titulo.categoria === 'Repasse Produtor' ? PLANO_CONTAS.OBRIGACOES_REPASSES_PRODUTOR : PLANO_CONTAS.OBRIGACOES_RETENCOES_RECOLHER))
+    : (dadosBaixa.contaDireito || (titulo.categoria === 'Receita Taxas Disk' ? PLANO_CONTAS.RECEITA_TAXAS_DISK : PLANO_CONTAS.CLIENTES_ADQUIRENTES_RECEBER));
 
   const lancamento = criarLancamentoPartidaDobrada(
     {

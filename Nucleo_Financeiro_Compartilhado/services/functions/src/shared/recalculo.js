@@ -4,16 +4,62 @@
 
 'use strict';
 
-const admin = require('firebase-admin');
-const logger = require('firebase-functions/logger');
 const path = require('node:path');
 const fs = require('node:fs');
+
+function safeRequire(modName, fallbackFactory) {
+  try {
+    return require(modName);
+  } catch {
+    return fallbackFactory();
+  }
+}
+
+class FallbackHttpsError extends Error {
+  constructor(code, message, details) {
+    super(message);
+    this.code = code;
+    this.details = details;
+  }
+}
+
+const httpsV2 = safeRequire('firebase-functions/v2/https', () => ({
+  onCall: (handler) => handler,
+  HttpsError: FallbackHttpsError
+}));
+
+const databaseV2 = safeRequire('firebase-functions/v2/database', () => ({
+  onValueWritten: (_path, handler) => handler
+}));
+
+const functionsV2 = safeRequire('firebase-functions/v2', () => ({
+  setGlobalOptions: () => {}
+}));
+
+const logger = safeRequire('firebase-functions/logger', () => ({
+  info: () => {},
+  warn: () => {},
+  error: () => {}
+}));
+
+const admin = safeRequire('firebase-admin', () => ({
+  apps: [{}],
+  initializeApp: () => {},
+  database: () => ({
+    ref: () => {
+      throw new Error('Firebase Admin RTDB não inicializado neste ambiente de teste sem mock.');
+    }
+  })
+}));
 
 const motorPath = fs.existsSync(path.resolve(__dirname, '../../../../packages/motor-repasse/src/index.js'))
   ? path.resolve(__dirname, '../../../../packages/motor-repasse/src/index.js')
   : path.resolve(__dirname, '../../../../motorRepasse.js');
 
 const {
+  toCents,
+  fromCents,
+  round2,
   calcEvento,
   calcConsolidado,
   bordero_produtor,
@@ -25,6 +71,11 @@ const {
   calcFluxoCaixa,
   gerarTitulosEvento,
   baixarTitulo,
+  PLANO_CONTAS,
+  obterDataAtualBR,
+  obterCompetenciaAtualBR,
+  extrairCompetencia,
+  competenciaEstaFechada,
   criarLancamentoPartidaDobrada,
   gerarEstornoLancamento
 } = require(motorPath);
@@ -39,7 +90,7 @@ function formatarDataHoraBR(date = new Date()) {
   return date.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
-async function registrarAuditoria({ usuario, modulo, eventoId = '', acao, resumo }) {
+async function registrarAuditoria({ usuario, modulo, eventoId = '', acao, resumo }, customDb = db) {
   const payload = {
     dataHora: formatarDataHoraBR(),
     usuario: String(usuario || 'sistema'),
@@ -48,11 +99,11 @@ async function registrarAuditoria({ usuario, modulo, eventoId = '', acao, resumo
     acao: String(acao || ''),
     resumo: String(resumo || '')
   };
-  await db.ref('/auditoria').push(payload);
+  await customDb.ref('/auditoria').push(payload);
   return payload;
 }
 
-async function recalcularTodaProdutora(produtoraId, preloaded = null) {
+async function recalcularTodaProdutora(produtoraId, preloaded = null, customDb = db) {
   const [
     prodSnap,
     eventosSnap,
@@ -65,16 +116,16 @@ async function recalcularTodaProdutora(produtoraId, preloaded = null) {
     repSnap,
     cfgTransfSnap
   ] = await Promise.all([
-    db.ref(`/produtoras/${produtoraId}`).get(),
-    db.ref('/eventos').orderByChild('produtoraId').equalTo(produtoraId).get(),
-    db.ref('/eventos_fin').get(),
-    db.ref('/negociacoes').get(),
-    preloaded ? Promise.resolve({ val: () => preloaded.locais }) : db.ref('/locais').get(),
-    preloaded ? Promise.resolve({ val: () => preloaded.despesas }) : db.ref('/despesas').get(),
-    preloaded ? Promise.resolve({ val: () => preloaded.advanced }) : db.ref('/advanced').get(),
-    preloaded ? Promise.resolve({ val: () => preloaded.antecipacoes }) : db.ref('/antecipacoes').get(),
-    db.ref('/repasses').orderByChild('produtoraId').equalTo(produtoraId).get(),
-    db.ref('/config/transferencia').get()
+    customDb.ref(`/produtoras/${produtoraId}`).get(),
+    customDb.ref('/eventos').orderByChild('produtoraId').equalTo(produtoraId).get(),
+    customDb.ref('/eventos_fin').get(),
+    customDb.ref('/negociacoes').get(),
+    preloaded ? Promise.resolve({ val: () => preloaded.locais }) : customDb.ref('/locais').get(),
+    preloaded ? Promise.resolve({ val: () => preloaded.despesas }) : customDb.ref('/despesas').get(),
+    preloaded ? Promise.resolve({ val: () => preloaded.advanced }) : customDb.ref('/advanced').get(),
+    preloaded ? Promise.resolve({ val: () => preloaded.antecipacoes }) : customDb.ref('/antecipacoes').get(),
+    customDb.ref('/repasses').orderByChild('produtoraId').equalTo(produtoraId).get(),
+    customDb.ref('/config/transferencia').get()
   ]);
 
   const produtora = prodSnap.val() || {};
@@ -134,7 +185,6 @@ async function recalcularTodaProdutora(produtoraId, preloaded = null) {
     atualizadoEm: formatarDataHoraBR()
   };
 
-  // Atualiza posição de Saldo (/saldos/{produtoraId}) e projeção limpa (/extrato_produtor/{produtoraId})
   if (typeof calcSaldoProdutora === 'function') {
     const saldoPos = calcSaldoProdutora({
       produtoraId,
@@ -157,7 +207,7 @@ async function recalcularTodaProdutora(produtoraId, preloaded = null) {
     }
   }
 
-  await db.ref().update(updates);
+  await customDb.ref().update(updates);
   logger.info(`[recalcularTodaProdutora] Produtora ${produtoraId} recalculada com sucesso.`, {
     saldoDisponivel: cons.saldoDisponivel
   });
@@ -173,15 +223,15 @@ async function recalcularTodaProdutora(produtoraId, preloaded = null) {
   };
 }
 
-async function processarRecalculoProdutoraPorEvento(eventoId) {
+async function processarRecalculoProdutoraPorEvento(eventoId, customDb = db) {
   if (!eventoId) return null;
 
   const [evSnap, locaisSnap, despSnap, advSnap, antSnap] = await Promise.all([
-    db.ref(`/eventos/${eventoId}`).get(),
-    db.ref('/locais').get(),
-    db.ref('/despesas').get(),
-    db.ref('/advanced').get(),
-    db.ref('/antecipacoes').get()
+    customDb.ref(`/eventos/${eventoId}`).get(),
+    customDb.ref('/locais').get(),
+    customDb.ref('/despesas').get(),
+    customDb.ref('/advanced').get(),
+    customDb.ref('/antecipacoes').get()
   ]);
 
   if (!evSnap.exists()) {
@@ -193,18 +243,33 @@ async function processarRecalculoProdutoraPorEvento(eventoId) {
   const produtoraId = evento.produtoraId;
   if (!produtoraId) return null;
 
-  return recalcularTodaProdutora(produtoraId, {
-    locais: locaisSnap.val() || {},
-    despesas: despSnap.val() || {},
-    advanced: advSnap.val() || {},
-    antecipacoes: antSnap.val() || {}
-  });
+  return recalcularTodaProdutora(
+    produtoraId,
+    {
+      locais: locaisSnap.val() || {},
+      despesas: despSnap.val() || {},
+      advanced: advSnap.val() || {},
+      antecipacoes: antSnap.val() || {}
+    },
+    customDb
+  );
 }
 
 module.exports = {
   db,
   logger,
+  httpsV2,
+  databaseV2,
+  functionsV2,
+  toCents,
+  fromCents,
+  round2,
   formatarDataHoraBR,
+  obterDataAtualBR,
+  obterCompetenciaAtualBR,
+  extrairCompetencia,
+  competenciaEstaFechada,
+  PLANO_CONTAS,
   registrarAuditoria,
   recalcularTodaProdutora,
   processarRecalculoProdutoraPorEvento,

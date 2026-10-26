@@ -21,8 +21,24 @@
     return Number.isFinite(n) ? n : 0;
   }
 
+  function toCents(valorReais) {
+    return Math.round((toNum(valorReais) + Number.EPSILON) * 100);
+  }
+
+  function fromCents(valorCents) {
+    return Math.round(Number(valorCents || 0)) / 100;
+  }
+
   function round2(n) {
-    return Math.round((Number(n || 0) + Number.EPSILON) * 100) / 100;
+    return fromCents(toCents(n));
+  }
+
+  function addMoney(...valoresReais) {
+    return fromCents(valoresReais.reduce((acc, v) => acc + toCents(v), 0));
+  }
+
+  function subMoney(aReais, bReais) {
+    return fromCents(toCents(aReais) - toCents(bReais));
   }
 
   /**
@@ -796,6 +812,12 @@
   }
 
   return {
+    toNum,
+    toCents,
+    fromCents,
+    round2,
+    addMoney,
+    subMoney,
     capacidadeUsada,
     calcEvento,
     calcConsolidado,
@@ -810,17 +832,24 @@
 });
 
 if (typeof module === 'object' && module.exports && typeof require === 'function') {
-  Object.assign(
-    module.exports,
-    require('./shared/money'),
-    require('./ledger'),
-    require('./contas'),
-    require('./advanced'),
-    require('./saldos'),
-    require('./rebate'),
-    require('./spread'),
-    require('./fluxoCaixa')
-  );
+  const path = require('node:path');
+  const fs = require('node:fs');
+  const baseDir = fs.existsSync(path.join(__dirname, 'shared/money.js'))
+    ? __dirname
+    : path.resolve(__dirname, 'packages/motor-repasse/src');
+  if (fs.existsSync(path.join(baseDir, 'shared/money.js'))) {
+    Object.assign(
+      module.exports,
+      require(path.join(baseDir, 'shared/money')),
+      require(path.join(baseDir, 'ledger')),
+      require(path.join(baseDir, 'contas')),
+      require(path.join(baseDir, 'advanced')),
+      require(path.join(baseDir, 'saldos')),
+      require(path.join(baseDir, 'rebate')),
+      require(path.join(baseDir, 'spread')),
+      require(path.join(baseDir, 'fluxoCaixa'))
+    );
+  }
 }
 
 

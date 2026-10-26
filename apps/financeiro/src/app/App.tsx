@@ -24,6 +24,7 @@ import { contasReceberModule } from '../modules/contas-receber';
 import { saldosModule } from '../modules/saldos';
 import { fluxoCaixaModule } from '../modules/fluxo-caixa';
 import { ledgerModule } from '../modules/ledger';
+import { VERTICAL_FINANCEIRO_MODULES } from './generatedModules';
 
 export const REGISTERED_MODULES: FinancialModulePlugin[] = [
   eventosModule,
@@ -37,7 +38,8 @@ export const REGISTERED_MODULES: FinancialModulePlugin[] = [
   contasReceberModule,
   saldosModule,
   fluxoCaixaModule,
-  ledgerModule
+  ledgerModule,
+  ...VERTICAL_FINANCEIRO_MODULES
 ];
 
 const MODULE_META: Record<string, { desc: string; icon: 'saldo' | 'repasses' | 'contas' | 'antecipacoes' | 'despesas' }> = {

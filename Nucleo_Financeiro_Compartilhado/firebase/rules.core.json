@@ -1,0 +1,179 @@
+{
+  "rules": {
+    "lancamentos": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".indexOn": ["competencia", "produtoraId", "eventoId", "origemId"],
+      "$lancamentoId": {
+        ".write": "auth != null && auth.token.role === 'financeiro' && !data.exists() && root.child('fechamentos').child(newData.child('competencia').val()).child('fechado').val() !== true",
+        ".validate": "!data.exists() && newData.hasChildren(['competencia', 'contaDebito', 'contaCredito', 'valor', 'imutavel']) && newData.child('valor').isNumber() && newData.child('valor').val() > 0 && newData.child('contaDebito').isString() && newData.child('contaCredito').isString() && newData.child('contaDebito').val() !== newData.child('contaCredito').val() && newData.child('imutavel').val() === true"
+      }
+    },
+
+    "fechamentos": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'",
+      "$competencia": {
+        ".validate": "(!data.exists() || data.child('fechado').val() !== true || newData.child('fechado').val() === true) && newData.hasChildren(['competencia', 'fechado', 'status']) && newData.child('competencia').val() === $competencia"
+      }
+    },
+
+    "labels": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+
+    "contas_pagar": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'",
+      ".indexOn": ["produtoraId", "eventoId", "status"],
+      "$tituloId": {
+        ".validate": "newData.hasChildren(['produtoraId', 'categoria', 'status']) && (newData.child('valor').isNumber() || newData.child('valorOriginal').isNumber())"
+      }
+    },
+
+    "contas_receber": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'",
+      ".indexOn": ["produtoraId", "eventoId", "status"],
+      "$tituloId": {
+        ".validate": "newData.hasChildren(['produtoraId', 'categoria', 'status']) && newData.child('valor').isNumber() && newData.child('valor').val() > 0"
+      }
+    },
+
+    "saldos": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+
+    "fluxo_caixa": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+
+    "extrato_produtor": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      "$produtoraId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId))",
+        ".write": false
+      }
+    },
+
+    "config": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'",
+      "antecipacao": {
+        ".read": "auth != null"
+      }
+    },
+
+    "produtoras": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      "$produtoraId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId))",
+        ".write": "auth != null && auth.token.role === 'financeiro'"
+      }
+    },
+
+    "locais": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.role === 'financeiro'"
+    },
+
+    "eventos": {
+      ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && query.orderByChild === 'produtoraId' && query.equalTo === auth.token.produtoraId))",
+      ".indexOn": ["produtoraId"],
+      "$eventoId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
+        ".write": "auth != null && auth.token.role === 'financeiro'",
+        ".validate": "newData.hasChildren(['produtoraId', 'nome']) && newData.child('produtoraId').isString()"
+      }
+    },
+
+    "eventos_fin": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      "$eventoId": {
+        ".read": "auth != null && auth.token.role === 'financeiro'",
+        ".write": "auth != null && auth.token.role === 'financeiro'"
+      }
+    },
+
+    "negociacoes": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      "$eventoId": {
+        ".read": "auth != null && auth.token.role === 'financeiro'",
+        ".write": "auth != null && auth.token.role === 'financeiro'"
+      }
+    },
+
+    "despesas": {
+      ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && query.orderByChild === 'produtoraId' && query.equalTo === auth.token.produtoraId))",
+      ".indexOn": ["produtoraId", "eventoId"],
+      "$despesaId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
+        ".write": "auth != null && auth.token.role === 'financeiro'",
+        ".validate": "newData.hasChildren(['produtoraId', 'eventoId', 'valor']) && newData.child('valor').isNumber() && newData.child('valor').val() >= 0"
+      }
+    },
+
+    "advanced": {
+      ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && query.orderByChild === 'produtoraId' && query.equalTo === auth.token.produtoraId))",
+      ".indexOn": ["produtoraId", "escopo"],
+      "$advId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
+        ".write": "auth != null && auth.token.role === 'financeiro'",
+        ".validate": "newData.hasChildren(['produtoraId', 'valor', 'escopo']) && newData.child('valor').isNumber() && newData.child('valor').val() > 0"
+      }
+    },
+
+    "antecipacoes": {
+      ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && query.orderByChild === 'produtoraId' && query.equalTo === auth.token.produtoraId))",
+      ".indexOn": ["produtoraId", "eventoId"],
+      "$antId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
+        ".write": "auth != null && (auth.token.role === 'financeiro' || (!data.exists() && auth.token.role === 'produtor' && newData.child('produtoraId').val() === auth.token.produtoraId && newData.child('status').val() === 'Solicitada'))",
+        ".validate": "newData.hasChildren(['produtoraId', 'eventoId', 'valor', 'status']) && newData.child('valor').isNumber() && newData.child('valor').val() > 0 && root.child('eventos').child(newData.child('eventoId').val()).child('produtoraId').val() === newData.child('produtoraId').val() && (newData.child('status').val() === 'Solicitada' || newData.child('status').val() === 'Aprovada' || newData.child('status').val() === 'Paga' || newData.child('status').val() === 'Recusada')"
+      }
+    },
+
+    "contas": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      "$produtoraId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId))",
+        "$contaId": {
+          ".write": "auth != null && (auth.token.role === 'financeiro' || (!data.exists() && auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId && newData.child('status').val() === 'Pendente' && newData.child('padrao').val() === false))",
+          ".validate": "newData.hasChildren(['status']) && (newData.child('status').val() === 'Pendente' || newData.child('status').val() === 'Validada' || newData.child('status').val() === 'Inativa')"
+        }
+      }
+    },
+
+    "repasses": {
+      ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && query.orderByChild === 'produtoraId' && query.equalTo === auth.token.produtoraId))",
+      ".indexOn": ["produtoraId", "status"],
+      "$repasseId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
+        ".write": "auth != null && ((auth.token.role === 'financeiro' && !newData.child('memoriaCalculo').exists()) || (!data.exists() && auth.token.role === 'produtor' && newData.child('produtoraId').val() === auth.token.produtoraId && newData.child('status').val() === 'Solicitado' && (newData.child('forma').val() === 'PIX' || newData.child('forma').val() === 'TED') && !newData.child('memoriaCalculo').exists()))",
+        ".validate": "newData.hasChildren(['produtoraId', 'eventoIds', 'valorSolicitado', 'valorLiquido', 'forma', 'contaId', 'status']) && newData.child('valorSolicitado').isNumber() && newData.child('valorSolicitado').val() > 0 && newData.child('valorLiquido').isNumber() && newData.child('valorLiquido').val() > 0 && (newData.child('forma').val() === 'PIX' || newData.child('forma').val() === 'TED') && (newData.child('status').val() === 'Solicitado' || newData.child('status').val() === 'Aprovado' || newData.child('status').val() === 'Recusado' || newData.child('status').val() === 'Pago') && root.child('contas').child(newData.child('produtoraId').val()).child(newData.child('contaId').val()).child('status').val() === 'Validada' && (!data.exists() || (data.child('status').val() === 'Solicitado' && (newData.child('status').val() === 'Aprovado' || newData.child('status').val() === 'Recusado' || newData.child('status').val() === 'Pago')) || (data.child('status').val() === 'Aprovado' && newData.child('status').val() === 'Pago'))",
+        "memoriaCalculo": {
+          ".write": false
+        }
+      }
+    },
+
+    "borderos_produtor": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      "$produtoraId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId))",
+        ".write": false
+      }
+    },
+
+    "auditoria": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": "auth != null && auth.token.role === 'financeiro'",
+      "$auditId": {
+        ".write": "auth != null && auth.token.role === 'financeiro' && !data.exists()",
+        ".validate": "!data.exists() && newData.hasChildren(['dataHora', 'usuario', 'modulo', 'acao', 'resumo'])"
+      }
+    }
+  }
+}
