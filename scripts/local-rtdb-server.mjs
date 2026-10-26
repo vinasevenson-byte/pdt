@@ -342,12 +342,55 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const agora = formatarDataHoraBR();
-      if (body.acao === 'recusar') {
+      if (body.acao === 'estornar') {
+        if (rep.status !== 'Aprovado' && rep.status !== 'Pago') {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: `Status ${rep.status} não permite estorno` }));
+          return;
+        }
+        const evIds = rep.eventoIds || [];
+        const rateio = (rep.memoriaCalculo && rep.memoriaCalculo.rateioAplicado) || null;
+        if (rateio) {
+          for (const [evId, q] of Object.entries(rateio)) {
+            if (dbState.eventos[evId]) {
+              dbState.eventos[evId].jaRepassado = Math.max(0, Number(dbState.eventos[evId].jaRepassado || 0) - Number(q || 0));
+            }
+          }
+        } else if (evIds.length > 0) {
+          const quota = Math.round((Number(rep.valorSolicitado || 0) / evIds.length) * 100) / 100;
+          for (const evId of evIds) {
+            if (dbState.eventos[evId]) {
+              dbState.eventos[evId].jaRepassado = Math.max(0, Number(dbState.eventos[evId].jaRepassado || 0) - quota);
+            }
+          }
+        }
+        dbState.estornos = dbState.estornos || {};
+        dbState.estornos[`est_${body.repasseId}`] = {
+          id: `est_${body.repasseId}`,
+          repasseId: body.repasseId,
+          produtoraId: rep.produtoraId,
+          statusAnterior: rep.status,
+          motivo: body.motivo || 'Estorno no simulador local',
+          protocoloDevolucao: body.protocoloDevolucao || null,
+          estornadoEm: agora
+        };
+        rep.status = 'Estornado';
+        rep.estornadoEm = agora;
+        if (dbState.contas_pagar[`cp_rep_${body.repasseId}`]) {
+          dbState.contas_pagar[`cp_rep_${body.repasseId}`].status = 'Cancelada';
+        }
+      } else if (body.acao === 'recusar') {
         rep.status = 'Recusado';
         rep.motivoRecusa = body.motivo || 'Recusado pelo Financeiro';
         rep.decididoEm = agora;
         if (dbState.contas_pagar[`cp_rep_${body.repasseId}`]) {
           dbState.contas_pagar[`cp_rep_${body.repasseId}`].status = 'Cancelada';
+        }
+      } else if (rep.status === 'Aprovado' && body.acao === 'pagar') {
+        rep.status = 'Pago';
+        rep.pagoEm = agora;
+        if (dbState.contas_pagar[`cp_rep_${body.repasseId}`]) {
+          dbState.contas_pagar[`cp_rep_${body.repasseId}`].status = 'Paga';
         }
       } else {
         rep.status = body.acao === 'pagar' ? 'Pago' : 'Aprovado';
