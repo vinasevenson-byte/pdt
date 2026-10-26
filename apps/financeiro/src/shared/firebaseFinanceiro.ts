@@ -70,10 +70,13 @@ function obterServicosFirebase() {
   return { app, auth, db, functions };
 }
 
+export const ROLES_PAINEL_INTERNO = ['financeiro', 'operador', 'aprovador', 'auditor', 'fiscal', 'comercial'];
+
 export interface SessaoFinanceiro {
   uid: string;
   email: string;
   role: string | null;
+  subRole?: string | null;
   autorizado: boolean;
 }
 
@@ -106,11 +109,13 @@ export function observarSessaoFinanceiro(callback: (sessao: SessaoFinanceiro | n
     }
     const tokenResult = await user.getIdTokenResult();
     const role = (tokenResult.claims.role as string) || null;
+    const subRole = (tokenResult.claims.subRole as string) || role;
     callback({
       uid: user.uid,
       email: user.email || '',
       role,
-      autorizado: role === 'financeiro'
+      subRole,
+      autorizado: Boolean(role && ROLES_PAINEL_INTERNO.includes(role))
     });
   });
 }
@@ -245,7 +250,7 @@ export function assinarDadosFinanceiroRTDB(
 
 export async function chamarDecidirRepasse(payload: {
   repasseId: string;
-  acao: 'aprovar' | 'recusar' | 'pagar';
+  acao: 'aprovar' | 'recusar' | 'pagar' | 'estornar';
   motivo?: string;
   modoRateio?: 'proporcional' | 'manual';
   rateioManual?: Record<string, number>;
@@ -264,6 +269,28 @@ export async function chamarDecidirRepasse(payload: {
   }
   const { functions } = obterServicosFirebase();
   const fn = httpsCallable(functions, 'decidirRepasse');
+  const res = await fn(payload);
+  return res.data;
+}
+
+export async function chamarDecidirAntecipacao(payload: {
+  antId: string;
+  acao: 'aprovar' | 'recusar' | 'pagar';
+  motivo?: string;
+  protocoloBancario?: string;
+}) {
+  if (!firebaseFinanceiroConfigurado) {
+    const resp = await fetch(`${obterUrlServidorLocal()}/callable/decidirAntecipacao`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    notificarDadosLocais();
+    return data;
+  }
+  const { functions } = obterServicosFirebase();
+  const fn = httpsCallable(functions, 'decidirAntecipacao');
   const res = await fn(payload);
   return res.data;
 }
@@ -299,26 +326,12 @@ export async function atualizarStatusContaBancariaRTDB(
 export async function decidirAntecipacaoRTDB(
   antecipacaoId: string,
   status: 'Aprovada' | 'Recusada' | 'Paga',
-  usuarioEmail: string
+  _usuarioEmail?: string
 ) {
-  if (!firebaseFinanceiroConfigurado) {
-    await fetch(`${obterUrlServidorLocal()}/rtdb/decidirAntecipacao`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ antecipacaoId, status, usuarioEmail })
-    });
-    notificarDadosLocais();
-    return;
-  }
-  const { db } = obterServicosFirebase();
-  await update(ref(db, `/antecipacoes/${antecipacaoId}`), { status });
-  const audRef = push(ref(db, '/auditoria'));
-  await set(audRef, {
-    dataHora: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
-    usuario: usuarioEmail,
-    modulo: 'Antecipacoes',
-    eventoId: antecipacaoId,
-    acao: `Antecipação ${status}`,
-    resumo: `Antecipação ${antecipacaoId} atualizada para ${status}`
+  const acao = status === 'Aprovada' ? 'aprovar' : status === 'Recusada' ? 'recusar' : 'pagar';
+  return chamarDecidirAntecipacao({
+    antId: antecipacaoId,
+    acao,
+    motivo: status === 'Recusada' ? 'Recusada na análise financeira' : undefined
   });
 }

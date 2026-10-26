@@ -420,15 +420,16 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (req.method === 'POST' && url.pathname === '/rtdb/decidirAntecipacao') {
+    if (req.method === 'POST' && (url.pathname === '/rtdb/decidirAntecipacao' || url.pathname === '/callable/decidirAntecipacao')) {
       const body = await lerJsonBody(req);
-      const { antecipacaoId, status } = body;
-      if (dbState.antecipacoes[antecipacaoId]) {
-        dbState.antecipacoes[antecipacaoId].status = status;
+      const id = body.antId || body.antecipacaoId;
+      const status = body.status || (body.acao === 'aprovar' ? 'Aprovada' : body.acao === 'recusar' ? 'Recusada' : 'Paga');
+      if (dbState.antecipacoes[id]) {
+        dbState.antecipacoes[id].status = status;
       }
       recalcularTudo();
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: true }));
+      res.end(JSON.stringify({ ok: true, id, status }));
       return;
     }
 

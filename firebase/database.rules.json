@@ -139,7 +139,7 @@
       "$antId": {
         ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
         ".write": "auth != null && (auth.token.role === 'financeiro' || (!data.exists() && auth.token.role === 'produtor' && newData.child('produtoraId').val() === auth.token.produtoraId && newData.child('status').val() === 'Solicitada'))",
-        ".validate": "newData.hasChildren(['produtoraId', 'eventoId', 'valor', 'status']) && newData.child('valor').isNumber() && newData.child('valor').val() > 0 && root.child('eventos').child(newData.child('eventoId').val()).child('produtoraId').val() === newData.child('produtoraId').val() && (newData.child('status').val() === 'Solicitada' || newData.child('status').val() === 'Aprovada' || newData.child('status').val() === 'Paga' || newData.child('status').val() === 'Recusada')"
+        ".validate": "newData.hasChildren(['produtoraId', 'eventoId', 'valor', 'status']) && newData.child('valor').isNumber() && newData.child('valor').val() > 0 && root.child('eventos').child(newData.child('eventoId').val()).child('produtoraId').val() === newData.child('produtoraId').val() && (newData.child('status').val() === 'Solicitada' || newData.child('status').val() === 'Aprovada' || newData.child('status').val() === 'Paga' || newData.child('status').val() === 'Recusada') && (!data.exists() || (data.child('status').val() === 'Solicitada' && (newData.child('status').val() === 'Aprovada' || newData.child('status').val() === 'Recusada' || newData.child('status').val() === 'Paga')) || (data.child('status').val() === 'Aprovada' && newData.child('status').val() === 'Paga'))"
       }
     },
     "contas": {
@@ -161,10 +161,22 @@
       "$repasseId": {
         ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
         ".write": "auth != null && ((auth.token.role === 'financeiro' && !newData.child('memoriaCalculo').exists()) || (!data.exists() && auth.token.role === 'produtor' && newData.child('produtoraId').val() === auth.token.produtoraId && newData.child('status').val() === 'Solicitado' && (newData.child('forma').val() === 'PIX' || newData.child('forma').val() === 'TED') && !newData.child('memoriaCalculo').exists()))",
-        ".validate": "newData.hasChildren(['produtoraId', 'eventoIds', 'valorSolicitado', 'valorLiquido', 'forma', 'contaId', 'status']) && newData.child('valorSolicitado').isNumber() && newData.child('valorSolicitado').val() > 0 && newData.child('valorLiquido').isNumber() && newData.child('valorLiquido').val() > 0 && (newData.child('forma').val() === 'PIX' || newData.child('forma').val() === 'TED') && (newData.child('status').val() === 'Solicitado' || newData.child('status').val() === 'Aprovado' || newData.child('status').val() === 'Recusado' || newData.child('status').val() === 'Pago') && root.child('contas').child(newData.child('produtoraId').val()).child(newData.child('contaId').val()).child('status').val() === 'Validada' && (!data.exists() || (data.child('status').val() === 'Solicitado' && (newData.child('status').val() === 'Aprovado' || newData.child('status').val() === 'Recusado' || newData.child('status').val() === 'Pago')) || (data.child('status').val() === 'Aprovado' && newData.child('status').val() === 'Pago'))",
+        ".validate": "newData.hasChildren(['produtoraId', 'eventoIds', 'valorSolicitado', 'valorLiquido', 'forma', 'contaId', 'status']) && newData.child('valorSolicitado').isNumber() && newData.child('valorSolicitado').val() > 0 && newData.child('valorLiquido').isNumber() && newData.child('valorLiquido').val() > 0 && (newData.child('forma').val() === 'PIX' || newData.child('forma').val() === 'TED') && (newData.child('status').val() === 'Solicitado' || newData.child('status').val() === 'AguardandoSegundaAprovacao' || newData.child('status').val() === 'Aprovado' || newData.child('status').val() === 'Recusado' || newData.child('status').val() === 'Pago' || newData.child('status').val() === 'Estornado') && root.child('contas').child(newData.child('produtoraId').val()).child(newData.child('contaId').val()).child('status').val() === 'Validada' && (!data.exists() || (data.child('status').val() === 'Solicitado' && (newData.child('status').val() === 'AguardandoSegundaAprovacao' || newData.child('status').val() === 'Aprovado' || newData.child('status').val() === 'Recusado' || newData.child('status').val() === 'Pago')) || (data.child('status').val() === 'AguardandoSegundaAprovacao' && (newData.child('status').val() === 'Aprovado' || newData.child('status').val() === 'Recusado' || newData.child('status').val() === 'Pago')) || (data.child('status').val() === 'Aprovado' && (newData.child('status').val() === 'Pago' || newData.child('status').val() === 'Estornado')) || (data.child('status').val() === 'Pago' && newData.child('status').val() === 'Estornado'))",
         "memoriaCalculo": {
           ".write": false
         }
+      }
+    },
+    "eventos_dominio": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".indexOn": [
+        "tipo",
+        "origemModulo",
+        "status"
+      ],
+      "$eventoDominioId": {
+        ".write": "auth != null && auth.token.role === 'financeiro' && !data.exists()",
+        ".validate": "!data.exists() && newData.hasChildren(['tipo', 'origemModulo', 'status', 'criadoEm'])"
       }
     },
     "borderos_produtor": {

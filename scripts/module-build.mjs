@@ -380,10 +380,18 @@ export function executarBuildModulos(rootDir = ROOT_DIR) {
     fs.mkdirSync(path.dirname(absPath), { recursive: true });
     fs.writeFileSync(absPath, content, 'utf8');
   }
-  // Sincroniza cópia em Nucleo_Financeiro_Compartilhado se existir
+  // Sincroniza cópias espelhadas se existirem
   const nucleoRules = path.join(rootDir, 'Nucleo_Financeiro_Compartilhado/firebase/database.rules.json');
   if (fs.existsSync(path.dirname(nucleoRules))) {
     fs.writeFileSync(nucleoRules, arquivosAlvo.get(path.join(rootDir, 'database.rules.json')), 'utf8');
+  }
+  const mirrorFinGen = path.join(rootDir, 'Financeiro_DiskIngressos/src/app/generatedModules.ts');
+  if (fs.existsSync(path.dirname(mirrorFinGen))) {
+    fs.writeFileSync(mirrorFinGen, arquivosAlvo.get(path.join(rootDir, 'apps/financeiro/src/app/generatedModules.ts')), 'utf8');
+  }
+  const mirrorProdGen = path.join(rootDir, 'Portal_Produtor_DiskIngressos/src/app/generatedProdutorModules.ts');
+  if (fs.existsSync(path.dirname(mirrorProdGen))) {
+    fs.writeFileSync(mirrorProdGen, arquivosAlvo.get(path.join(rootDir, 'apps/produtor/src/app/generatedProdutorModules.ts')), 'utf8');
   }
   return { totalModulos: itens.length, arquivosGerados: Array.from(arquivosAlvo.keys()) };
 }

@@ -16,14 +16,18 @@ import { ContasProdutorModule } from '../modules/contas';
 import { AntecipacoesProdutorModule } from '../modules/antecipacoes';
 import { DespesasProdutorModule } from '../modules/despesas';
 import { BorderoProdutorModule } from '../modules/bordero';
+import { ExtratoProdutorModule } from '../modules/extrato';
+import { VERTICAL_PRODUTOR_MODULES } from './generatedProdutorModules';
 
 const TABS = [
   { id: 'saldo', label: 'Saldo Consolidado' },
   { id: 'repasses', label: 'Solicitar Repasse' },
+  { id: 'extrato', label: 'Extrato Consolidado' },
   { id: 'contas', label: 'Contas Bancárias' },
   { id: 'antecipacoes', label: 'Antecipações' },
   { id: 'despesas', label: 'Despesas' },
-  { id: 'bordero', label: 'Borderô' }
+  { id: 'bordero', label: 'Borderô' },
+  ...VERTICAL_PRODUTOR_MODULES.map(m => ({ id: m.id, label: m.title }))
 ];
 
 export function App() {
@@ -212,6 +216,10 @@ export function App() {
             {activeTab === 'antecipacoes' && <AntecipacoesProdutorModule dados={dados} />}
             {activeTab === 'despesas' && <DespesasProdutorModule dados={dados} initialEventoId={despesaEventoId} />}
             {activeTab === 'bordero' && <BorderoProdutorModule dados={dados} />}
+            {activeTab === 'extrato' && <ExtratoProdutorModule dados={dados} />}
+            {VERTICAL_PRODUTOR_MODULES.map(mod =>
+              activeTab === mod.id ? <mod.Component key={mod.id} dados={dados as unknown as Record<string, unknown>} /> : null
+            )}
           </div>
         </>
       )}

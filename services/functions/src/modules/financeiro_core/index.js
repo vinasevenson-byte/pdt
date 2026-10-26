@@ -8,7 +8,7 @@
 'use strict';
 
 const {
-  db,
+  db: defaultDb,
   httpsV2,
   formatarDataHoraBR,
   obterDataAtualBR,
@@ -16,12 +16,13 @@ const {
   somarDiasUteis,
   calcFluxoCaixa,
   baixarTitulo,
-  gerarEstornoLancamento
+  gerarEstornoLancamento,
+  temPermissao
 } = require('../../shared/recalculo');
 
 const { onCall, HttpsError } = httpsV2;
 
-async function atualizarSnapshotFluxoCaixa(customDb = db) {
+async function atualizarSnapshotFluxoCaixa(customDb = defaultDb) {
   const [crSnap, cpSnap] = await Promise.all([
     customDb.ref('/contas_receber').get(),
     customDb.ref('/contas_pagar').get()
@@ -40,10 +41,11 @@ async function atualizarSnapshotFluxoCaixa(customDb = db) {
   return snapshot;
 }
 
-exports.registrarBaixaTitulo = onCall(async (request) => {
+async function executarRegistrarBaixaTitulo(request, deps = {}) {
+  const db = deps.db || defaultDb;
   const auth = request.auth;
-  if (!auth || auth.token.role !== 'financeiro') {
-    throw new HttpsError('permission-denied', 'Apenas o perfil Financeiro pode baixar títulos.');
+  if (!auth || !temPermissao(auth.token, 'titulo:baixar')) {
+    throw new HttpsError('permission-denied', 'Apenas perfis com permissão "titulo:baixar" (Financeiro, Aprovador ou Operador) podem baixar títulos.');
   }
 
   const { natureza, tituloId, dataBaixa, contaBanco, historico } = request.data || {};
@@ -82,7 +84,7 @@ exports.registrarBaixaTitulo = onCall(async (request) => {
       [`/lancamentos/${novoLancRef.key}`]: lancamento
     };
     await db.ref().update(updates);
-    await atualizarSnapshotFluxoCaixa();
+    await atualizarSnapshotFluxoCaixa(db);
 
     await registrarAuditoria({
       usuario,
@@ -90,18 +92,19 @@ exports.registrarBaixaTitulo = onCall(async (request) => {
       eventoId: tituloAtualizado.eventoId || '',
       acao: `Baixa de Título (${tituloAtualizado.status})`,
       resumo: `Título ${tituloId} baixado por R$ ${Number(tituloAtualizado.valorBaixado).toFixed(2)}. Lançamento ledger: ${novoLancRef.key}.`
-    });
+    }, db);
 
     return { titulo: tituloAtualizado, lancamento };
   } catch (err) {
     throw new HttpsError('failed-precondition', err.message);
   }
-});
+}
 
-exports.estornarLancamento = onCall(async (request) => {
+async function executarEstornarLancamento(request, deps = {}) {
+  const db = deps.db || defaultDb;
   const auth = request.auth;
-  if (!auth || auth.token.role !== 'financeiro') {
-    throw new HttpsError('permission-denied', 'Apenas o perfil Financeiro pode estornar lançamentos no Ledger.');
+  if (!auth || !temPermissao(auth.token, 'ledger:estornar')) {
+    throw new HttpsError('permission-denied', 'Apenas perfis com permissão "ledger:estornar" (Financeiro ou Aprovador) podem estornar lançamentos no Ledger.');
   }
 
   const { lancamentoId, motivo, dataEstorno } = request.data || {};
@@ -140,18 +143,19 @@ exports.estornarLancamento = onCall(async (request) => {
       eventoId: estorno.eventoId || '',
       acao: 'Estorno Contábil',
       resumo: `Estorno ${estornoRef.key} gerado para lançamento original ${lancamentoId}: ${motivo}`
-    });
+    }, db);
 
     return estorno;
   } catch (err) {
     throw new HttpsError('failed-precondition', err.message);
   }
-});
+}
 
-exports.fecharCompetencia = onCall(async (request) => {
+async function executarFecharCompetencia(request, deps = {}) {
+  const db = deps.db || defaultDb;
   const auth = request.auth;
-  if (!auth || auth.token.role !== 'financeiro') {
-    throw new HttpsError('permission-denied', 'Apenas o perfil Financeiro pode fechar competências.');
+  if (!auth || !temPermissao(auth.token, 'competencia:fechar')) {
+    throw new HttpsError('permission-denied', 'Apenas perfis com permissão "competencia:fechar" (Financeiro, Aprovador ou Fiscal) podem fechar competências.');
   }
 
   const { competencia, observacoes = '' } = request.data || {};
@@ -182,7 +186,14 @@ exports.fecharCompetencia = onCall(async (request) => {
     eventoId: '',
     acao: 'Fechamento de Competência',
     resumo: `Competência ${competencia} encerrada por ${usuario}. Escrita retroativa no Ledger bloqueada.`
-  });
+  }, db);
 
   return payload;
-});
+}
+
+exports.registrarBaixaTitulo = onCall((request) => executarRegistrarBaixaTitulo(request));
+exports.estornarLancamento = onCall((request) => executarEstornarLancamento(request));
+exports.fecharCompetencia = onCall((request) => executarFecharCompetencia(request));
+exports.executarRegistrarBaixaTitulo = executarRegistrarBaixaTitulo;
+exports.executarEstornarLancamento = executarEstornarLancamento;
+exports.executarFecharCompetencia = executarFecharCompetencia;

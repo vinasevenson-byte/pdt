@@ -48,14 +48,14 @@ export const repassesModule: FinancialModulePlugin = {
                     <td style={{ padding: '8px' }}>{String(r.forma || 'PIX')}</td>
                     <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700 }}>{formatBRL(Number(r.valorSolicitado || 0))}</td>
                     <td style={{ padding: '8px', fontWeight: 700 }}>{status}</td>
-                    <td style={{ padding: '8px', display: 'flex', gap: '8px' }}>
-                      {status === 'Solicitado' && (
+                    <td style={{ padding: '8px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {(status === 'Solicitado' || status === 'AguardandoSegundaAprovacao') && (
                         <>
                           <button
                             onClick={() => chamarDecidirRepasse({ repasseId: r.id, acao: 'aprovar', modoRateio: 'proporcional' })}
                             style={{ padding: '6px 10px', borderRadius: '6px', border: 0, background: '#047857', color: '#fff', cursor: 'pointer' }}
                           >
-                            Aprovar
+                            {status === 'AguardandoSegundaAprovacao' ? '2ª Aprovação' : 'Aprovar'}
                           </button>
                           <button
                             onClick={() => chamarDecidirRepasse({ repasseId: r.id, acao: 'recusar', motivo: 'Recusado na conferência financeira' })}
@@ -64,6 +64,30 @@ export const repassesModule: FinancialModulePlugin = {
                             Recusar
                           </button>
                         </>
+                      )}
+                      {status === 'Aprovado' && (
+                        <>
+                          <button
+                            onClick={() => chamarDecidirRepasse({ repasseId: r.id, acao: 'pagar', protocoloBancario: `LIQ-${r.id}` })}
+                            style={{ padding: '6px 10px', borderRadius: '6px', border: 0, background: '#1d4ed8', color: '#fff', cursor: 'pointer' }}
+                          >
+                            Liquidar (Pago)
+                          </button>
+                          <button
+                            onClick={() => chamarDecidirRepasse({ repasseId: r.id, acao: 'estornar', motivo: 'Estorno administrativo de repasse aprovado' })}
+                            style={{ padding: '6px 10px', borderRadius: '6px', border: 0, background: '#7c2d12', color: '#fff', cursor: 'pointer' }}
+                          >
+                            Estornar
+                          </button>
+                        </>
+                      )}
+                      {status === 'Pago' && (
+                        <button
+                          onClick={() => chamarDecidirRepasse({ repasseId: r.id, acao: 'estornar', motivo: 'Estorno contábil de repasse liquidado' })}
+                          style={{ padding: '6px 10px', borderRadius: '6px', border: 0, background: '#7c2d12', color: '#fff', cursor: 'pointer' }}
+                        >
+                          Estornar
+                        </button>
                       )}
                     </td>
                   </tr>

@@ -1,0 +1,7 @@
+{
+  "name": "@diskingressos/core",
+  "version": "2.1.0",
+  "private": true,
+  "description": "Núcleo Transversal do ERP DiskIngressos — RBAC Granular, Alçada de Dupla Aprovação, Feature Flags e Outbox de Eventos de Domínio",
+  "main": "src/index.js"
+}

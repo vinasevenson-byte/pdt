@@ -12,9 +12,11 @@ const { toCents, fromCents } = require('../shared/money');
 const PLANO_CONTAS = Object.freeze({
   BANCO_CONTA_MOVIMENTO: '1.1.01.001 - Conta Movimento Bancária Disk',
   CLIENTES_ADQUIRENTES_RECEBER: '1.1.02.001 - Clientes e Adquirentes a Receber',
+  ADIANTAMENTOS_ANTECIPACOES_PRODUTOR: '1.1.03.001 - Antecipações Concedidas a Produtores',
   OBRIGACOES_REPASSES_PRODUTOR: '2.1.01.001 - Obrigações de Repasse Produtor',
   OBRIGACOES_RETENCOES_RECOLHER: '2.1.01.002 - Retenções de Eventos a Recolher',
   RECEITA_TAXAS_DISK: '3.1.01.001 - Receita de Taxas (Adm/Op) Disk',
+  RECEITA_ENCARGOS_ANTECIPACAO: '3.1.02.002 - Receita de Encargos sobre Antecipação',
   RECEITA_TARIFA_TRANSFERENCIA: '4.1.02.01 - Receita de Tarifa de Transferência (TED)'
 });
 

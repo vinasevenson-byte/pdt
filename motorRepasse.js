@@ -41,6 +41,12 @@
     return fromCents(toCents(aReais) - toCents(bReais));
   }
 
+  function mulPct(valorReais, percentual) {
+    const cents = toCents(valorReais);
+    const pct = toNum(percentual);
+    return fromCents(Math.round((cents * pct) / 100));
+  }
+
   /**
    * Utilitários de Calendário Bancário Brasileiro (segunda a sexta, descontando feriados nacionais)
    */
@@ -238,20 +244,21 @@
     const ingressosContados = capInfo.ingressosContados;
     const pctVendido = capInfo.pctVendido;
 
-    // Bilheteria das vendas de ingressos (SEM conveniência)
-    const bil = toNum(evento.bilheteria);
+    // Bilheteria das vendas de ingressos (SEM conveniência) — aritmética unificada em centavos inteiros
+    const bilCents = toCents(evento.bilheteria);
+    const bil = fromCents(bilCents);
 
     // TAXAS DISK
     const taxaAdmCfg = fin.taxaAdm || { ativo: false, percentual: 0 };
-    const taxaAdm = taxaAdmCfg.ativo ? round2(bil * (toNum(taxaAdmCfg.percentual) / 100)) : 0;
+    const taxaAdm = taxaAdmCfg.ativo ? mulPct(bil, taxaAdmCfg.percentual) : 0;
 
     const taxaOpCfg = (negociacao && negociacao.taxaOp) || { tipo: 'fixo', valor: 0 };
     const valOp = toNum(taxaOpCfg.valor);
     let taxaOp = 0;
     if (taxaOpCfg.tipo === 'porIngresso') {
-      taxaOp = round2(vendidos * valOp);
+      taxaOp = fromCents(Math.round(vendidos * toCents(valOp)));
     } else if (taxaOpCfg.tipo === 'percentual') {
-      taxaOp = round2(bil * (valOp / 100));
+      taxaOp = mulPct(bil, valOp);
     } else {
       taxaOp = round2(valOp);
     }
@@ -260,19 +267,19 @@
     const retencoesRaw = Array.isArray(fin.retencoes) ? fin.retencoes : [];
     const retencoesDetalhe = retencoesRaw.map(r => {
       const ativo = Boolean(r.ativo);
-      const baseRet = r.base === 'liquido' ? (bil - taxaAdm - taxaOp) : bil;
+      const baseRet = r.base === 'liquido' ? addMoney(bil, -taxaAdm, -taxaOp) : bil;
       let valorCalculado = 0;
 
       if (r.tipo === 'percentual') {
-        valorCalculado = baseRet * (toNum(r.percentual) / 100);
+        valorCalculado = mulPct(baseRet, r.percentual);
       } else if (r.tipo === 'fixo') {
-        valorCalculado = toNum(r.valorFixo);
+        valorCalculado = round2(r.valorFixo);
       } else if (r.tipo === 'maiorEntre') {
-        valorCalculado = Math.max(toNum(r.valorFixo), baseRet * (toNum(r.percentual) / 100));
+        valorCalculado = Math.max(round2(r.valorFixo), mulPct(baseRet, r.percentual));
       } else if (r.tipo === 'porIngresso') {
-        valorCalculado = vendidos * toNum(r.valorUnitario);
+        valorCalculado = fromCents(Math.round(vendidos * toCents(r.valorUnitario)));
       } else if (r.tipo === 'porCapacidade') {
-        valorCalculado = cap * toNum(r.valorUnitario);
+        valorCalculado = fromCents(Math.round(cap * toCents(r.valorUnitario)));
       }
 
       valorCalculado = round2(valorCalculado);
@@ -299,8 +306,8 @@
       };
     });
 
-    const totRetencoes = round2(
-      retencoesDetalhe.reduce((acc, item) => acc + item.valor, 0)
+    const totRetencoes = fromCents(
+      retencoesDetalhe.reduce((acc, item) => acc + toCents(item.valor), 0)
     );
 
     // DESCONTOS OPERACIONAIS
@@ -309,7 +316,7 @@
       const ativo = Boolean(d.ativo);
       const qtd = toNum(d.quantidade);
       const unit = toNum(d.valorUnitario);
-      const valor = ativo ? round2(qtd * unit) : 0;
+      const valor = ativo ? fromCents(Math.round(qtd * toCents(unit))) : 0;
       return {
         id: d.id,
         nome: d.nome,
@@ -320,8 +327,8 @@
       };
     });
 
-    const totOps = round2(
-      descontosDetalhe.reduce((acc, item) => acc + item.valor, 0)
+    const totOps = fromCents(
+      descontosDetalhe.reduce((acc, item) => acc + toCents(item.valor), 0)
     );
 
     const regra = fin.regra || {
@@ -351,45 +358,45 @@
       despesasPagasVal = round2(despesasLancadas);
       despesas = despesasPagasVal;
     } else if (Array.isArray(despesasLancadas)) {
-      despesasPagasVal = round2(
+      despesasPagasVal = fromCents(
         despesasLancadas
           .filter(d => !d.status || d.status === 'Pago')
-          .reduce((acc, d) => acc + toNum(d.valor), 0)
+          .reduce((acc, d) => acc + toCents(d.valor), 0)
       );
-      despesasAPagarVal = round2(
+      despesasAPagarVal = fromCents(
         despesasLancadas
           .filter(d => d.status === 'A pagar')
-          .reduce((acc, d) => acc + toNum(d.valor), 0)
+          .reduce((acc, d) => acc + toCents(d.valor), 0)
       );
-      despesas = round2(despesasPagasVal + (abaterDespesasAPagar ? despesasAPagarVal : 0));
+      despesas = addMoney(despesasPagasVal, abaterDespesasAPagar ? despesasAPagarVal : 0);
     }
 
-    const reserva = round2(bil * (toNum(regra.reservaReembolsoPct) / 100));
+    const reserva = mulPct(bil, regra.reservaReembolsoPct);
 
-    // RESULTADO
-    const resultado = round2(bil - taxaAdm - taxaOp - despesas - totRetencoes - totOps - reserva);
+    // RESULTADO (em centavos inteiros)
+    const resultado = addMoney(bil, -taxaAdm, -taxaOp, -despesas, -totRetencoes, -totOps, -reserva);
 
     // CRÉDITOS — SAEM DA TAXA ADM DO DISK (limitados a ela)
     const rebateCfg = fin.rebate || { ativo: false, tipo: 'percentual', valor: 0 };
     const rebateBruto = rebateCfg.ativo
-      ? round2(rebateCfg.tipo === 'percentual' ? bil * (toNum(rebateCfg.valor) / 100) : toNum(rebateCfg.valor))
+      ? (rebateCfg.tipo === 'percentual' ? mulPct(bil, rebateCfg.valor) : round2(rebateCfg.valor))
       : 0;
-    const rebate = round2(Math.min(rebateBruto, taxaAdm));
+    const rebate = fromCents(Math.min(toCents(rebateBruto), toCents(taxaAdm)));
 
     const patEvCfg = fin.patrocinioEvento || { ativo: false, descricao: '', valor: 0 };
-    const patrocinioBruto = patEvCfg.ativo ? round2(toNum(patEvCfg.valor)) : 0;
-    const patrocinio = round2(Math.min(patrocinioBruto, Math.max(0, taxaAdm - rebate)));
+    const patrocinioBruto = patEvCfg.ativo ? round2(patEvCfg.valor) : 0;
+    const patrocinio = fromCents(Math.min(toCents(patrocinioBruto), Math.max(0, toCents(taxaAdm) - toCents(rebate))));
 
-    const excedente = round2((rebateBruto + patrocinioBruto) - (rebate + patrocinio));
-    const taxaAdmLiquida = round2(taxaAdm - rebate - patrocinio);
-    const creditos = round2(rebate + patrocinio);
+    const excedente = subMoney(addMoney(rebateBruto, patrocinioBruto), addMoney(rebate, patrocinio));
+    const taxaAdmLiquida = addMoney(taxaAdm, -rebate, -patrocinio);
+    const creditos = addMoney(rebate, patrocinio);
 
     // TRAVAS
     const creditosSujeitosTrava = Boolean(regra.creditosSujeitosTrava);
-    const basePositiva = round2(Math.max(0, resultado + (creditosSujeitosTrava ? creditos : 0)));
+    const basePositiva = Math.max(0, addMoney(resultado, creditosSujeitosTrava ? creditos : 0));
 
     const pctResultado = toNum(regra.pctResultado);
-    const A = round2(basePositiva * (pctResultado / 100));
+    const A = mulPct(basePositiva, pctResultado);
 
     const faixasOrdenadas = (Array.isArray(regra.faixas) ? [...regra.faixas] : [])
       .map(f => ({
@@ -411,7 +418,7 @@
       }
     }
 
-    const B = round2(basePositiva * (liberaPctB / 100));
+    const B = mulPct(basePositiva, liberaPctB);
 
     // Cálculo de D+X em dias úteis bancários (segunda a sexta, sem feriados nacionais)
     const liberaTotalDmais = toNum(regra.liberaTotalDmais !== undefined ? regra.liberaTotalDmais : 2);
@@ -423,8 +430,8 @@
 
     const modo = regra.modo || 'MIN';
     let escolhido = modo === 'A' ? A : modo === 'B' ? B : Math.min(A, B);
-    const teto = toNum(regra.teto);
-    if (teto > 0) {
+    const teto = round2(regra.teto);
+    if (toCents(teto) > 0) {
       escolhido = Math.min(escolhido, teto);
     }
     if (infoPosEvento.liberadoPosEvento) {
@@ -432,17 +439,17 @@
     }
     escolhido = round2(escolhido);
 
-    const liberadoRegra = round2(escolhido + (creditosSujeitosTrava ? 0 : creditos));
+    const liberadoRegra = addMoney(escolhido, creditosSujeitosTrava ? 0 : creditos);
 
-    // ABATIMENTOS DO EVENTO
+    // ABATIMENTOS DO EVENTO (em centavos inteiros)
     let advEv = 0;
     if (typeof advancedEvento === 'number') {
       advEv = round2(advancedEvento);
     } else if (Array.isArray(advancedEvento)) {
-      advEv = round2(
+      advEv = fromCents(
         advancedEvento
           .filter(a => a.abaterNoProximo && (a.escopo === evento.id || a.escopo !== 'consolidado'))
-          .reduce((acc, a) => acc + toNum(a.valor), 0)
+          .reduce((acc, a) => acc + toCents(a.valor), 0)
       );
     }
 
@@ -450,18 +457,18 @@
     if (typeof antecipacoesEvento === 'number') {
       antEv = round2(antecipacoesEvento);
     } else if (Array.isArray(antecipacoesEvento)) {
-      antEv = round2(
+      antEv = fromCents(
         antecipacoesEvento
           .filter(a => a.abaterNoProximo && (!a.status || a.status === 'Aprovada' || a.status === 'Paga'))
-          .reduce((acc, a) => acc + toNum(a.valor) * (1 + toNum(a.taxaPct) / 100), 0)
+          .reduce((acc, a) => acc + toCents(a.valor) + toCents(mulPct(a.valor, a.taxaPct)), 0)
       );
     }
 
-    const jaRepassado = round2(toNum(evento.jaRepassado));
-    const bruto = round2(liberadoRegra - jaRepassado - advEv - antEv);
-    const liberavel = round2(Math.max(0, bruto));
-    const saldoDevedor = round2(Math.max(0, -bruto));
-    const retido = round2(Math.max(0, Math.max(0, resultado) + creditos - liberadoRegra));
+    const jaRepassado = round2(evento.jaRepassado);
+    const bruto = addMoney(liberadoRegra, -jaRepassado, -advEv, -antEv);
+    const liberavel = Math.max(0, bruto);
+    const saldoDevedor = Math.max(0, subMoney(0, bruto));
+    const retido = Math.max(0, addMoney(Math.max(0, resultado), creditos, -liberadoRegra));
 
     const proximaFaixa = proximaFaixaObj
       ? {
@@ -537,38 +544,38 @@
     const eventosLiberados = lista.filter(e => e.liberadoParaSolicitacao !== false);
 
     const advList = Array.isArray(advanced) ? advanced : Object.values(advanced || {});
-    const advConsolidado = round2(
+    const advConsolidado = fromCents(
       advList
         .filter(a => a && a.abaterNoProximo && a.escopo === 'consolidado')
-        .reduce((acc, a) => acc + toNum(a.valor), 0)
+        .reduce((acc, a) => acc + toCents(a.valor), 0)
     );
 
-    const taxaAdmLiqTotal = round2(
-      eventosLiberados.reduce((acc, e) => acc + toNum(e.taxaAdmLiquida), 0)
+    const taxaAdmLiqTotal = fromCents(
+      eventosLiberados.reduce((acc, e) => acc + toCents(e.taxaAdmLiquida), 0)
     );
 
     const patProdCfg = (produtora && produtora.patrocinio) || { ativo: false, descricao: '', valor: 0 };
-    const patrocinioProdutoraBruto = patProdCfg.ativo ? round2(toNum(patProdCfg.valor)) : 0;
-    const patrocinioProdutora = round2(Math.min(patrocinioProdutoraBruto, taxaAdmLiqTotal));
-    const excedentePatrocinioProdutora = round2(Math.max(0, patrocinioProdutoraBruto - patrocinioProdutora));
+    const patrocinioProdutoraBruto = patProdCfg.ativo ? round2(patProdCfg.valor) : 0;
+    const patrocinioProdutora = fromCents(Math.min(toCents(patrocinioProdutoraBruto), toCents(taxaAdmLiqTotal)));
+    const excedentePatrocinioProdutora = Math.max(0, subMoney(patrocinioProdutoraBruto, patrocinioProdutora));
 
-    const devedores = round2(
-      eventosLiberados.reduce((acc, e) => acc + toNum(e.saldoDevedor), 0)
+    const devedores = fromCents(
+      eventosLiberados.reduce((acc, e) => acc + toCents(e.saldoDevedor), 0)
     );
 
-    const liberavelEventos = round2(
-      eventosLiberados.reduce((acc, e) => acc + toNum(e.liberavel), 0)
+    const liberavelEventos = fromCents(
+      eventosLiberados.reduce((acc, e) => acc + toCents(e.liberavel), 0)
     );
 
     function disponivel(selecaoIds) {
       if (!Array.isArray(selecaoIds) || selecaoIds.length === 0) return 0;
-      const somaSelecionados = eventosLiberados
+      const somaSelecionadosCents = eventosLiberados
         .filter(e => selecaoIds.includes(e.id))
-        .reduce((acc, e) => acc + toNum(e.liberavel), 0);
-      if (somaSelecionados <= 0 && selecaoIds.every(id => !eventosLiberados.some(e => e.id === id))) {
+        .reduce((acc, e) => acc + toCents(e.liberavel), 0);
+      if (somaSelecionadosCents <= 0 && selecaoIds.every(id => !eventosLiberados.some(e => e.id === id))) {
         return 0;
       }
-      return round2(Math.max(0, somaSelecionados + patrocinioProdutora - advConsolidado - devedores));
+      return Math.max(0, addMoney(fromCents(somaSelecionadosCents), patrocinioProdutora, -advConsolidado, -devedores));
     }
 
     const saldoDisponivel = disponivel(eventosLiberados.map(e => e.id));
@@ -670,20 +677,20 @@
     }
 
     if (modoRateio === 'manual') {
-      let soma = 0;
+      let somaCents = 0;
       for (const ev of lista) {
-        const q = round2(Math.max(0, toNum(rateioManual && rateioManual[ev.id])));
-        quotasPorEvento[ev.id] = q;
-        soma = round2(soma + q);
+        const qCents = Math.max(0, toCents(rateioManual && rateioManual[ev.id]));
+        quotasPorEvento[ev.id] = fromCents(qCents);
+        somaCents += qCents;
       }
-      const diff = round2(Math.abs(soma - valSol));
-      if (diff > 0.01) {
+      const diffCents = Math.abs(somaCents - toCents(valSol));
+      if (diffCents > 1) {
         return {
           modoRateio: 'manual',
           valido: false,
-          erro: `A soma do rateio manual (R$ ${soma.toFixed(2)}) difere do valor do repasse (R$ ${valSol.toFixed(2)}).`,
+          erro: `A soma do rateio manual (R$ ${fromCents(somaCents).toFixed(2)}) difere do valor do repasse (R$ ${valSol.toFixed(2)}).`,
           quotasPorEvento,
-          somaQuotas: soma
+          somaQuotas: fromCents(somaCents)
         };
       }
       return {
@@ -691,23 +698,24 @@
         valido: true,
         erro: null,
         quotasPorEvento,
-        somaQuotas: soma
+        somaQuotas: fromCents(somaCents)
       };
     }
 
-    // Modo proporcional ao liberável de cada evento selecionado
-    const somaLiberavel = round2(lista.reduce((acc, e) => acc + Math.max(0, toNum(e.liberavel)), 0));
-    let acumulado = 0;
+    // Modo proporcional ao liberável de cada evento selecionado (em centavos inteiros)
+    const valSolCents = toCents(valSol);
+    const somaLiberavelCents = lista.reduce((acc, e) => acc + Math.max(0, toCents(e.liberavel)), 0);
+    let acumuladoCents = 0;
     lista.forEach((ev, idx) => {
       if (idx === lista.length - 1) {
-        const restante = round2(Math.max(0, valSol - acumulado));
-        quotasPorEvento[ev.id] = restante;
-        acumulado = round2(acumulado + restante);
+        const restanteCents = Math.max(0, valSolCents - acumuladoCents);
+        quotasPorEvento[ev.id] = fromCents(restanteCents);
+        acumuladoCents += restanteCents;
       } else {
-        const prop = somaLiberavel > 0 ? Math.max(0, toNum(ev.liberavel)) / somaLiberavel : (1 / lista.length);
-        const quota = round2(valSol * prop);
-        quotasPorEvento[ev.id] = quota;
-        acumulado = round2(acumulado + quota);
+        const prop = somaLiberavelCents > 0 ? Math.max(0, toCents(ev.liberavel)) / somaLiberavelCents : (1 / lista.length);
+        const quotaCents = Math.round(valSolCents * prop);
+        quotasPorEvento[ev.id] = fromCents(quotaCents);
+        acumuladoCents += quotaCents;
       }
     });
 
@@ -716,7 +724,7 @@
       valido: true,
       erro: null,
       quotasPorEvento,
-      somaQuotas: acumulado
+      somaQuotas: fromCents(acumuladoCents)
     };
   }
 
@@ -818,6 +826,7 @@
     round2,
     addMoney,
     subMoney,
+    mulPct,
     capacidadeUsada,
     calcEvento,
     calcConsolidado,

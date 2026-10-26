@@ -56,6 +56,31 @@ const motorPath = fs.existsSync(path.resolve(__dirname, '../../../../packages/mo
   ? path.resolve(__dirname, '../../../../packages/motor-repasse/src/index.js')
   : path.resolve(__dirname, '../../../../motorRepasse.js');
 
+const corePath = path.resolve(__dirname, '../../../../packages/core/src/index.js');
+const {
+  ROLES_SISTEMA,
+  ROLES_PAINEL_INTERNO,
+  MATRIZ_PERMISSOES,
+  extrairPapelEfetivo,
+  possuiAcessoPainelInterno,
+  temPermissao,
+  avaliarAlcadaDuplaAprovacao,
+  criarEventoDominio,
+  publicarEventoDominio
+} = fs.existsSync(corePath)
+  ? require(corePath)
+  : {
+      ROLES_SISTEMA: {},
+      ROLES_PAINEL_INTERNO: new Set(),
+      MATRIZ_PERMISSOES: {},
+      extrairPapelEfetivo: (t) => (t && (t.subRole || t.role)) || null,
+      possuiAcessoPainelInterno: (t) => Boolean(t && t.role && t.role !== 'produtor'),
+      temPermissao: (t) => Boolean(t && t.role === 'financeiro'),
+      avaliarAlcadaDuplaAprovacao: () => ({ requerSegundaAprovacao: false, concluido: true }),
+      criarEventoDominio: (d) => d,
+      publicarEventoDominio: async () => null
+    };
+
 const {
   toCents,
   fromCents,
@@ -280,5 +305,14 @@ module.exports = {
   gerarTitulosEvento,
   baixarTitulo,
   criarLancamentoPartidaDobrada,
-  gerarEstornoLancamento
+  gerarEstornoLancamento,
+  ROLES_SISTEMA,
+  ROLES_PAINEL_INTERNO,
+  MATRIZ_PERMISSOES,
+  extrairPapelEfetivo,
+  possuiAcessoPainelInterno,
+  temPermissao,
+  avaliarAlcadaDuplaAprovacao,
+  criarEventoDominio,
+  publicarEventoDominio
 };
