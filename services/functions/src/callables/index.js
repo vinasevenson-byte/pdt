@@ -129,18 +129,20 @@ function validarTransicaoRepasse(statusAtual, acao) {
 /**
  * Máquina de estados formal para transição de uma Antecipação.
  * Estados válidos:
- * - Solicitada -> Aprovada (acao: 'aprovar')
- * - Solicitada -> Recusada (acao: 'recusar')
- * - Solicitada -> Paga     (acao: 'pagar')
- * - Aprovada   -> Paga     (acao: 'pagar')
- * Estados terminais: 'Recusada' e 'Paga'.
+ * - Solicitada -> Aprovada  (acao: 'aprovar')
+ * - Solicitada -> Recusada  (acao: 'recusar')
+ * - Solicitada -> Paga      (acao: 'pagar')
+ * - Aprovada   -> Paga      (acao: 'pagar')
+ * - Aprovada   -> Estornada (acao: 'estornar')
+ * - Paga       -> Estornada (acao: 'estornar')
+ * Estados terminais: 'Recusada' e 'Estornada'.
  */
 function validarTransicaoAntecipacao(statusAtual, acao) {
-  if (!['aprovar', 'recusar', 'pagar'].includes(acao)) {
+  if (!['aprovar', 'recusar', 'pagar', 'estornar'].includes(acao)) {
     return {
       permitido: false,
       codigoErro: 'invalid-argument',
-      mensagem: 'Parâmetros inválidos. Informe acao ("aprovar", "recusar" ou "pagar").'
+      mensagem: 'Parâmetros inválidos. Informe acao ("aprovar", "recusar", "pagar" ou "estornar").'
     };
   }
 
@@ -152,7 +154,21 @@ function validarTransicaoAntecipacao(statusAtual, acao) {
     };
   }
 
-  if (statusAtual === 'Paga' || statusAtual === 'Recusada') {
+  if (acao === 'estornar') {
+    if (statusAtual === 'Aprovada') {
+      return { permitido: true, modoExecucao: 'estornar_aprovada', statusDestino: 'Estornada' };
+    }
+    if (statusAtual === 'Paga') {
+      return { permitido: true, modoExecucao: 'estornar_paga', statusDestino: 'Estornada' };
+    }
+    return {
+      permitido: false,
+      codigoErro: 'failed-precondition',
+      mensagem: `Transição inválida: apenas antecipações com status "Aprovada" ou "Paga" podem ser estornadas (status atual: "${statusAtual}").`
+    };
+  }
+
+  if (statusAtual === 'Paga' || statusAtual === 'Recusada' || statusAtual === 'Estornada') {
     return {
       permitido: false,
       codigoErro: 'failed-precondition',
@@ -285,6 +301,24 @@ async function liberarLockComRollback(customDb, repasseId, statusAnterior) {
     _lockEm: null,
     _lockEmMs: null
   });
+}
+
+/**
+ * Ajusta atomicamente /eventos/{evId}/jaRepassado usando .transaction() para evitar corrida
+ * caso dois repasses distintos do mesmo evento sejam aprovados ou estornados simultaneamente.
+ */
+async function ajustarJaRepassadoAtomico(customDb, evId, deltaCents) {
+  const jaRepRef = customDb.ref(`/eventos/${evId}/jaRepassado`);
+  if (typeof jaRepRef.transaction === 'function') {
+    await jaRepRef.transaction((atual) => {
+      const atualCents = toCents(atual || 0);
+      return fromCents(Math.max(0, atualCents + deltaCents));
+    });
+    return;
+  }
+  const snap = await jaRepRef.get();
+  const atualCents = toCents(snap.exists() ? snap.val() : 0);
+  await jaRepRef.set(fromCents(Math.max(0, atualCents + deltaCents)));
 }
 
 /**
@@ -666,13 +700,12 @@ async function executarEstornarRepasse(request, deps = {}) {
     const mem = repasse.memoriaCalculo || {};
     const rateioAplicado = mem.rateioAplicado || {};
 
-    // 3. Reverte jaRepassado de cada evento usando o rateio gravado na memória de cálculo
+    // 3. Reverte jaRepassado de cada evento de forma atômica usando o rateio gravado na memória de cálculo
     for (const [evId, quotaVal] of Object.entries(rateioAplicado)) {
       const evSnap = await customDb.ref(`/eventos/${evId}`).get();
       if (evSnap.exists()) {
-        const atualCents = toCents(evSnap.val().jaRepassado || 0);
         const quotaCents = toCents(quotaVal || 0);
-        updates[`/eventos/${evId}/jaRepassado`] = fromCents(Math.max(0, atualCents - quotaCents));
+        await ajustarJaRepassadoAtomico(customDb, evId, -quotaCents);
       }
     }
 
@@ -1057,7 +1090,7 @@ async function executarDecidirRepasse(request, deps = {}) {
 
     for (const evCalc of selecionados) {
       const quotaCents = toCents(rateioEventos[evCalc.id] || 0);
-      updates[`/eventos/${evCalc.id}/jaRepassado`] = fromCents(toCents(evCalc.jaRepassado) + quotaCents);
+      await ajustarJaRepassadoAtomico(customDb, evCalc.id, quotaCents);
     }
 
     const advancedAbatidosIds = [];
@@ -1240,6 +1273,8 @@ async function executarSolicitarAntecipacao(request, deps = {}) {
   }
 
   const novaAntRef = customDb.ref('/antecipacoes').push();
+  const antId = novaAntRef.key;
+  const encargoCents = Math.round((toCents(valorSolicitado) * taxaPct) / 100);
   const payload = {
     produtoraId,
     eventoId,
@@ -1247,36 +1282,55 @@ async function executarSolicitarAntecipacao(request, deps = {}) {
     valor: valorSolicitado,
     valorCents: toCents(valorSolicitado),
     taxaPct,
+    encargo: fromCents(encargoCents),
+    encargoCents,
     abaterNoProximo: true,
     status: 'Solicitada'
   };
 
   await novaAntRef.set(payload);
+  await customDb.ref(`/contas_pagar/cp_ant_${antId}`).set({
+    id: `cp_ant_${antId}`,
+    natureza: 'pagar',
+    produtoraId,
+    eventoId,
+    antecipacaoId: antId,
+    categoria: 'Antecipação Produtor',
+    fornecedor: produtoraId,
+    valor: valorSolicitado,
+    valorCents: toCents(valorSolicitado),
+    valorOriginal: valorSolicitado,
+    valorPago: 0,
+    valorBaixadoCents: 0,
+    status: 'Prevista',
+    criadoEm: formatarDataHoraBR(nowDate)
+  });
+
   await registrarAuditoria(
     {
       usuario: auth.token.email || auth.uid,
       modulo: 'Antecipacoes',
       eventoId,
       acao: 'Solicitação de Antecipação',
-      resumo: `Antecipação ${novaAntRef.key} solicitada por ${produtoraId} — R$ ${payload.valor.toFixed(2)}.`
+      resumo: `Antecipação ${antId} solicitada por ${produtoraId} — R$ ${payload.valor.toFixed(2)}.`
     },
     customDb
   );
-  logger.info(`[solicitarAntecipacao] Antecipação ${novaAntRef.key} solicitada por ${produtoraId}`, payload);
-  return { id: novaAntRef.key, ...payload };
+  logger.info(`[solicitarAntecipacao] Antecipação ${antId} solicitada por ${produtoraId}`, payload);
+  return { id: antId, ...payload };
 }
 
 /**
- * Decisão server-side para Antecipações com máquina de estados, lock transacional e lançamento no Ledger ao pagar.
+ * Decisão server-side para Antecipações com máquina de estados, lock transacional, estorno e lançamento no Ledger ao pagar.
  */
 async function executarDecidirAntecipacao(request, deps = {}) {
   const customDb = deps.db || defaultDb;
   const nowDate = deps.nowDate || new Date();
   const auth = request.auth;
 
-  const { antId, acao, motivo = '', protocoloBancario = '' } = request.data || {};
-  if (!antId || !['aprovar', 'recusar', 'pagar'].includes(acao)) {
-    throw new HttpsError('invalid-argument', 'Informe antId e acao ("aprovar", "recusar" ou "pagar").');
+  const { antId, acao, motivo = '', protocoloBancario = '', protocoloDevolucao = '' } = request.data || {};
+  if (!antId || !['aprovar', 'recusar', 'pagar', 'estornar'].includes(acao)) {
+    throw new HttpsError('invalid-argument', 'Informe antId e acao ("aprovar", "recusar", "pagar" ou "estornar").');
   }
 
   const permissaoNecessaria = `antecipacao:${acao}`;
@@ -1291,6 +1345,7 @@ async function executarDecidirAntecipacao(request, deps = {}) {
   const agora = formatarDataHoraBR(nowDate);
   const dataContabilBR = obterDataAtualBR(nowDate);
   const competenciaBR = obterCompetenciaAtualBR(nowDate);
+  const protoDevolucao = String(protocoloDevolucao || protocoloBancario || '').trim();
 
   const { antOriginal: ant, transicao } = await adquirirLockTransacionalAntecipacao(
     customDb,
@@ -1303,15 +1358,111 @@ async function executarDecidirAntecipacao(request, deps = {}) {
 
   try {
     let fechamentosMap = {};
-    if (transicao.statusDestino === 'Paga') {
+    if (transicao.statusDestino === 'Paga' || transicao.modoExecucao === 'estornar_paga') {
       const fechSnap = await customDb.ref('/fechamentos').get();
       fechamentosMap = (fechSnap && fechSnap.val()) || {};
       if (competenciaEstaFechada(competenciaBR, fechamentosMap)) {
         throw new HttpsError(
           'failed-precondition',
-          `A competência ${competenciaBR} está encerrada em /fechamentos e bloqueia o pagamento de antecipação.`
+          `A competência ${competenciaBR} está encerrada em /fechamentos e bloqueia movimentações contábeis de antecipação.`
         );
       }
+    }
+
+    // Caso Estorno de Antecipação (Aprovada -> Estornada ou Paga -> Estornada)
+    if (transicao.modoExecucao === 'estornar_aprovada' || transicao.modoExecucao === 'estornar_paga') {
+      if (!motivo || String(motivo).trim().length < 3) {
+        throw new HttpsError('invalid-argument', 'Informe obrigatoriamente o motivo do estorno da antecipação (mínimo 3 caracteres).');
+      }
+      if (ant.abaterNoProximo === false) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Não é permitido estornar uma antecipação que já foi abatida em um repasse. Estorne o repasse correspondente primeiro.'
+        );
+      }
+
+      const segregacaoAtiva =
+        deps.estornoSegregacao !== undefined
+          ? Boolean(deps.estornoSegregacao)
+          : process.env.ESTORNO_SEGREGACAO !== 'false';
+
+      if (segregacaoAtiva) {
+        const operadorAnterior = transicao.modoExecucao === 'estornar_paga' ? (ant.pagoPor || ant.decididoPor) : ant.decididoPor;
+        if (operadorAnterior && operadorAnterior === usuarioEmail) {
+          throw new HttpsError(
+            'failed-precondition',
+            `Segregação de funções: o operador (${usuarioEmail}) que ${transicao.modoExecucao === 'estornar_paga' ? 'liquidou' : 'aprovou'} a antecipação não pode estorná-la.`
+          );
+        }
+      }
+
+      const updatesEstorno = {
+        [`/antecipacoes/${antId}/status`]: 'Estornada',
+        [`/antecipacoes/${antId}/abaterNoProximo`]: false,
+        [`/antecipacoes/${antId}/estornadoEm`]: agora,
+        [`/antecipacoes/${antId}/_statusAnterior`]: null,
+        [`/antecipacoes/${antId}/_lockOperador`]: null,
+        [`/antecipacoes/${antId}/_lockEm`]: null,
+        [`/antecipacoes/${antId}/_lockEmMs`]: null,
+        [`/contas_pagar/cp_ant_${antId}/status`]: 'Cancelada'
+      };
+
+      const lancamentosEstornoIds = [];
+      if (transicao.modoExecucao === 'estornar_paga') {
+        if (!protoDevolucao || protoDevolucao.length < 3) {
+          throw new HttpsError(
+            'invalid-argument',
+            'Para estornar uma antecipação já Paga, informe obrigatoriamente o protocolo da devolução bancária (protocoloDevolucao).'
+          );
+        }
+        const lncAntSnap = await customDb.ref(`/lancamentos/lnc_ant_${antId}`).get();
+        if (lncAntSnap.exists()) {
+          const estAntId = `lnc_est_ant_${antId}`;
+          const estAnt = gerarEstornoLancamento(
+            { id: `lnc_ant_${antId}`, ...lncAntSnap.val() },
+            {
+              id: estAntId,
+              motivo: `${String(motivo).trim()} (Protocolo devolução: ${protoDevolucao})`,
+              data: dataContabilBR,
+              competencia: competenciaBR,
+              usuario: usuarioEmail
+            },
+            fechamentosMap
+          );
+          updatesEstorno[`/lancamentos/${estAntId}`] = estAnt;
+          lancamentosEstornoIds.push(estAntId);
+        }
+      }
+
+      const estornoId = `est_ant_${antId}`;
+      updatesEstorno[`/estornos/${estornoId}`] = {
+        id: estornoId,
+        antecipacaoId: antId,
+        repasseId: antId,
+        produtoraId: ant.produtoraId,
+        eventoId: ant.eventoId || null,
+        statusAnterior: ant.status,
+        valor: ant.valor,
+        motivo: String(motivo).trim(),
+        protocoloDevolucao: protoDevolucao || null,
+        lancamentosEstornoIds,
+        estornadoPor: usuarioEmail,
+        estornadoEm: agora
+      };
+
+      await customDb.ref().update(updatesEstorno);
+      await registrarAuditoria(
+        {
+          usuario: usuarioEmail,
+          modulo: 'Antecipacoes',
+          eventoId: ant.eventoId || '',
+          acao: `Estorno de Antecipação (${ant.status} -> Estornada)`,
+          resumo: `Antecipação ${antId} estornada por ${usuarioEmail}. Motivo: ${String(motivo).trim()}.`
+        },
+        customDb
+      );
+      await recalcularTodaProdutora(ant.produtoraId, null, customDb);
+      return { id: antId, status: 'Estornada', estornoId, lancamentosEstornoIds };
     }
 
     if (transicao.modoExecucao === 'recusar_solicitada') {
@@ -1326,6 +1477,7 @@ async function executarDecidirAntecipacao(request, deps = {}) {
         _lockEmMs: null
       };
       await customDb.ref(`/antecipacoes/${antId}`).update(updatesRecusa);
+      await customDb.ref(`/contas_pagar/cp_ant_${antId}/status`).set('Cancelada');
       await registrarAuditoria(
         {
           usuario: usuarioEmail,
@@ -1376,7 +1528,8 @@ async function executarDecidirAntecipacao(request, deps = {}) {
       [`/antecipacoes/${antId}/_statusAnterior`]: null,
       [`/antecipacoes/${antId}/_lockOperador`]: null,
       [`/antecipacoes/${antId}/_lockEm`]: null,
-      [`/antecipacoes/${antId}/_lockEmMs`]: null
+      [`/antecipacoes/${antId}/_lockEmMs`]: null,
+      [`/contas_pagar/cp_ant_${antId}/status`]: statusFinal === 'Paga' ? 'Paga' : 'Aprovada'
     };
 
     if (statusFinal === 'Paga') {

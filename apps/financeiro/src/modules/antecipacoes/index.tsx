@@ -63,11 +63,27 @@ export const antecipacoesModule: FinancialModulePlugin = {
                         </>
                       )}
                       {st === 'Aprovada' && (
+                        <>
+                          <button
+                            onClick={() => chamarDecidirAntecipacao({ antId: id, acao: 'pagar' })}
+                            style={{ padding: '4px 8px', borderRadius: '4px', border: 0, background: '#1d4ed8', color: '#fff', cursor: 'pointer' }}
+                          >
+                            Liquidar (Paga)
+                          </button>
+                          <button
+                            onClick={() => chamarDecidirAntecipacao({ antId: id, acao: 'estornar', motivo: 'Cancelamento administrativo de antecipação aprovada' })}
+                            style={{ padding: '4px 8px', borderRadius: '4px', border: 0, background: '#7c2d12', color: '#fff', cursor: 'pointer' }}
+                          >
+                            Estornar
+                          </button>
+                        </>
+                      )}
+                      {st === 'Paga' && (
                         <button
-                          onClick={() => chamarDecidirAntecipacao({ antId: id, acao: 'pagar' })}
-                          style={{ padding: '4px 8px', borderRadius: '4px', border: 0, background: '#1d4ed8', color: '#fff', cursor: 'pointer' }}
+                          onClick={() => chamarDecidirAntecipacao({ antId: id, acao: 'estornar', motivo: 'Devolução bancária de antecipação', protocoloDevolucao: `DEV-ANT-${id}` })}
+                          style={{ padding: '4px 8px', borderRadius: '4px', border: 0, background: '#7c2d12', color: '#fff', cursor: 'pointer' }}
                         >
-                          Liquidar (Paga)
+                          Estornar
                         </button>
                       )}
                     </td>

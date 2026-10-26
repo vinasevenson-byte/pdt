@@ -276,9 +276,10 @@ export async function chamarDecidirRepasse(payload: {
 
 export async function chamarDecidirAntecipacao(payload: {
   antId: string;
-  acao: 'aprovar' | 'recusar' | 'pagar';
+  acao: 'aprovar' | 'recusar' | 'pagar' | 'estornar';
   motivo?: string;
   protocoloBancario?: string;
+  protocoloDevolucao?: string;
 }) {
   if (!firebaseFinanceiroConfigurado) {
     const resp = await fetch(`${obterUrlServidorLocal()}/callable/decidirAntecipacao`, {

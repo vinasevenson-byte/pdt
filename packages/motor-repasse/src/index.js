@@ -819,6 +819,32 @@
     };
   }
 
+  /**
+   * 7. derivarJaRepassadoPorEvento(eventoId, repasses, fallbackJaRepassado)
+   * Deriva o total já repassado de um evento diretamente das quotas registradas em
+   * `memoriaCalculo.rateioAplicado` dos repasses ativos (`Aprovado` ou `Pago`),
+   * eliminando divergências por condição de corrida entre aprovações/estornos simultâneos.
+   */
+  function derivarJaRepassadoPorEvento(eventoId, repasses = [], fallbackJaRepassado = 0) {
+    if (!eventoId) return round2(fallbackJaRepassado);
+    const lista = Array.isArray(repasses) ? repasses : Object.values(repasses || {});
+    const possuiHistoricoRateio = lista.some(
+      r => r && r.memoriaCalculo && r.memoriaCalculo.rateioAplicado && typeof r.memoriaCalculo.rateioAplicado === 'object'
+    );
+    if (!possuiHistoricoRateio) {
+      return round2(fallbackJaRepassado);
+    }
+    const somaCents = lista
+      .filter(r => r && (r.status === 'Aprovado' || r.status === 'Pago'))
+      .reduce((acc, r) => {
+        const quota = r.memoriaCalculo && r.memoriaCalculo.rateioAplicado
+          ? r.memoriaCalculo.rateioAplicado[eventoId]
+          : 0;
+        return acc + Math.max(0, toCents(quota || 0));
+      }, 0);
+    return fromCents(somaCents);
+  }
+
   return {
     toNum,
     toCents,
@@ -836,7 +862,8 @@
     calcularDataLiberacaoPosEvento,
     calcTransferencia,
     calcularRateioRepasse,
-    simularVendasEvento
+    simularVendasEvento,
+    derivarJaRepassadoPorEvento
   };
 });
 

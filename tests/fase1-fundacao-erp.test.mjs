@@ -21,6 +21,7 @@ const {
   mulPct,
   calcEvento,
   calcConsolidado,
+  derivarJaRepassadoPorEvento,
   PLANO_CONTAS,
   obterCompetenciaAtualBR
 } = require('../packages/motor-repasse/src/index.js');
@@ -464,14 +465,52 @@ test('FASE 1 (Item 4) — Callable decidirAntecipacao com máquina de estados, v
   assert.equal(lancAnt.valorCents, toCents(500));
   assert.equal(lancAnt.contaDebito, PLANO_CONTAS.ADIANTAMENTOS_ANTECIPACOES_PRODUTOR);
   assert.equal(lancAnt.contaCredito, PLANO_CONTAS.BANCO_CONTA_MOVIMENTO);
+  assert.equal(mockDb.store.contas_pagar[`cp_ant_${ant.id}`].status, 'Paga');
+
+  // 3º passo: Estorno da antecipação Paga exige outro aprovador (ESTORNO_SEGREGACAO) e protocoloDevolucao
+  await assert.rejects(
+    () =>
+      executarDecidirAntecipacao(
+        {
+          auth: { uid: 'u_op', token: { role: 'financeiro', subRole: 'aprovador', email: 'op@diskingressos.com.br' } },
+          data: { antId: ant.id, acao: 'estornar', motivo: 'Tentativa pelo mesmo operador', protocoloDevolucao: 'DEV-ANT-1' }
+        },
+        { db: mockDb, nowDate: dataFixa }
+      ),
+    (err) => err.code === 'failed-precondition' && err.message.includes('Segregação de funções')
+  );
+
+  const estAnt = await executarDecidirAntecipacao(
+    {
+      auth: { uid: 'u_aprov2', token: { role: 'financeiro', subRole: 'aprovador', email: 'aprovador2@diskingressos.com.br' } },
+      data: { antId: ant.id, acao: 'estornar', motivo: 'Devolução bancária da antecipação', protocoloDevolucao: 'DEV-ANT-500' }
+    },
+    { db: mockDb, nowDate: dataFixa }
+  );
+  assert.equal(estAnt.status, 'Estornada');
+  assert.equal(mockDb.store.antecipacoes[ant.id].status, 'Estornada');
+  assert.equal(mockDb.store.antecipacoes[ant.id].abaterNoProximo, false);
+  assert.equal(mockDb.store.contas_pagar[`cp_ant_${ant.id}`].status, 'Cancelada');
+  assert.ok(mockDb.store.lancamentos[`lnc_est_ant_${ant.id}`], 'Deve gerar lançamento inverso de estorno para a antecipação paga');
+  assert.equal(mockDb.store.estornos[`est_ant_${ant.id}`].protocoloDevolucao, 'DEV-ANT-500');
 });
 
-test('FASE 1 (Item 5) — Aritmética Unificada em Centavos no Motor e sincronia do Extrato do Produtor', () => {
+test('FASE 1 (Item 5) — Aritmética Unificada em Centavos, Derivação de jaRepassado sem Corrida e Extrato do Produtor', () => {
   // Casos clássicos de erro IEEE-754 em ponto flutuante
   assert.equal(addMoney(0.1, 0.2), 0.3);
   assert.equal(subMoney(1.0, 0.9), 0.1);
   assert.equal(mulPct(19.99, 10), 2.0);
   assert.equal(toCents(addMoney(10.01, 20.02, 30.03)), 6006);
+
+  // Derivação determinística de jaRepassado a partir dos repasses ativos (Aprovado / Pago), ignorando Estornado / Recusado
+  const repassesSimulados = [
+    { status: 'Pago', memoriaCalculo: { rateioAplicado: { festival: 5000, polaquedo: 100.25 } } },
+    { status: 'Aprovado', memoriaCalculo: { rateioAplicado: { festival: 1200.5, polaquedo: 39.75 } } },
+    { status: 'Estornado', memoriaCalculo: { rateioAplicado: { festival: 3000, polaquedo: 200 } } },
+    { status: 'Recusado', memoriaCalculo: { rateioAplicado: { festival: 999 } } }
+  ];
+  assert.equal(derivarJaRepassadoPorEvento('festival', repassesSimulados, 0), 6200.5);
+  assert.equal(derivarJaRepassadoPorEvento('polaquedo', repassesSimulados, 0), 140.0);
 
   // Verifica que o módulo de Extrato do Produtor e o App do Produtor conectam VERTICAL_PRODUTOR_MODULES
   const appProdutorRaw = readFileSync(path.resolve('apps/produtor/src/app/App.tsx'), 'utf8');

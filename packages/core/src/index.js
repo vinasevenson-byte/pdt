@@ -37,6 +37,7 @@ const MATRIZ_PERMISSOES = Object.freeze({
     'antecipacao:aprovar',
     'antecipacao:recusar',
     'antecipacao:pagar',
+    'antecipacao:estornar',
     'titulo:baixar',
     'ledger:estornar',
     'competencia:fechar',

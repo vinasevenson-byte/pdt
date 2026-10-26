@@ -90,6 +90,7 @@ const {
   bordero_produtor,
   calcTransferencia,
   calcularRateioRepasse,
+  derivarJaRepassadoPorEvento,
   somarDiasUteis,
   calcSaldoProdutora,
   extrato_produtor,
@@ -175,7 +176,13 @@ async function recalcularTodaProdutora(produtoraId, preloaded = null, customDb =
   const eventosCalculados = [];
 
   for (const [evId, evData] of Object.entries(eventosMap)) {
-    const ev = { id: evId, ...evData };
+    const jaRepassadoDerivado = typeof derivarJaRepassadoPorEvento === 'function'
+      ? derivarJaRepassadoPorEvento(evId, repassesList, evData.jaRepassado)
+      : round2(evData.jaRepassado || 0);
+    if (toCents(evData.jaRepassado || 0) !== toCents(jaRepassadoDerivado)) {
+      updates[`/eventos/${evId}/jaRepassado`] = jaRepassadoDerivado;
+    }
+    const ev = { id: evId, ...evData, jaRepassado: jaRepassadoDerivado };
     const fin = eventosFinMap[evId] || {};
     const neg = negMap[evId] || {};
     const loc = locaisMap[ev.localId] || {};
@@ -300,6 +307,7 @@ module.exports = {
   processarRecalculoProdutoraPorEvento,
   calcTransferencia,
   calcularRateioRepasse,
+  derivarJaRepassadoPorEvento,
   somarDiasUteis,
   calcFluxoCaixa,
   gerarTitulosEvento,
