@@ -1,0 +1,31 @@
+{
+  "id": "financeiro/chargebacks",
+  "dominio": "financeiro",
+  "modulo": "chargebacks",
+  "titulo": "Chargebacks",
+  "descricao": "Módulo vertical Chargebacks (financeiro/chargebacks)",
+  "camada": "node",
+  "rolesPermitidas": [
+    "financeiro"
+  ],
+  "rtdb": {
+    "no": "chargebacks",
+    "leituraProdutor": "nenhuma",
+    "escritaCliente": "nenhuma",
+    "camposObrigatorios": [
+      "produtoraId",
+      "status"
+    ]
+  },
+  "ui": {
+    "financeiro": true,
+    "produtor": false
+  },
+  "dependencias": [
+    "core"
+  ],
+  "eventosEmitidos": [
+    "financeiro.chargebacks.processado"
+  ],
+  "featureFlag": "ff_financeiro_chargebacks"
+}

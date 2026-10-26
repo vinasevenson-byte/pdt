@@ -1,0 +1,31 @@
+{
+  "id": "financeiro/conciliacao",
+  "dominio": "financeiro",
+  "modulo": "conciliacao",
+  "titulo": "Conciliacao",
+  "descricao": "Módulo vertical Conciliacao (financeiro/conciliacao)",
+  "camada": "java",
+  "rolesPermitidas": [
+    "financeiro"
+  ],
+  "rtdb": {
+    "no": "conciliacoes",
+    "leituraProdutor": "nenhuma",
+    "escritaCliente": "nenhuma",
+    "camposObrigatorios": [
+      "produtoraId",
+      "status"
+    ]
+  },
+  "ui": {
+    "financeiro": true,
+    "produtor": false
+  },
+  "dependencias": [
+    "core"
+  ],
+  "eventosEmitidos": [
+    "financeiro.conciliacao.processado"
+  ],
+  "featureFlag": "ff_financeiro_conciliacao"
+}

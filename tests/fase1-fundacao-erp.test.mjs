@@ -519,3 +519,61 @@ test('FASE 1 (Item 5) — Aritmética Unificada em Centavos, Derivação de jaRe
   assert.ok(appProdutorRaw.includes('ExtratoProdutorModule'), 'App do Produtor deve renderizar ExtratoProdutorModule');
   assert.ok(extratoProdutorRaw.includes('Histórico de Movimentações de Repasse'), 'ExtratoProdutorModule deve exibir tabela completa');
 });
+
+test('FASE 2 — Módulos Verticais de Negócio (chargebacks, conciliacao, contratos) e Modal de Decisão sem window.prompt', () => {
+  const { calcularImpactoChargebacksEvento } = require('../modules/financeiro/chargebacks/domain/index.js');
+  const { conciliarExtratoBancario } = require('../modules/financeiro/conciliacao/domain/index.js');
+  const { validarVigenciaContrato } = require('../modules/comercial/contratos/domain/index.js');
+
+  // 1. Chargebacks frente à reserva de reembolso
+  const impactoCb = calcularImpactoChargebacksEvento({
+    reservaReembolso: 500,
+    chargebacks: [
+      { status: 'Confirmado', valor: 350.4 },
+      { status: 'EmDisputa', valor: 249.6 },
+      { status: 'Revertido', valor: 100 }
+    ]
+  });
+  assert.equal(impactoCb.exposicaoTotal, 600);
+  assert.equal(impactoCb.cobertoPelaReserva, 500);
+  assert.equal(impactoCb.excedenteDescoberto, 100);
+
+  // 2. Conciliação Bancária em centavos contra lançamentos do Ledger
+  const resConc = conciliarExtratoBancario({
+    itensExtrato: [
+      { id: 'ext_1', protocolo: 'TED-100', valor: 4990 },
+      { id: 'ext_2', protocolo: 'PIX-200', valor: 1500 },
+      { id: 'ext_3', protocolo: 'TED-SEM-LEDGER', valor: 300 }
+    ],
+    lancamentosLedger: [
+      { id: 'lnc_1', historico: 'Liquidação TED-100', valorCents: 499000 },
+      { id: 'lnc_2', historico: 'Liquidação PIX-200', valorCents: 149000 }
+    ]
+  });
+  assert.equal(resConc.conciliados.length, 1);
+  assert.equal(resConc.divergentesValor.length, 1);
+  assert.equal(resConc.divergentesValor[0].diferenca, 10);
+  assert.equal(resConc.pendentesExtrato.length, 1);
+  assert.equal(resConc.conciliadoComSucesso, false);
+
+  // 3. Vigência de Contratos Comerciais
+  const vig = validarVigenciaContrato(
+    {
+      id: 'ctr_1',
+      produtoraId: 'prod_exemplo',
+      assinadoProdutor: true,
+      assinadoComercial: true,
+      vigenciaInicio: '2026-01-01',
+      vigenciaFim: '2026-12-31',
+      status: 'Assinado'
+    },
+    '2026-10-26'
+  );
+  assert.equal(vig.vigente, true);
+  assert.equal(vig.statusCalculado, 'Vigente');
+
+  // 4. UI do Financeiro utiliza ModalDecisaoFinanceira em vez de window.prompt
+  const repassesUiRaw = readFileSync(path.resolve('apps/financeiro/src/modules/repasses/index.tsx'), 'utf8');
+  assert.equal(repassesUiRaw.includes('window.prompt'), false, 'UI de Repasses não deve usar window.prompt');
+  assert.ok(repassesUiRaw.includes('renderizarPainelDecisaoInline'), 'UI de Repasses deve usar modal inline dedicado');
+});

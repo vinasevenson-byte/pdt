@@ -1,0 +1,32 @@
+{
+  "id": "comercial/contratos",
+  "dominio": "comercial",
+  "modulo": "contratos",
+  "titulo": "Contratos",
+  "descricao": "Módulo vertical Contratos (comercial/contratos)",
+  "camada": "node",
+  "rolesPermitidas": [
+    "financeiro",
+    "produtor"
+  ],
+  "rtdb": {
+    "no": "contratos",
+    "leituraProdutor": "dono",
+    "escritaCliente": "nenhuma",
+    "camposObrigatorios": [
+      "produtoraId",
+      "status"
+    ]
+  },
+  "ui": {
+    "financeiro": true,
+    "produtor": true
+  },
+  "dependencias": [
+    "core"
+  ],
+  "eventosEmitidos": [
+    "comercial.contratos.processado"
+  ],
+  "featureFlag": "ff_comercial_contratos"
+}

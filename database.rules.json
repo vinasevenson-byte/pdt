@@ -205,6 +205,39 @@
         ".write": "auth != null && auth.token.role === 'financeiro' && !data.exists()",
         ".validate": "!data.exists() && newData.hasChildren(['dataHora', 'usuario', 'modulo', 'acao', 'resumo'])"
       }
+    },
+    "contratos": {
+      ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && query.orderByChild === 'produtoraId' && query.equalTo === auth.token.produtoraId))",
+      ".indexOn": [
+        "produtoraId"
+      ],
+      "$itemId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
+        ".write": false,
+        ".validate": "newData.hasChildren(['produtoraId', 'status'])"
+      }
+    },
+    "chargebacks": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".indexOn": [
+        "produtoraId"
+      ],
+      "$itemId": {
+        ".read": "auth != null && auth.token.role === 'financeiro'",
+        ".write": false,
+        ".validate": "newData.hasChildren(['produtoraId', 'status'])"
+      }
+    },
+    "conciliacoes": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".indexOn": [
+        "produtoraId"
+      ],
+      "$itemId": {
+        ".read": "auth != null && auth.token.role === 'financeiro'",
+        ".write": false,
+        ".validate": "newData.hasChildren(['produtoraId', 'status'])"
+      }
     }
   }
 }
