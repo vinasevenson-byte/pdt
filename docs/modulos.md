@@ -6,7 +6,7 @@ Cada módulo de negócio vive isolado em `modules/<dominio>/<modulo>/` com um `m
 
 ```bash
 # Criar módulo financeiro apenas servidor/interno (Node)
-npm run module:new -- financeiro/estornos --no estornos
+npm run module:new -- financeiro/chargebacks --no chargebacks
 
 # Criar módulo financeiro com backend Java (Spring Boot)
 npm run module:new -- financeiro/conciliacao --no conciliacoes --java

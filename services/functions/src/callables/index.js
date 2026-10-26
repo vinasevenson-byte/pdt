@@ -573,10 +573,11 @@ async function executarSolicitarRepasse(request, deps = {}) {
 
 /**
  * Estorno / Cancelamento de Repasse Aprovado ou Pago.
- * - Reverte jaRepassado em cada evento contemplado no rateio
- * - Restaura abaterNoProximo = true nos adiantamentos (advanced) e antecipações que foram consumidos neste repasse
- * - Cancela/estorna a obrigação em /contas_pagar/cp_rep_{repasseId}
- * - Se o repasse estava 'Pago', exige competência aberta em /fechamentos e gera lançamentos inversos no Ledger
+ * - Aprovado: cancelamento (devolve jaRepassado, restaura abatimentos registrados, cancela CP, sem lançamento no ledger)
+ * - Pago: devolução (exige protocolo de devolução bancária, valida competência aberta, gera contrapartidas inversas no ledger)
+ * - Segregação: quem aprovou/liquidou o repasse não pode estorná-lo (salvo ESTORNO_SEGREGACAO=false em dev)
+ * - Isolamento do Produtor: o produtor vê apenas status='Estornado'; o motivo interno fica restrito a /estornos
+ * - Repasses legados sem abatimentosAplicados retornam restauracaoAbatimentos='manual' com advertência na auditoria
  */
 async function executarEstornarRepasse(request, deps = {}) {
   const customDb = deps.db || defaultDb;
@@ -590,7 +591,7 @@ async function executarEstornarRepasse(request, deps = {}) {
     );
   }
 
-  const { repasseId, motivo } = request.data || {};
+  const { repasseId, motivo, protocoloDevolucao, protocoloBancario } = request.data || {};
   if (!repasseId || !motivo || String(motivo).trim().length < 3) {
     throw new HttpsError('invalid-argument', 'Informe obrigatoriamente repasseId e o motivo do estorno (mínimo 3 caracteres).');
   }
@@ -600,6 +601,7 @@ async function executarEstornarRepasse(request, deps = {}) {
   const dataContabilBR = obterDataAtualBR(nowDate);
   const competenciaBR = obterCompetenciaAtualBR(nowDate);
   const motivoLimpo = String(motivo).trim();
+  const protoDevolucao = String(protocoloDevolucao || protocoloBancario || '').trim();
 
   const { repasseOriginal: repasse, transicao } = await adquirirLockTransacionalRepasse(
     customDb,
@@ -611,8 +613,45 @@ async function executarEstornarRepasse(request, deps = {}) {
   );
 
   try {
+    // 1. Segregação de funções: quem liquidou (ou aprovou) não pode estornar, salvo ESTORNO_SEGREGACAO=false
+    const segregacaoAtiva =
+      deps.estornoSegregacao !== undefined
+        ? Boolean(deps.estornoSegregacao)
+        : process.env.ESTORNO_SEGREGACAO !== 'false';
+
+    if (segregacaoAtiva) {
+      const uidLiquidacao = repasse.assinaturaLiquidacao && repasse.assinaturaLiquidacao.uid;
+      const emailLiquidacao = repasse.pagoPor || (repasse.assinaturaLiquidacao && repasse.assinaturaLiquidacao.email);
+      const uidAprovacao = repasse.assinaturaFinanceiro && repasse.assinaturaFinanceiro.uid;
+      const emailAprovacao = repasse.decididoPor || (repasse.assinaturaFinanceiro && repasse.assinaturaFinanceiro.email);
+
+      const mesmoLiquidador =
+        transicao.modoExecucao === 'estornar_pago' &&
+        ((auth.uid && uidLiquidacao && auth.uid === uidLiquidacao) ||
+          (usuarioEmail && emailLiquidacao && usuarioEmail === emailLiquidacao));
+
+      const mesmoAprovador =
+        transicao.modoExecucao === 'estornar_aprovado' &&
+        ((auth.uid && uidAprovacao && auth.uid === uidAprovacao) ||
+          (usuarioEmail && emailAprovacao && usuarioEmail === emailAprovacao));
+
+      if (mesmoLiquidador || mesmoAprovador) {
+        throw new HttpsError(
+          'failed-precondition',
+          `Segregação de funções: o operador (${usuarioEmail}) que ${transicao.modoExecucao === 'estornar_pago' ? 'liquidou' : 'aprovou'} o repasse não pode estorná-lo.`
+        );
+      }
+    }
+
+    // 2. Se estava Pago, exige protocolo de devolução bancária e competência aberta em /fechamentos
     let fechamentosMap = {};
     if (transicao.modoExecucao === 'estornar_pago') {
+      if (!protoDevolucao || protoDevolucao.length < 3) {
+        throw new HttpsError(
+          'invalid-argument',
+          'Para estornar um repasse já Pago, informe obrigatoriamente o protocolo da devolução bancária (protocoloDevolucao).'
+        );
+      }
       const fechSnap = await customDb.ref('/fechamentos').get();
       fechamentosMap = (fechSnap && fechSnap.val()) || {};
       if (competenciaEstaFechada(competenciaBR, fechamentosMap)) {
@@ -627,7 +666,7 @@ async function executarEstornarRepasse(request, deps = {}) {
     const mem = repasse.memoriaCalculo || {};
     const rateioAplicado = mem.rateioAplicado || {};
 
-    // 1. Reverte jaRepassado de cada evento usando o rateio gravado na memória de cálculo
+    // 3. Reverte jaRepassado de cada evento usando o rateio gravado na memória de cálculo
     for (const [evId, quotaVal] of Object.entries(rateioAplicado)) {
       const evSnap = await customDb.ref(`/eventos/${evId}`).get();
       if (evSnap.exists()) {
@@ -637,47 +676,20 @@ async function executarEstornarRepasse(request, deps = {}) {
       }
     }
 
-    // 2. Restaura abaterNoProximo = true nos itens de advanced e antecipacoes abatidos no repasse
+    // 4. Restaura abaterNoProximo = true nos itens de advanced e antecipacoes registrados em abatimentosAplicados
     const abatimentos = mem.abatimentosAplicados || null;
-    if (abatimentos) {
+    let restauracaoAbatimentos = 'manual';
+    if (abatimentos && (Array.isArray(abatimentos.advancedIds) || Array.isArray(abatimentos.antecipacaoIds))) {
+      restauracaoAbatimentos = 'automatica';
       for (const advId of abatimentos.advancedIds || []) {
         updates[`/advanced/${advId}/abaterNoProximo`] = true;
       }
       for (const antId of abatimentos.antecipacaoIds || []) {
         updates[`/antecipacoes/${antId}/abaterNoProximo`] = true;
       }
-    } else {
-      // Fallback caso memoriaCalculo antiga não tenha abatimentosAplicados explícitos
-      const [advSnap, antSnap] = await Promise.all([
-        customDb.ref('/advanced').get(),
-        customDb.ref('/antecipacoes').get()
-      ]);
-      const advMap = advSnap.val() || {};
-      for (const [advId, adv] of Object.entries(advMap)) {
-        if (
-          adv &&
-          adv.produtoraId === repasse.produtoraId &&
-          adv.abaterNoProximo === false &&
-          (adv.escopo === 'consolidado' || (repasse.eventoIds || []).includes(adv.escopo))
-        ) {
-          updates[`/advanced/${advId}/abaterNoProximo`] = true;
-        }
-      }
-      const antMap = antSnap.val() || {};
-      for (const [antId, ant] of Object.entries(antMap)) {
-        if (
-          ant &&
-          ant.produtoraId === repasse.produtoraId &&
-          ant.abaterNoProximo === false &&
-          (repasse.eventoIds || []).includes(ant.eventoId) &&
-          (ant.status === 'Aprovada' || ant.status === 'Paga')
-        ) {
-          updates[`/antecipacoes/${antId}/abaterNoProximo`] = true;
-        }
-      }
     }
 
-    // 3. Se estava Pago, gera lançamentos contábeis inversos no Ledger
+    // 5. Se estava Pago, gera lançamentos contábeis inversos no Ledger na competência atual
     const lancamentosEstornoIds = [];
     if (transicao.modoExecucao === 'estornar_pago') {
       const [lncRepSnap, lncTarSnap] = await Promise.all([
@@ -689,7 +701,13 @@ async function executarEstornarRepasse(request, deps = {}) {
         const estRepId = `lnc_est_rep_${repasseId}`;
         const estRep = gerarEstornoLancamento(
           { id: `lnc_rep_${repasseId}`, ...lncRepSnap.val() },
-          { id: estRepId, motivo: motivoLimpo, data: dataContabilBR, competencia: competenciaBR, usuario: usuarioEmail },
+          {
+            id: estRepId,
+            motivo: `${motivoLimpo} (Protocolo devolução: ${protoDevolucao})`,
+            data: dataContabilBR,
+            competencia: competenciaBR,
+            usuario: usuarioEmail
+          },
           fechamentosMap
         );
         updates[`/lancamentos/${estRepId}`] = estRep;
@@ -700,7 +718,13 @@ async function executarEstornarRepasse(request, deps = {}) {
         const estTarId = `lnc_est_tar_${repasseId}`;
         const estTar = gerarEstornoLancamento(
           { id: `lnc_tar_${repasseId}`, ...lncTarSnap.val() },
-          { id: estTarId, motivo: motivoLimpo, data: dataContabilBR, competencia: competenciaBR, usuario: usuarioEmail },
+          {
+            id: estTarId,
+            motivo: `${motivoLimpo} (Protocolo devolução: ${protoDevolucao})`,
+            data: dataContabilBR,
+            competencia: competenciaBR,
+            usuario: usuarioEmail
+          },
           fechamentosMap
         );
         updates[`/lancamentos/${estTarId}`] = estTar;
@@ -708,28 +732,48 @@ async function executarEstornarRepasse(request, deps = {}) {
       }
     }
 
-    // 4. Atualiza Contas a Pagar e o próprio Repasse
+    // 6. Atualiza Contas a Pagar, grava motivo interno em /estornos (oculto do Produtor) e atualiza /repasses
     updates[`/contas_pagar/cp_rep_${repasseId}/status`] = 'Cancelada';
     updates[`/contas_pagar/cp_rep_${repasseId}/estornadoEm`] = agora;
-    updates[`/contas_pagar/cp_rep_${repasseId}/motivoEstorno`] = motivoLimpo;
 
+    const estornoId = `est_${repasseId}`;
+    const registroEstorno = {
+      id: estornoId,
+      repasseId,
+      produtoraId: repasse.produtoraId,
+      eventoIds: repasse.eventoIds || [],
+      statusAnterior: repasse.status,
+      valorSolicitado: repasse.valorSolicitado,
+      valorLiquido: repasse.valorLiquido,
+      motivo: motivoLimpo,
+      protocoloDevolucao: protoDevolucao || null,
+      restauracaoAbatimentos,
+      lancamentosEstornoIds,
+      estornadoPor: usuarioEmail,
+      estornadoEm: agora,
+      assinaturaEstorno: {
+        uid: auth.uid,
+        email: usuarioEmail,
+        protocoloDevolucao: protoDevolucao || null,
+        assinadoEm: agora
+      }
+    };
+    updates[`/estornos/${estornoId}`] = registroEstorno;
+
+    // No nó /repasses (lido pelo produtor), grava apenas status='Estornado' e estornadoEm, SEM expor o motivo interno
     updates[`/repasses/${repasseId}/status`] = 'Estornado';
-    updates[`/repasses/${repasseId}/statusAnteriorEstorno`] = repasse.status;
-    updates[`/repasses/${repasseId}/motivoEstorno`] = motivoLimpo;
-    updates[`/repasses/${repasseId}/estornadoPor`] = usuarioEmail;
     updates[`/repasses/${repasseId}/estornadoEm`] = agora;
     updates[`/repasses/${repasseId}/_statusAnterior`] = null;
     updates[`/repasses/${repasseId}/_lockOperador`] = null;
     updates[`/repasses/${repasseId}/_lockEm`] = null;
     updates[`/repasses/${repasseId}/_lockEmMs`] = null;
-    updates[`/repasses/${repasseId}/assinaturaEstorno`] = {
-      uid: auth.uid,
-      email: usuarioEmail,
-      motivo: motivoLimpo,
-      assinadoEm: agora
-    };
 
     await customDb.ref().update(updates);
+
+    const avisoManual =
+      restauracaoAbatimentos === 'manual'
+        ? ' [ATENÇÃO: repasse legado sem abatimentosAplicados; conferir advanced e antecipações manualmente]'
+        : '';
 
     await registrarAuditoria(
       {
@@ -737,7 +781,7 @@ async function executarEstornarRepasse(request, deps = {}) {
         modulo: 'Repasses',
         eventoId: (repasse.eventoIds || []).join(', '),
         acao: `Estorno de Repasse (${repasse.status} -> Estornado)`,
-        resumo: `Repasse ${repasseId} estornado por ${usuarioEmail}. Motivo: ${motivoLimpo}.`
+        resumo: `Repasse ${repasseId} estornado por ${usuarioEmail}. Motivo: ${motivoLimpo}.${protoDevolucao ? ` Protocolo devolução: ${protoDevolucao}.` : ''}${avisoManual}`
       },
       customDb
     );
@@ -748,9 +792,10 @@ async function executarEstornarRepasse(request, deps = {}) {
       referenciaId: repasseId,
       produtoraId: repasse.produtoraId,
       payload: {
+        estornoId,
         statusAnterior: repasse.status,
         valorSolicitado: repasse.valorSolicitado,
-        motivo: motivoLimpo,
+        restauracaoAbatimentos,
         lancamentosEstornoIds
       },
       criadoEm: agora
@@ -760,7 +805,9 @@ async function executarEstornarRepasse(request, deps = {}) {
 
     return {
       status: 'Estornado',
+      estornoId,
       statusAnterior: repasse.status,
+      restauracaoAbatimentos,
       lancamentosEstornoIds
     };
   } catch (err) {

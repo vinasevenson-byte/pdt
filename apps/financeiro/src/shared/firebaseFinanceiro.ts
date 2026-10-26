@@ -252,6 +252,7 @@ export async function chamarDecidirRepasse(payload: {
   repasseId: string;
   acao: 'aprovar' | 'recusar' | 'pagar' | 'estornar';
   motivo?: string;
+  protocoloDevolucao?: string;
   modoRateio?: 'proporcional' | 'manual';
   rateioManual?: Record<string, number>;
   protocoloBancario?: string;

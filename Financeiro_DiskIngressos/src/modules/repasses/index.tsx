@@ -74,7 +74,13 @@ export const repassesModule: FinancialModulePlugin = {
                             Liquidar (Pago)
                           </button>
                           <button
-                            onClick={() => chamarDecidirRepasse({ repasseId: r.id, acao: 'estornar', motivo: 'Estorno administrativo de repasse aprovado' })}
+                            onClick={() => {
+                              const motivo = typeof window !== 'undefined' && typeof window.prompt === 'function'
+                                ? window.prompt('Informe o motivo do cancelamento/estorno do repasse aprovado:', 'Cancelamento administrativo antes da liquidação')
+                                : 'Cancelamento administrativo antes da liquidação';
+                              if (!motivo) return;
+                              chamarDecidirRepasse({ repasseId: r.id, acao: 'estornar', motivo });
+                            }}
                             style={{ padding: '6px 10px', borderRadius: '6px', border: 0, background: '#7c2d12', color: '#fff', cursor: 'pointer' }}
                           >
                             Estornar
@@ -83,7 +89,17 @@ export const repassesModule: FinancialModulePlugin = {
                       )}
                       {status === 'Pago' && (
                         <button
-                          onClick={() => chamarDecidirRepasse({ repasseId: r.id, acao: 'estornar', motivo: 'Estorno contábil de repasse liquidado' })}
+                          onClick={() => {
+                            const motivo = typeof window !== 'undefined' && typeof window.prompt === 'function'
+                              ? window.prompt('Informe o motivo do estorno do repasse pago:', 'Devolução bancária de transferência')
+                              : 'Devolução bancária de transferência';
+                            if (!motivo) return;
+                            const protocoloDevolucao = typeof window !== 'undefined' && typeof window.prompt === 'function'
+                              ? window.prompt('Informe o protocolo da devolução bancária:', `DEV-${r.id}`)
+                              : `DEV-${r.id}`;
+                            if (!protocoloDevolucao) return;
+                            chamarDecidirRepasse({ repasseId: r.id, acao: 'estornar', motivo, protocoloDevolucao });
+                          }}
                           style={{ padding: '6px 10px', borderRadius: '6px', border: 0, background: '#7c2d12', color: '#fff', cursor: 'pointer' }}
                         >
                           Estornar

@@ -310,43 +310,84 @@ test('FASE 1 (Item 3) — Fluxo de Estorno de Repasse Aprovado e Pago (reversão
   assert.equal(mockDb.store.advanced.adv_1.abaterNoProximo, false, 'Adiantamento foi abatido no repasse');
   assert.equal(mockDb.store.antecipacoes.ant_1.abaterNoProximo, false, 'Antecipação foi abatida no repasse');
 
-  // Se a competência estiver fechada, o estorno de repasse Pago deve ser bloqueado
-  await mockDb.ref(`/fechamentos/${compFixa}`).set({ competencia: compFixa, fechado: true, status: 'Fechado' });
+  // 1. Segregação de funções (ESTORNO_SEGREGACAO): o mesmo operador que liquidou NÃO pode estornar
   await assert.rejects(
     () =>
       executarEstornarRepasse(
         {
           auth: { uid: 'u_fin', token: { role: 'financeiro', email: 'fin@diskingressos.com.br' } },
-          data: { repasseId: sol.id, motivo: 'Erro operacional bancário' }
+          data: { repasseId: sol.id, motivo: 'Tentativa pelo próprio liquidador', protocoloDevolucao: 'DEV-001' }
+        },
+        { db: mockDb, nowDate: dataFixa }
+      ),
+    (err) => err.code === 'failed-precondition' && err.message.includes('Segregação de funções')
+  );
+
+  // 2. Exigência de protocoloDevolucao para repasse Pago
+  await assert.rejects(
+    () =>
+      executarEstornarRepasse(
+        {
+          auth: { uid: 'u_aprov2', token: { role: 'financeiro', subRole: 'aprovador', email: 'aprovador2@diskingressos.com.br' } },
+          data: { repasseId: sol.id, motivo: 'Estorno sem protocolo de devolução' }
+        },
+        { db: mockDb, nowDate: dataFixa }
+      ),
+    (err) => err.code === 'invalid-argument' && err.message.includes('protocoloDevolucao')
+  );
+
+  // 3. Se a competência estiver fechada, o estorno de repasse Pago deve ser bloqueado
+  await mockDb.ref(`/fechamentos/${compFixa}`).set({ competencia: compFixa, fechado: true, status: 'Fechado' });
+  await assert.rejects(
+    () =>
+      executarEstornarRepasse(
+        {
+          auth: { uid: 'u_aprov2', token: { role: 'financeiro', subRole: 'aprovador', email: 'aprovador2@diskingressos.com.br' } },
+          data: { repasseId: sol.id, motivo: 'Erro operacional bancário', protocoloDevolucao: 'DEV-002' }
         },
         { db: mockDb, nowDate: dataFixa }
       ),
     (err) => err.code === 'failed-precondition' && err.message.includes('encerrada')
   );
 
-  // Reabre no mock para testar o estorno completo
+  // Reabre no mock para testar o estorno completo por um segundo operador distinto
   await mockDb.ref(`/fechamentos/${compFixa}`).set(null);
 
   const estRes = await executarEstornarRepasse(
     {
-      auth: { uid: 'u_fin', token: { role: 'financeiro', email: 'fin@diskingressos.com.br' } },
-      data: { repasseId: sol.id, motivo: 'Devolução TED bancária — conta divergente' }
+      auth: { uid: 'u_aprov2', token: { role: 'financeiro', subRole: 'aprovador', email: 'aprovador2@diskingressos.com.br' } },
+      data: { repasseId: sol.id, motivo: 'Devolução TED bancária — conta divergente', protocoloDevolucao: 'DEV-TED-999' }
     },
     { db: mockDb, nowDate: dataFixa }
   );
 
   assert.equal(estRes.status, 'Estornado');
   assert.equal(estRes.statusAnterior, 'Pago');
+  assert.equal(estRes.restauracaoAbatimentos, 'automatica');
   assert.equal(mockDb.store.repasses[sol.id].status, 'Estornado');
+  assert.equal(mockDb.store.repasses[sol.id].motivoEstorno, undefined, 'Não deve expor motivo interno em /repasses (visível ao produtor)');
+  assert.equal(mockDb.store.estornos[`est_${sol.id}`].motivo, 'Devolução TED bancária — conta divergente');
+  assert.equal(mockDb.store.estornos[`est_${sol.id}`].protocoloDevolucao, 'DEV-TED-999');
   assert.equal(mockDb.store.contas_pagar[`cp_rep_${sol.id}`].status, 'Cancelada');
 
   // Verifica reversão exata do jaRepassado para os valores originais do seed (0 e 5000)
   assert.equal(mockDb.store.eventos.polaquedo.jaRepassado, 0);
   assert.equal(mockDb.store.eventos.festival.jaRepassado, 5000);
 
-  // Verifica restauração dos abatimentos
+  // Verifica restauração automática dos abatimentos registrados na aprovação
   assert.equal(mockDb.store.advanced.adv_1.abaterNoProximo, true);
   assert.equal(mockDb.store.antecipacoes.ant_1.abaterNoProximo, true);
+
+  // 4. Repasse legado (rep_hist_1 do seed, sem abatimentosAplicados) devolve restauracaoAbatimentos: 'manual' e alerta na auditoria
+  const estLegado = await executarEstornarRepasse(
+    {
+      auth: { uid: 'u_aprov2', token: { role: 'financeiro', subRole: 'aprovador', email: 'aprovador2@diskingressos.com.br' } },
+      data: { repasseId: 'rep_hist_1', motivo: 'Estorno de repasse histórico legado', protocoloDevolucao: 'DEV-HIST-1' }
+    },
+    { db: mockDb, nowDate: dataFixa }
+  );
+  assert.equal(estLegado.restauracaoAbatimentos, 'manual');
+  assert.equal(mockDb.store.eventos.festival.jaRepassado, 0, 'Deve reverter os 5000 de rep_hist_1 em festival');
 
   // Verifica geração dos lançamentos inversos no Ledger (partida dobrada invertida)
   const estRep = mockDb.store.lancamentos[`lnc_est_rep_${sol.id}`];

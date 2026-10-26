@@ -159,6 +159,16 @@
       }
     },
 
+    "estornos": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".indexOn": ["produtoraId", "repasseId"],
+      "$estornoId": {
+        ".read": "auth != null && auth.token.role === 'financeiro'",
+        ".write": "auth != null && auth.token.role === 'financeiro' && !data.exists()",
+        ".validate": "!data.exists() && newData.hasChildren(['repasseId', 'produtoraId', 'motivo', 'statusAnterior', 'estornadoPor', 'estornadoEm'])"
+      }
+    },
+
     "eventos_dominio": {
       ".read": "auth != null && auth.token.role === 'financeiro'",
       ".indexOn": ["tipo", "origemModulo", "status"],

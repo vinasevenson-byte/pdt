@@ -432,10 +432,10 @@ test('FASE 0 (Seção 5) — Scaffolder de módulos verticais (module:new, modul
     );
 
     // Testa criação dos 3 exemplos da especificação:
-    // npm run module:new -- financeiro/estornos --no estornos
+    // npm run module:new -- financeiro/chargebacks --no chargebacks
     // npm run module:new -- financeiro/conciliacao --no conciliacoes --java
     // npm run module:new -- comercial/contratos --no contratos --produtor dono
-    criarModuloVertical(parseArgsScaffolder(['financeiro/estornos', '--no', 'estornos']), tempRoot);
+    criarModuloVertical(parseArgsScaffolder(['financeiro/chargebacks', '--no', 'chargebacks']), tempRoot);
     criarModuloVertical(parseArgsScaffolder(['financeiro/conciliacao', '--no', 'conciliacoes', '--java']), tempRoot);
     criarModuloVertical(parseArgsScaffolder(['comercial/contratos', '--no', 'contratos', '--produtor', 'dono']), tempRoot);
 
@@ -443,8 +443,8 @@ test('FASE 0 (Seção 5) — Scaffolder de módulos verticais (module:new, modul
     assert.equal(checkTemp.ok, true);
 
     const rulesGeradas = JSON.parse(readFileSync(path.join(tempRoot, 'database.rules.json'), 'utf8')).rules;
-    assert.ok(rulesGeradas.estornos, 'Nó /estornos deve ser gerado nas regras RTDB');
-    assert.equal(rulesGeradas.estornos.$itemId['.write'], false, 'Escrita de cliente deve ser false (nenhuma) por padrão');
+    assert.ok(rulesGeradas.chargebacks, 'Nó /chargebacks deve ser gerado nas regras RTDB');
+    assert.equal(rulesGeradas.chargebacks.$itemId['.write'], false, 'Escrita de cliente deve ser false (nenhuma) por padrão');
     assert.ok(rulesGeradas.conciliacoes, 'Nó /conciliacoes deve ser gerado');
     assert.ok(rulesGeradas.contratos['.read'].includes("query.orderByChild === 'produtoraId'"), 'Módulo com --produtor dono deve permitir leitura filtrada');
 
