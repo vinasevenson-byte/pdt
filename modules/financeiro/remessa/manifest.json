@@ -1,0 +1,31 @@
+{
+  "id": "financeiro/remessa",
+  "dominio": "financeiro",
+  "modulo": "remessa",
+  "titulo": "Remessa",
+  "descricao": "Módulo vertical Remessa (financeiro/remessa)",
+  "camada": "node",
+  "rolesPermitidas": [
+    "financeiro"
+  ],
+  "rtdb": {
+    "no": "remessas",
+    "leituraProdutor": "nenhuma",
+    "escritaCliente": "nenhuma",
+    "camposObrigatorios": [
+      "produtoraId",
+      "status"
+    ]
+  },
+  "ui": {
+    "financeiro": true,
+    "produtor": false
+  },
+  "dependencias": [
+    "core"
+  ],
+  "eventosEmitidos": [
+    "financeiro.remessa.processado"
+  ],
+  "featureFlag": "ff_financeiro_remessa"
+}

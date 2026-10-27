@@ -327,8 +327,7 @@ ${prodEntries.join(',\n')}
 
   // 4. Registro de Cloud Functions
   const fnRequires = [];
-  for (const { pastaDominio, pastaModulo, dirAbs, manifest } of itens) {
-    if (manifest.camada === 'java') continue;
+  for (const { pastaDominio, pastaModulo, dirAbs } of itens) {
     const fnFile = path.join(dirAbs, 'functions/index.js');
     if (fs.existsSync(fnFile)) {
       fnRequires.push(`  ...require('../../../../modules/${pastaDominio}/${pastaModulo}/functions')`);

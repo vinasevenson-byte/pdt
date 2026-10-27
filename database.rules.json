@@ -239,6 +239,28 @@
         ".write": false,
         ".validate": "newData.hasChildren(['produtoraId', 'status'])"
       }
+    },
+    "apuracoes_fiscais": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".indexOn": [
+        "produtoraId"
+      ],
+      "$itemId": {
+        ".read": "auth != null && auth.token.role === 'financeiro'",
+        ".write": false,
+        ".validate": "newData.hasChildren(['produtoraId', 'status'])"
+      }
+    },
+    "remessas": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".indexOn": [
+        "produtoraId"
+      ],
+      "$itemId": {
+        ".read": "auth != null && auth.token.role === 'financeiro'",
+        ".write": false,
+        ".validate": "newData.hasChildren(['produtoraId', 'status'])"
+      }
     }
   }
 }

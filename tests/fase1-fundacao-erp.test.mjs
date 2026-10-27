@@ -887,3 +887,297 @@ test('FASE 2 (Módulo 1) — Callables previaFechamento, fecharCompetencia e rea
   assert.ok(uiFechamentoRaw.includes('chamarFecharCompetencia'));
   assert.ok(uiFechamentoRaw.includes('chamarReabrirCompetencia'));
 });
+
+test('FASE 2 (Módulo 2) — Conciliação Bancária OFX 1.02/2.x: parser, pareamento (protocolo/data+valor/ambiguidade), bloqueio de duplicidade e vínculo manual', async () => {
+  const { parsearExtratoOFX } = require('../modules/financeiro/conciliacao/domain/index.js');
+  const {
+    executarImportarExtratoOFX,
+    executarVincularItemConciliacao
+  } = require('../modules/financeiro/conciliacao/functions/index.js');
+
+  const ofxSample = `
+OFXHEADER:100
+DATA:OFXSGML
+<OFX>
+  <BANKMSGSRSV1>
+    <STMTRS>
+      <CURDEF>BRL
+      <BANKACCTFROM>
+        <BANKID>341
+        <BRANCHID>1234
+        <ACCTID>567890
+      </BANKACCTFROM>
+      <BANKTRANLIST>
+        <DTSTART>20261001000000
+        <DTEND>20261031235959
+        <STMTTRN>
+          <TRNTYPE>DEBIT
+          <DTPOSTED>20261015120000
+          <TRNAMT>-1990.00
+          <FITID>FIT_001
+          <CHECKNUM>TED-1990
+          <MEMO>Pagamento repasse TED-1990
+        </STMTTRN>
+        <STMTTRN>
+          <TRNTYPE>DEBIT
+          <DTPOSTED>20261016120000
+          <TRNAMT>-500.00
+          <FITID>FIT_002
+          <MEMO>Transferencia mesmo valor
+        </STMTTRN>
+      </BANKTRANLIST>
+      <LEDGERBAL>
+        <BALAMT>15000.00
+      </LEDGERBAL>
+    </STMTRS>
+  </BANKMSGSRSV1>
+</OFX>`;
+
+  const parsed = parsearExtratoOFX(ofxSample);
+  assert.equal(parsed.banco.bankId, '341');
+  assert.equal(parsed.competencia, '2026-10');
+  assert.equal(parsed.quantidadeTransacoes, 2);
+  assert.equal(parsed.transacoes[0].valorCents, 199000);
+  assert.equal(parsed.transacoes[0].protocolo, 'TED-1990');
+  assert.equal(parsed.hashArquivo.length, 64);
+
+  const mockDb = criarMockRTDB({
+    ...seedData,
+    lancamentos: {
+      lnc_1: criarLancamentoPartidaDobrada({
+        id: 'lnc_1',
+        data: '15/10/2026',
+        competencia: '2026-10',
+        contaDebito: PLANO_CONTAS.OBRIGACOES_REPASSES_PRODUTOR,
+        contaCredito: PLANO_CONTAS.BANCO_CONTA_MOVIMENTO,
+        valor: 1990,
+        historico: 'Liquidação bancária TED-1990'
+      }),
+      // Dois lançamentos de mesmo valor (R$ 500,00) na mesma janela de data sem protocolo no extrato -> deve gerar ambiguidade!
+      lnc_amb_a: criarLancamentoPartidaDobrada({
+        id: 'lnc_amb_a',
+        data: '16/10/2026',
+        competencia: '2026-10',
+        contaDebito: PLANO_CONTAS.ADIANTAMENTOS_ANTECIPACOES_PRODUTOR,
+        contaCredito: PLANO_CONTAS.BANCO_CONTA_MOVIMENTO,
+        valor: 500,
+        historico: 'Antecipação A'
+      }),
+      lnc_amb_b: criarLancamentoPartidaDobrada({
+        id: 'lnc_amb_b',
+        data: '16/10/2026',
+        competencia: '2026-10',
+        contaDebito: PLANO_CONTAS.ADIANTAMENTOS_ANTECIPACOES_PRODUTOR,
+        contaCredito: PLANO_CONTAS.BANCO_CONTA_MOVIMENTO,
+        valor: 500,
+        historico: 'Antecipação B'
+      })
+    },
+    conciliacoes: {},
+    fechamentos: {}
+  });
+
+  const authFin = { uid: 'u_fin', token: { role: 'financeiro', email: 'fin@diskingressos.com.br' } };
+
+  // 1. Importa o extrato OFX
+  const conc = await executarImportarExtratoOFX(
+    { auth: authFin, data: { ofxConteudo: ofxSample } },
+    { db: mockDb, nowDate: new Date('2026-10-20T14:00:00-03:00') }
+  );
+  assert.equal(conc.status, 'ComPendencias');
+  assert.equal(conc.resumo.conciliados, 1);
+  assert.equal(conc.resumo.ambiguidades, 1, 'Dois candidatos com mesmo valor/data devem ir para ambiguidades');
+
+  // 2. Tentar importar o mesmo arquivo OFX novamente deve falhar por hash SHA-256 duplicado
+  await assert.rejects(
+    () =>
+      executarImportarExtratoOFX(
+        { auth: authFin, data: { ofxConteudo: ofxSample } },
+        { db: mockDb, nowDate: new Date('2026-10-20T15:00:00-03:00') }
+      ),
+    (err) => err.code === 'already-exists'
+  );
+
+  // 3. Vínculo manual resolve a ambiguidade de FIT_002 com lnc_amb_a
+  const concVinculada = await executarVincularItemConciliacao(
+    {
+      auth: authFin,
+      data: {
+        conciliacaoId: conc.id,
+        extratoId: 'FIT_002',
+        lancamentoId: 'lnc_amb_a',
+        justificativa: 'Comprovante conferido com Antecipação A'
+      }
+    },
+    { db: mockDb, nowDate: new Date('2026-10-20T16:00:00-03:00') }
+  );
+  assert.equal(concVinculada.resumo.conciliados, 2);
+  assert.equal(concVinculada.resumo.ambiguidades, 0);
+});
+
+test('FASE 2 (Módulo 3) — Remessa PIX / CNAB 240 Pagamentos e Baixa por Retorno (liquidação "00" vs rejeição "RJ")', async () => {
+  const {
+    executarGerarRemessaPagamento,
+    executarProcessarRetornoRemessa
+  } = require('../modules/financeiro/remessa/functions/index.js');
+
+  const mockDb = criarMockRTDB(seedData);
+  const dataFixa = new Date('2026-10-22T10:00:00-03:00');
+  const authProd = { uid: 'u_prod', token: { role: 'produtor', produtoraId: 'prod_exemplo', email: 'prod@exemplo.com' } };
+  const authFin = { uid: 'u_fin', token: { role: 'financeiro', email: 'fin@diskingressos.com.br' } };
+
+  // Cria 2 solicitações de repasse e aprova ambas (ficam Aprovado com título cp_rep_* em status Aprovada)
+  const sol1 = await executarSolicitarRepasse(
+    {
+      auth: authProd,
+      data: {
+        eventoIds: ['polaquedo', 'festival'],
+        valor: 1000,
+        forma: 'PIX',
+        contaId: 'c1',
+        aceiteBancario: true,
+        aceiteTermosBordero: true
+      }
+    },
+    { db: mockDb, nowDate: dataFixa }
+  );
+  const sol2 = await executarSolicitarRepasse(
+    {
+      auth: authProd,
+      data: {
+        eventoIds: ['polaquedo', 'festival'],
+        valor: 500,
+        forma: 'TED',
+        contaId: 'c1',
+        aceiteBancario: true,
+        aceiteTermosBordero: true
+      }
+    },
+    { db: mockDb, nowDate: dataFixa }
+  );
+
+  await executarDecidirRepasse(
+    { auth: authFin, data: { repasseId: sol1.id, acao: 'aprovar' } },
+    { db: mockDb, nowDate: dataFixa }
+  );
+  await executarDecidirRepasse(
+    { auth: authFin, data: { repasseId: sol2.id, acao: 'aprovar' } },
+    { db: mockDb, nowDate: dataFixa }
+  );
+
+  // 1. Gera remessa CNAB 240 para os dois títulos aprovados
+  const remessa = await executarGerarRemessaPagamento(
+    {
+      auth: authFin,
+      data: {
+        tituloIds: [`cp_rep_${sol1.id}`, `cp_rep_${sol2.id}`],
+        codigoBanco: '341'
+      }
+    },
+    { db: mockDb, nowDate: dataFixa }
+  );
+
+  assert.equal(remessa.status, 'Gerada');
+  assert.equal(remessa.quantidadeItens, 2);
+  assert.equal(remessa.valorTotalCents, toCents(1000 + 490)); // PIX 1000 + TED líquido 490
+  const linhasCnab = remessa.cnab240.split('\n');
+  assert.equal(linhasCnab.length, 6); // Header Arq + Header Lote + 2 Seg A + Trailer Lote + Trailer Arq
+  for (const linha of linhasCnab) {
+    assert.equal(linha.length, 240, 'Cada linha do arquivo CNAB 240 deve ter exatamente 240 posições');
+  }
+
+  // 2. Tentar gerar outra remessa com os mesmos títulos já travados deve falhar
+  await assert.rejects(
+    () =>
+      executarGerarRemessaPagamento(
+        {
+          auth: authFin,
+          data: { tituloIds: [`cp_rep_${sol1.id}`] }
+        },
+        { db: mockDb, nowDate: dataFixa }
+      ),
+    (err) => err.code === 'failed-precondition' && err.message.includes('já incluído na remessa ativa')
+  );
+
+  // 3. Processa arquivo de retorno: sol1 liquidado ("00") e sol2 rejeitado pelo banco ("RJ")
+  const ret = await executarProcessarRetornoRemessa(
+    {
+      auth: authFin,
+      data: {
+        remessaId: remessa.id,
+        retornoEntrada: [
+          {
+            tituloId: `cp_rep_${sol1.id}`,
+            protocoloBancario: 'CNAB-LIQ-001',
+            codigoOcorrencia: '00',
+            valor: 1000
+          },
+          {
+            tituloId: `cp_rep_${sol2.id}`,
+            protocoloBancario: 'CNAB-REJ-002',
+            codigoOcorrencia: 'RJ',
+            valor: 490
+          }
+        ]
+      }
+    },
+    { db: mockDb, nowDate: dataFixa }
+  );
+
+  assert.equal(ret.liquidados.length, 1);
+  assert.equal(ret.rejeitadosBanco.length, 1);
+
+  // sol1 virou Pago e lançou no Ledger; sol2 permanece Aprovado e teve remessaId liberada para reenvio!
+  assert.equal(mockDb.store.repasses[sol1.id].status, 'Pago');
+  assert.ok(mockDb.store.lancamentos[`lnc_rep_${sol1.id}`]);
+  assert.equal(mockDb.store.repasses[sol2.id].status, 'Aprovado');
+  assert.equal(mockDb.store.contas_pagar[`cp_rep_${sol2.id}`].remessaId, undefined);
+  assert.equal(mockDb.store.contas_pagar[`cp_rep_${sol2.id}`].ultimoErroRemessa, 'RJ');
+});
+
+test('FASE 2 (Módulo 4) — Apuração Fiscal e Retenções por Competência (apurarImpostosCompetencia e recolherGuiaFiscal)', async () => {
+  const {
+    executarApurarImpostosCompetencia,
+    executarRecolherGuiaFiscal
+  } = require('../modules/financeiro/fiscal/functions/index.js');
+
+  const mockDb = criarMockRTDB(seedData);
+  const authFiscal = {
+    uid: 'u_fisc',
+    token: { role: 'financeiro', subRole: 'fiscal', email: 'fiscal@diskingressos.com.br' }
+  };
+  const dataOutubro = new Date('2026-10-25T15:00:00-03:00');
+
+  // 1. Apura impostos da competência 2026-10
+  const apuracao = await executarApurarImpostosCompetencia(
+    {
+      auth: authFiscal,
+      data: { competencia: '2026-10' }
+    },
+    { db: mockDb, nowDate: dataOutubro }
+  );
+
+  assert.equal(apuracao.status, 'Apurada');
+  assert.ok(apuracao.baseTributavelDiskCents > 0, 'Deve apurar base tributável das taxas Disk');
+  assert.ok(apuracao.tributosProprios.totalCents > 0, 'Deve calcular ISS, PIS, COFINS, IRPJ e CSLL');
+  assert.ok(apuracao.retencoesTerceiros.totalProvisionadoEventosCents > 0, 'Deve consolidar retenções dos eventos (ISS, ECAD, etc.)');
+  assert.equal(apuracao.seloApuracaoSha256.length, 64);
+  assert.ok(mockDb.store.contas_pagar['cp_fisc_2026-10'], 'Deve provisionar título de guia fiscal em /contas_pagar');
+
+  // 2. Recolhe a guia fiscal gerando lançamento em partida dobrada no Ledger
+  const recolhimento = await executarRecolherGuiaFiscal(
+    {
+      auth: authFiscal,
+      data: { competencia: '2026-10', protocoloGuia: 'DARF-ISS-202610' }
+    },
+    { db: mockDb, nowDate: dataOutubro }
+  );
+
+  assert.equal(recolhimento.status, 'Recolhida');
+  assert.equal(mockDb.store.contas_pagar['cp_fisc_2026-10'].status, 'Paga');
+  const lncFiscal = mockDb.store.lancamentos['lnc_fisc_2026-10'];
+  assert.ok(lncFiscal, 'Recolhimento de guia fiscal deve gerar lançamento no Ledger');
+  assert.equal(lncFiscal.contaDebito, PLANO_CONTAS.OBRIGACOES_RETENCOES_RECOLHER);
+  assert.equal(lncFiscal.contaCredito, PLANO_CONTAS.BANCO_CONTA_MOVIMENTO);
+  assert.equal(lncFiscal.valorCents, apuracao.totalGuiasARecolherCents);
+});
