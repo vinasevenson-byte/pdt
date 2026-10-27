@@ -4,16 +4,17 @@
       ".read": "auth != null && auth.token.role === 'financeiro'",
       ".indexOn": ["competencia", "produtoraId", "eventoId", "origemId"],
       "$lancamentoId": {
-        ".write": "auth != null && auth.token.role === 'financeiro' && !data.exists() && root.child('fechamentos').child(newData.child('competencia').val()).child('fechado').val() !== true",
+        ".write": "auth != null && auth.token.role === 'financeiro' && !data.exists() && root.child('fechamentos').child(newData.child('competencia').val()).child('fechado').val() !== true && root.child('fechamentos').child(newData.child('competencia').val()).child('emFechamento').val() !== true",
         ".validate": "!data.exists() && newData.hasChildren(['competencia', 'contaDebito', 'contaCredito', 'valor', 'imutavel']) && newData.child('valor').isNumber() && newData.child('valor').val() > 0 && newData.child('contaDebito').isString() && newData.child('contaCredito').isString() && newData.child('contaDebito').val() !== newData.child('contaCredito').val() && newData.child('imutavel').val() === true"
       }
     },
 
     "fechamentos": {
       ".read": "auth != null && auth.token.role === 'financeiro'",
-      ".write": "auth != null && auth.token.role === 'financeiro'",
+      ".write": false,
       "$competencia": {
-        ".validate": "(!data.exists() || data.child('fechado').val() !== true || newData.child('fechado').val() === true) && newData.hasChildren(['competencia', 'fechado', 'status']) && newData.child('competencia').val() === $competencia"
+        ".write": false,
+        ".validate": "newData.hasChildren(['competencia', 'fechado', 'status']) && newData.child('competencia').val() === $competencia"
       }
     },
 

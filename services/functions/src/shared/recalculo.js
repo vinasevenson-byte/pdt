@@ -101,9 +101,18 @@ const {
   obterDataAtualBR,
   obterCompetenciaAtualBR,
   extrairCompetencia,
+  validarFormatoCompetencia,
+  competenciaAnterior,
+  competenciaSeguinte,
   competenciaEstaFechada,
   criarLancamentoPartidaDobrada,
-  gerarEstornoLancamento
+  gerarEstornoLancamento,
+  calcularSeloFechamento,
+  calcularBalanceteCompetencia,
+  verificarSequenciaFechamento,
+  calcularPreviaFechamento,
+  verificarPermissaoReabertura,
+  listarCompetenciasOrdenadas
 } = require(motorPath);
 
 if (!admin.apps.length) {
@@ -314,6 +323,15 @@ module.exports = {
   baixarTitulo,
   criarLancamentoPartidaDobrada,
   gerarEstornoLancamento,
+  validarFormatoCompetencia,
+  competenciaAnterior,
+  competenciaSeguinte,
+  calcularSeloFechamento,
+  calcularBalanceteCompetencia,
+  verificarSequenciaFechamento,
+  calcularPreviaFechamento,
+  verificarPermissaoReabertura,
+  listarCompetenciasOrdenadas,
   ROLES_SISTEMA,
   ROLES_PAINEL_INTERNO,
   MATRIZ_PERMISSOES,

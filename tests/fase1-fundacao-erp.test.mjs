@@ -23,7 +23,14 @@ const {
   calcConsolidado,
   derivarJaRepassadoPorEvento,
   PLANO_CONTAS,
-  obterCompetenciaAtualBR
+  obterCompetenciaAtualBR,
+  criarLancamentoPartidaDobrada,
+  calcularSeloFechamento,
+  calcularBalanceteCompetencia,
+  verificarSequenciaFechamento,
+  calcularPreviaFechamento,
+  verificarPermissaoReabertura,
+  listarCompetenciasOrdenadas
 } = require('../packages/motor-repasse/src/index.js');
 
 const {
@@ -37,7 +44,9 @@ const {
 } = require('../services/functions/src/callables/index.js');
 
 const {
+  executarPreviaFechamento,
   executarFecharCompetencia,
+  executarReabrirCompetencia,
   executarEstornarLancamento
 } = require('../services/functions/src/modules/financeiro_core/index.js');
 
@@ -576,4 +585,305 @@ test('FASE 2 — Módulos Verticais de Negócio (chargebacks, conciliacao, contr
   const repassesUiRaw = readFileSync(path.resolve('apps/financeiro/src/modules/repasses/index.tsx'), 'utf8');
   assert.equal(repassesUiRaw.includes('window.prompt'), false, 'UI de Repasses não deve usar window.prompt');
   assert.ok(repassesUiRaw.includes('renderizarPainelDecisaoInline'), 'UI de Repasses deve usar modal inline dedicado');
+});
+
+test('FASE 2 (Módulo 1) — Fechamento Mensal: biblioteca pura (bloqueios, balancete, sequência, selo SHA-256 e adulteração)', () => {
+  const l1 = criarLancamentoPartidaDobrada({
+    id: 'lnc_rep_r1',
+    data: '10/01/2026',
+    competencia: '2026-01',
+    contaDebito: PLANO_CONTAS.OBRIGACOES_REPASSES_PRODUTOR,
+    contaCredito: PLANO_CONTAS.BANCO_CONTA_MOVIMENTO,
+    valor: 1000,
+    origemModulo: 'Repasses',
+    origemId: 'r1'
+  });
+
+  // 1. Balancete por conta e selo SHA-256 determinístico
+  const bal = calcularBalanceteCompetencia('2026-01', { lnc_rep_r1: l1 });
+  assert.equal(bal.balanceado, true);
+  assert.equal(bal.totalDebitosCents, 100000);
+  assert.equal(bal.totalCreditosCents, 100000);
+  assert.equal(bal.contas.length, 2);
+
+  const selo1 = calcularSeloFechamento('2026-01', { lnc_rep_r1: l1 });
+  const selo2 = calcularSeloFechamento('2026-01', [l1]);
+  assert.equal(selo1, selo2, 'Selo SHA-256 deve ser determinístico');
+  assert.equal(selo1.length, 64);
+
+  // 2. Bloqueio de mês em curso ou futuro (só fecha mês já encerrado)
+  const prevMesEmCurso = calcularPreviaFechamento({
+    competencia: '2026-10',
+    lancamentos: { lnc_rep_r1: l1 },
+    fechamentos: { '2026-01': { competencia: '2026-01', fechado: true } },
+    competenciaAtual: '2026-10'
+  });
+  assert.equal(prevMesEmCurso.aptoParaFechar, false);
+  assert.ok(prevMesEmCurso.bloqueios.some(b => b.codigo === 'competencia_em_curso_ou_futura'));
+
+  // 3. Bloqueio de sequência (tentar fechar 2026-02 com 2026-01 ainda aberto)
+  const seqQuebrada = verificarSequenciaFechamento('2026-02', {
+    lancamentos: { lnc_rep_r1: l1 },
+    fechamentos: {},
+    competenciaAtual: '2026-03'
+  });
+  assert.equal(seqQuebrada.valido, false);
+  assert.ok(seqQuebrada.bloqueios.some(b => b.codigo === 'sequencia_violada' && b.competenciaAnterior === '2026-01'));
+
+  // 4. Bloqueios de integridade contábil:
+  // 4a. Lançamento inválido + balancete desbalanceado
+  const prevInvalido = calcularPreviaFechamento({
+    competencia: '2026-01',
+    lancamentos: {
+      lnc_bad: {
+        id: 'lnc_bad',
+        competencia: '2026-01',
+        contaDebito: '1.1.01',
+        contaCredito: '1.1.01', // mesma conta!
+        valor: 500,
+        valorCents: 40000, // divergente de valor!
+        debitoCents: 50000,
+        creditoCents: 40000,
+        imutavel: true
+      }
+    },
+    competenciaAtual: '2026-02'
+  });
+  assert.ok(prevInvalido.bloqueios.some(b => b.codigo === 'lancamento_invalido'));
+  assert.ok(prevInvalido.bloqueios.some(b => b.codigo === 'balancete_desbalanceado'));
+
+  // 4b. Repasse Pago sem lançamento no ledger
+  const prevRepSemLanc = calcularPreviaFechamento({
+    competencia: '2026-01',
+    lancamentos: {},
+    repasses: {
+      r_sem_lnc: {
+        id: 'r_sem_lnc',
+        status: 'Pago',
+        valorSolicitado: 1000,
+        valorLiquido: 1000,
+        pagoEm: '15/01/2026, 14:00:00'
+      }
+    },
+    competenciaAtual: '2026-02'
+  });
+  assert.ok(prevRepSemLanc.bloqueios.some(b => b.codigo === 'repasse_pago_sem_lancamento'));
+
+  // 4c. Devolução sem contrapartida (repasse Pago -> Estornado sem lançamento de estorno)
+  const prevDevSemContra = calcularPreviaFechamento({
+    competencia: '2026-01',
+    lancamentos: { lnc_rep_r1: l1 },
+    repasses: {
+      r1: {
+        id: 'r1',
+        status: 'Estornado',
+        valorSolicitado: 1000,
+        valorLiquido: 1000,
+        pagoEm: '10/01/2026, 10:00:00',
+        estornadoEm: '20/01/2026, 11:00:00',
+        protocoloDevolucao: 'DEV-123'
+      }
+    },
+    estornos: {
+      est_r1: {
+        repasseId: 'r1',
+        statusAnterior: 'Pago',
+        estornadoEm: '20/01/2026, 11:00:00'
+      }
+    },
+    competenciaAtual: '2026-02'
+  });
+  assert.ok(prevDevSemContra.bloqueios.some(b => b.codigo === 'devolucao_sem_contrapartida'));
+
+  // 5. Detecção de adulteração do selo SHA-256 em mês já fechado
+  const lancAdulterado = { ...l1, valorCents: 99900, valor: 999 };
+  const prevAdulterada = calcularPreviaFechamento({
+    competencia: '2026-01',
+    lancamentos: { lnc_rep_r1: lancAdulterado },
+    fechamentos: {
+      '2026-01': {
+        competencia: '2026-01',
+        fechado: true,
+        status: 'Fechado',
+        versao: 1,
+        seloSha256: selo1
+      }
+    },
+    competenciaAtual: '2026-02'
+  });
+  assert.equal(prevAdulterada.integro, false);
+  assert.ok(prevAdulterada.bloqueios.some(b => b.codigo === 'adulteracao_detectada'));
+
+  // 6. Lista de competências ordenadas preenchendo lacunas
+  const comps = listarCompetenciasOrdenadas({
+    lancamentos: { lnc_rep_r1: l1 },
+    fechamentos: {},
+    competenciaAtual: '2026-03'
+  });
+  assert.deepEqual(comps, ['2026-01', '2026-02', '2026-03']);
+});
+
+test('FASE 2 (Módulo 1) — Callables previaFechamento, fecharCompetencia e reabrirCompetencia (trava, sequência, segregação e versionamento)', async () => {
+  const mockDb = criarMockRTDB({
+    ...seedData,
+    lancamentos: {
+      lnc_rep_jan: criarLancamentoPartidaDobrada({
+        id: 'lnc_rep_jan',
+        data: '15/08/2026',
+        competencia: '2026-08',
+        contaDebito: PLANO_CONTAS.OBRIGACOES_REPASSES_PRODUTOR,
+        contaCredito: PLANO_CONTAS.BANCO_CONTA_MOVIMENTO,
+        valor: 1500,
+        origemModulo: 'Repasses',
+        origemId: 'rep_jan'
+      }),
+      lnc_rep_set: criarLancamentoPartidaDobrada({
+        id: 'lnc_rep_set',
+        data: '18/09/2026',
+        competencia: '2026-09',
+        contaDebito: PLANO_CONTAS.OBRIGACOES_REPASSES_PRODUTOR,
+        contaCredito: PLANO_CONTAS.BANCO_CONTA_MOVIMENTO,
+        valor: 2500,
+        origemModulo: 'Repasses',
+        origemId: 'rep_set'
+      })
+    },
+    fechamentos: {}
+  });
+
+  const authFin1 = { uid: 'u_fin1', token: { role: 'financeiro', email: 'fin1@diskingressos.com.br' } };
+  const authFin2 = { uid: 'u_fin2', token: { role: 'financeiro', email: 'fin2@diskingressos.com.br' } };
+  const dataOutubro = new Date('2026-10-15T14:00:00-03:00'); // Competência atual: 2026-10
+
+  // 1. Tentar fechar 2026-10 (mês em curso) deve ser bloqueado
+  await assert.rejects(
+    () =>
+      executarFecharCompetencia(
+        { auth: authFin1, data: { competencia: '2026-10' } },
+        { db: mockDb, nowDate: dataOutubro }
+      ),
+    (err) => err.code === 'failed-precondition' && err.message.includes('em curso ou no futuro')
+  );
+
+  // 2. Tentar fechar 2026-09 antes de fechar 2026-08 deve ser bloqueado (sequência)
+  await assert.rejects(
+    () =>
+      executarFecharCompetencia(
+        { auth: authFin1, data: { competencia: '2026-09' } },
+        { db: mockDb, nowDate: dataOutubro }
+      ),
+    (err) => err.code === 'failed-precondition' && err.message.includes('2026-08')
+  );
+
+  // 3. Fecha 2026-08 verificando que, durante a trava (onAfterLock), qualquer tentativa de criar lançamento em 2026-08 falha!
+  let travaVerificada = false;
+  const fechAgo = await executarFecharCompetencia(
+    { auth: authFin1, data: { competencia: '2026-08', observacoes: 'Fechamento Agosto' } },
+    {
+      db: mockDb,
+      nowDate: dataOutubro,
+      onAfterLock: async () => {
+        const estadoTrava = mockDb.store.fechamentos['2026-08'];
+        assert.equal(estadoTrava.emFechamento, true);
+        assert.equal(estadoTrava.status, 'Fechando');
+        assert.throws(
+          () =>
+            criarLancamentoPartidaDobrada(
+              {
+                data: '20/08/2026',
+                competencia: '2026-08',
+                contaDebito: PLANO_CONTAS.OBRIGACOES_REPASSES_PRODUTOR,
+                contaCredito: PLANO_CONTAS.BANCO_CONTA_MOVIMENTO,
+                valor: 100
+              },
+              mockDb.store.fechamentos
+            ),
+          /encerrada em \/fechamentos/
+        );
+        travaVerificada = true;
+      }
+    }
+  );
+  assert.equal(travaVerificada, true);
+  assert.equal(fechAgo.fechado, true);
+  assert.equal(fechAgo.versao, 1);
+  assert.ok(fechAgo.seloSha256 && fechAgo.seloSha256.length === 64);
+
+  // 4. Agora 2026-09 pode ser fechado em sequência (testando também concorrência de 2 operadores)
+  const [resSet1, resSet2] = await Promise.allSettled([
+    executarFecharCompetencia(
+      { auth: authFin1, data: { competencia: '2026-09' } },
+      { db: mockDb, nowDate: dataOutubro }
+    ),
+    executarFecharCompetencia(
+      { auth: authFin2, data: { competencia: '2026-09' } },
+      { db: mockDb, nowDate: dataOutubro }
+    )
+  ]);
+  const fechamentosOk = [resSet1, resSet2].filter(r => r.status === 'fulfilled');
+  assert.equal(fechamentosOk.length, 1, 'Apenas 1 fechamento concorrente deve suceder');
+
+  // 5. Prévia de mês fechado confere o selo SHA-256 (íntegro = true)
+  const previaSet = await executarPreviaFechamento(
+    { auth: authFin1, data: { competencia: '2026-09' } },
+    { db: mockDb, nowDate: dataOutubro }
+  );
+  assert.equal(previaSet.fechado, true);
+  assert.equal(previaSet.integro, true);
+  assert.equal(previaSet.seloGravado, previaSet.seloCalculado);
+
+  // 6. Reabertura: não pode reabrir 2026-08 enquanto 2026-09 (posterior) estiver fechado!
+  await assert.rejects(
+    () =>
+      executarReabrirCompetencia(
+        { auth: authFin2, data: { competencia: '2026-08', motivo: 'Ajuste retroativo em agosto' } },
+        { db: mockDb, nowDate: dataOutubro }
+      ),
+    (err) => err.code === 'failed-precondition' && err.message.includes('última competência fechada')
+  );
+
+  // 7. Reabertura de 2026-09 pelo MESMO operador que fechou deve ser bloqueada por segregação de funções!
+  const quemFechouSet = mockDb.store.fechamentos['2026-09'].fechadoPor;
+  const authMesmoOperador = quemFechouSet === authFin1.token.email ? authFin1 : authFin2;
+  const authOutroOperador = quemFechouSet === authFin1.token.email ? authFin2 : authFin1;
+
+  await assert.rejects(
+    () =>
+      executarReabrirCompetencia(
+        { auth: authMesmoOperador, data: { competencia: '2026-09', motivo: 'Tentativa pelo mesmo usuário' } },
+        { db: mockDb, nowDate: dataOutubro }
+      ),
+    (err) => err.code === 'failed-precondition' && err.message.includes('Segregação de funções')
+  );
+
+  // 8. Reabertura de 2026-09 pelo OUTRO operador sucede e preserva histórico
+  const reaberto = await executarReabrirCompetencia(
+    { auth: authOutroOperador, data: { competencia: '2026-09', motivo: 'Inclusão de ajuste contábil' } },
+    { db: mockDb, nowDate: dataOutubro }
+  );
+  assert.equal(reaberto.fechado, false);
+  assert.equal(reaberto.status, 'Reaberto');
+  assert.equal(reaberto.historicoReaberturas.length, 1);
+  const seloV1 = reaberto.ultimoSeloSha256;
+
+  // 9. Refechar 2026-09 gera versão 2 e guarda seloAnterior
+  const refechado = await executarFecharCompetencia(
+    { auth: authMesmoOperador, data: { competencia: '2026-09', observacoes: 'Refechamento v2' } },
+    { db: mockDb, nowDate: dataOutubro }
+  );
+  assert.equal(refechado.fechado, true);
+  assert.equal(refechado.versao, 2);
+  assert.equal(refechado.seloAnterior, seloV1);
+  assert.equal(refechado.historicoReaberturas.length, 1);
+
+  // 10. Regras do RTDB para /fechamentos (escrita bloqueada ao cliente) e UI registrada
+  const rulesRaw = JSON.parse(readFileSync(path.resolve('database.rules.json'), 'utf8')).rules;
+  assert.equal(rulesRaw.fechamentos['.write'], false);
+  assert.ok(rulesRaw.lancamentos['.indexOn'].includes('competencia'));
+  assert.ok(rulesRaw.lancamentos.$lancamentoId['.write'].includes("child('emFechamento').val() !== true"));
+
+  const uiFechamentoRaw = readFileSync(path.resolve('apps/financeiro/src/modules/fechamento/index.tsx'), 'utf8');
+  assert.ok(uiFechamentoRaw.includes('chamarPreviaFechamento'));
+  assert.ok(uiFechamentoRaw.includes('chamarFecharCompetencia'));
+  assert.ok(uiFechamentoRaw.includes('chamarReabrirCompetencia'));
 });

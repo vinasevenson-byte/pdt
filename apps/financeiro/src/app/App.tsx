@@ -24,6 +24,7 @@ import { contasReceberModule } from '../modules/contas-receber';
 import { saldosModule } from '../modules/saldos';
 import { fluxoCaixaModule } from '../modules/fluxo-caixa';
 import { ledgerModule } from '../modules/ledger';
+import { fechamentoModule } from '../modules/fechamento';
 import { VERTICAL_FINANCEIRO_MODULES } from './generatedModules';
 
 export const REGISTERED_MODULES: FinancialModulePlugin[] = [
@@ -39,6 +40,7 @@ export const REGISTERED_MODULES: FinancialModulePlugin[] = [
   saldosModule,
   fluxoCaixaModule,
   ledgerModule,
+  fechamentoModule,
   ...VERTICAL_FINANCEIRO_MODULES
 ];
 
@@ -89,6 +91,10 @@ const MODULE_META: Record<string, { desc: string; icon: 'saldo' | 'repasses' | '
   },
   ledger: {
     desc: 'Livro razão em partidas dobradas, fechamento contábil e trilha de auditoria.',
+    icon: 'despesas'
+  },
+  fechamento: {
+    desc: 'Prévia de balancete por conta, fechamento mensal em sequência com selo SHA-256 e reabertura auditada.',
     icon: 'despesas'
   }
 };

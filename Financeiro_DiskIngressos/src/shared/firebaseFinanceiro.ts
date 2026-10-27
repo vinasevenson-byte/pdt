@@ -337,3 +337,39 @@ export async function decidirAntecipacaoRTDB(
     motivo: status === 'Recusada' ? 'Recusada na análise financeira' : undefined
   });
 }
+
+export async function chamarPreviaFechamento(payload: { competencia: string }) {
+  if (!firebaseFinanceiroConfigurado) {
+    throw new Error(
+      'O simulador local não implementa previaFechamento. Conecte ao Firebase ou Emulator para consultar a prévia oficial do servidor.'
+    );
+  }
+  const { functions } = obterServicosFirebase();
+  const fn = httpsCallable(functions, 'previaFechamento');
+  const res = await fn(payload);
+  return res.data;
+}
+
+export async function chamarFecharCompetencia(payload: { competencia: string; observacoes?: string }) {
+  if (!firebaseFinanceiroConfigurado) {
+    throw new Error(
+      'O simulador local não implementa fecharCompetencia. Conecte ao Firebase ou Emulator para selar e fechar a competência.'
+    );
+  }
+  const { functions } = obterServicosFirebase();
+  const fn = httpsCallable(functions, 'fecharCompetencia');
+  const res = await fn(payload);
+  return res.data;
+}
+
+export async function chamarReabrirCompetencia(payload: { competencia: string; motivo: string }) {
+  if (!firebaseFinanceiroConfigurado) {
+    throw new Error(
+      'O simulador local não implementa reabrirCompetencia. Conecte ao Firebase ou Emulator para reabrir a competência.'
+    );
+  }
+  const { functions } = obterServicosFirebase();
+  const fn = httpsCallable(functions, 'reabrirCompetencia');
+  const res = await fn(payload);
+  return res.data;
+}
