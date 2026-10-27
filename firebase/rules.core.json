@@ -69,23 +69,33 @@
 
     "produtoras": {
       ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": false,
       "$produtoraId": {
         ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId))",
-        ".write": "auth != null && auth.token.role === 'financeiro'"
+        ".write": false
       }
     },
 
     "locais": {
       ".read": "auth != null",
-      ".write": "auth != null && auth.token.role === 'financeiro'"
+      ".write": false,
+      "$localId": {
+        ".write": false
+      }
+    },
+
+    "cadastro_cnpj": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": false
     },
 
     "eventos": {
       ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && query.orderByChild === 'produtoraId' && query.equalTo === auth.token.produtoraId))",
+      ".write": false,
       ".indexOn": ["produtoraId"],
       "$eventoId": {
         ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
-        ".write": "auth != null && auth.token.role === 'financeiro'",
+        ".write": false,
         ".validate": "newData.hasChildren(['produtoraId', 'nome']) && newData.child('produtoraId').isString()"
       }
     },

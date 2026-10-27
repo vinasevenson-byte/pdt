@@ -11,11 +11,13 @@ functionsV2.setGlobalOptions({ region: 'southamerica-east1' });
 const triggers = require('./triggers');
 const callables = require('./callables');
 const financeiroCore = require('./modules/financeiro_core');
+const cadastroCore = require('./modules/cadastro_core');
 const verticalModules = require('./modules/generatedModules');
 
 module.exports = {
   ...triggers,
   ...callables,
   ...financeiroCore,
+  ...cadastroCore,
   ...verticalModules
 };

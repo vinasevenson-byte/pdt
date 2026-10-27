@@ -43,6 +43,7 @@ const MATRIZ_PERMISSOES = Object.freeze({
     'competencia:previa',
     'competencia:fechar',
     'competencia:reabrir',
+    'cadastro:gerenciar',
     'conta:validar',
     'auditoria:ler'
   ]),

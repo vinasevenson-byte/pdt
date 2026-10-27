@@ -112,7 +112,17 @@ const {
   verificarSequenciaFechamento,
   calcularPreviaFechamento,
   verificarPermissaoReabertura,
-  listarCompetenciasOrdenadas
+  listarCompetenciasOrdenadas,
+  validarIdCadastro,
+  gerarIdCadastro,
+  normalizarCnpj,
+  formatarCnpj,
+  validarDigitosCnpj,
+  calcularCapacidadeEContadosEvento,
+  validarSalvarProdutora,
+  validarSalvarLocal,
+  validarSalvarEvento,
+  validarAlteracaoStatusCadastro
 } = require(motorPath);
 
 if (!admin.apps.length) {
@@ -202,11 +212,17 @@ async function recalcularTodaProdutora(produtoraId, preloaded = null, customDb =
     const calc = calcEvento(ev, fin, neg, despEv, advEv, antEv, loc);
     const borderoLimpo = bordero_produtor(calc);
 
+    const eventoLiberado =
+      Boolean(ev.liberadoParaSolicitacao) &&
+      ev.ativo !== false &&
+      produtora.ativo !== false &&
+      loc.ativo !== false;
+
     updates[`/borderos_produtor/${produtoraId}/${evId}`] = borderoLimpo;
     eventosCalculados.push({
       id: evId,
       nome: ev.nome,
-      liberadoParaSolicitacao: Boolean(ev.liberadoParaSolicitacao),
+      liberadoParaSolicitacao: eventoLiberado,
       regraVigente: fin.regra || {},
       ...calc
     });
@@ -332,6 +348,16 @@ module.exports = {
   calcularPreviaFechamento,
   verificarPermissaoReabertura,
   listarCompetenciasOrdenadas,
+  validarIdCadastro,
+  gerarIdCadastro,
+  normalizarCnpj,
+  formatarCnpj,
+  validarDigitosCnpj,
+  calcularCapacidadeEContadosEvento,
+  validarSalvarProdutora,
+  validarSalvarLocal,
+  validarSalvarEvento,
+  validarAlteracaoStatusCadastro,
   ROLES_SISTEMA,
   ROLES_PAINEL_INTERNO,
   MATRIZ_PERMISSOES,

@@ -30,8 +30,24 @@ const {
   verificarSequenciaFechamento,
   calcularPreviaFechamento,
   verificarPermissaoReabertura,
-  listarCompetenciasOrdenadas
+  listarCompetenciasOrdenadas,
+  validarIdCadastro,
+  gerarIdCadastro,
+  normalizarCnpj,
+  formatarCnpj,
+  validarDigitosCnpj,
+  validarSalvarProdutora,
+  validarSalvarLocal,
+  validarSalvarEvento,
+  validarAlteracaoStatusCadastro
 } = require('../packages/motor-repasse/src/index.js');
+
+const {
+  executarSalvarProdutora,
+  executarSalvarLocal,
+  executarSalvarEvento,
+  executarAlterarStatusCadastro
+} = require('../services/functions/src/modules/cadastro_core/index.js');
 
 const {
   validarTransicaoRepasse,
@@ -1181,3 +1197,353 @@ test('FASE 2 (Módulo 4) — Apuração Fiscal e Retenções por Competência (a
   assert.equal(lncFiscal.contaCredito, PLANO_CONTAS.BANCO_CONTA_MOVIMENTO);
   assert.equal(lncFiscal.valorCents, apuracao.totalGuiasARecolherCents);
 });
+
+// ============================================================================
+// FASE 3, MÓDULO 1 — CADASTRO MESTRE (PRODUTORAS, LOCAIS E EVENTOS)
+// ============================================================================
+
+test('Cadastro Mestre — validação pura de CNPJ (Módulo 11) e identificadores RTDB', () => {
+  assert.equal(validarDigitosCnpj('11.222.333/0001-81'), true);
+  assert.equal(validarDigitosCnpj('11.444.777/0001-61'), true);
+  assert.equal(validarDigitosCnpj('11.222.333/0001-82'), false);
+  assert.equal(validarDigitosCnpj('11.111.111/1111-11'), false);
+  assert.equal(normalizarCnpj('11.222.333/0001-81'), '11222333000181');
+  assert.equal(formatarCnpj('11222333000181'), '11.222.333/0001-81');
+
+  assert.equal(validarIdCadastro('prod_nova_01'), true);
+  assert.equal(validarIdCadastro('id-com-hifen'), false);
+  assert.equal(validarIdCadastro('id.com.ponto'), false);
+  assert.match(gerarIdCadastro('evt'), /^evt_[a-z0-9_]+$/);
+});
+
+test('Cadastro Mestre — salvarProdutora valida CNPJ, reserva atomicamente em /cadastro_cnpj e preserva edição do seed', async () => {
+  const mockDb = criarMockRTDB(seedData);
+  const authFin = {
+    uid: 'fin_cad_1',
+    token: { role: 'financeiro', email: 'cadastro@diskingressos.com.br' }
+  };
+
+  // 1. Recusa CNPJ com dígito verificador inválido em novo cadastro
+  await assert.rejects(
+    () =>
+      executarSalvarProdutora(
+        {
+          auth: authFin,
+          data: { nome: 'Produtora Inválida', cnpj: '11.222.333/0001-99' }
+        },
+        { db: mockDb }
+      ),
+    /dígitos verificadores não conferem/i
+  );
+
+  // 2. Cria produtora com CNPJ válido e reserva em /cadastro_cnpj
+  const nova = await executarSalvarProdutora(
+    {
+      auth: authFin,
+      data: {
+        id: 'prod_prime_01',
+        nome: 'Prime Shows Entretenimento Ltda',
+        cnpj: '11.222.333/0001-81',
+        patrocinio: { ativo: true, descricao: 'Patrocínio Master', valor: 5000 }
+      }
+    },
+    { db: mockDb }
+  );
+  assert.equal(nova.criado, true);
+  assert.equal(nova.id, 'prod_prime_01');
+  assert.equal(mockDb.store.cadastro_cnpj['11222333000181'].produtoraId, 'prod_prime_01');
+
+  // 3. Recusa outra produtora tentando usar o mesmo CNPJ
+  await assert.rejects(
+    () =>
+      executarSalvarProdutora(
+        {
+          auth: authFin,
+          data: { id: 'prod_outra', nome: 'Outra Produtora', cnpj: '11.222.333/0001-81' }
+        },
+        { db: mockDb }
+      ),
+    /Já existe outra produtora.*cadastrada com o CNPJ/i
+  );
+
+  // 4. Permite editar prod_exemplo mantendo o CNPJ fictício original do seed (14.890.321/0001-55)
+  const editSeed = await executarSalvarProdutora(
+    {
+      auth: authFin,
+      data: {
+        id: 'prod_exemplo',
+        nome: 'Produtora Exemplo Atualizada',
+        cnpj: '14.890.321/0001-55',
+        patrocinio: { ativo: true, descricao: 'Cota Cervejaria', valor: 20000 }
+      }
+    },
+    { db: mockDb }
+  );
+  assert.equal(editSeed.criado, false);
+  assert.equal(mockDb.store.produtoras.prod_exemplo.nome, 'Produtora Exemplo Atualizada');
+});
+
+test('Cadastro Mestre — salvarLocal impede quebrar setores abertos ou reduzir capacidade abaixo do público vendido', async () => {
+  const mockDb = criarMockRTDB(seedData);
+  const authFin = {
+    uid: 'fin_cad_1',
+    token: { role: 'financeiro', email: 'cadastro@diskingressos.com.br' }
+  };
+
+  // festival usa loc_teatro no modo 'setores' com ['Plateia'] e tem 720 vendidos
+  await assert.rejects(
+    () =>
+      executarSalvarLocal(
+        {
+          auth: authFin,
+          data: {
+            id: 'loc_teatro',
+            nome: 'Teatro Guaíra',
+            cidade: 'Curitiba',
+            uf: 'PR',
+            setores: [{ nome: 'Balcão', capacidade: 973 }] // Removeu 'Plateia'
+          }
+        },
+        { db: mockDb }
+      ),
+    /Não é possível remover o\(s\) setor\(es\) \[Plateia\]/i
+  );
+
+  await assert.rejects(
+    () =>
+      executarSalvarLocal(
+        {
+          auth: authFin,
+          data: {
+            id: 'loc_teatro',
+            nome: 'Teatro Guaíra',
+            cidade: 'Curitiba',
+            uf: 'PR',
+            setores: [
+              { nome: 'Plateia', capacidade: 500 },
+              { nome: 'Balcão', capacidade: 973 }
+            ] // Plateia = 500 < 720 vendidos
+          }
+        },
+        { db: mockDb }
+      ),
+    /abaixo dos ingressos já contados \(720\)/i
+  );
+
+  // Alteração válida
+  const res = await executarSalvarLocal(
+    {
+      auth: authFin,
+      data: {
+        id: 'loc_teatro',
+        nome: 'Teatro Guaíra Oficial',
+        cidade: 'Curitiba',
+        uf: 'PR',
+        setores: [
+          { nome: 'Plateia', capacidade: 1300 },
+          { nome: 'Balcão', capacidade: 1000 }
+        ]
+      }
+    },
+    { db: mockDb }
+  );
+  assert.equal(res.criado, false);
+  assert.equal(mockDb.store.locais.loc_teatro.capacidadeTotal, 2300);
+});
+
+test('Cadastro Mestre — salvarEvento protege dono imutável, trava local após vendas, recusa campos financeiros e preserva corrida com repasse', async () => {
+  const mockDb = criarMockRTDB(seedData);
+  const authFin = {
+    uid: 'fin_cad_1',
+    token: { role: 'financeiro', email: 'cadastro@diskingressos.com.br' }
+  };
+
+  // 1. Recusa payload que envia jaRepassado, vendas ou bilheteria
+  await assert.rejects(
+    () =>
+      executarSalvarEvento(
+        {
+          auth: authFin,
+          data: {
+            id: 'festival',
+            nome: 'Festival de Inverno',
+            data: '22/11/2026',
+            produtoraId: 'prod_exemplo',
+            localId: 'loc_teatro',
+            jaRepassado: 999999
+          }
+        },
+        { db: mockDb }
+      ),
+    /recusa o campo "jaRepassado"/i
+  );
+
+  // 2. Recusa trocar produtoraId (dono imutável)
+  mockDb.store.produtoras.prod_outra = {
+    id: 'prod_outra',
+    nome: 'Outra Produtora',
+    cnpj: '11.222.333/0001-81',
+    ativo: true
+  };
+  await assert.rejects(
+    () =>
+      executarSalvarEvento(
+        {
+          auth: authFin,
+          data: {
+            id: 'festival',
+            nome: 'Festival de Inverno',
+            data: '22/11/2026',
+            produtoraId: 'prod_outra',
+            localId: 'loc_teatro',
+            capacidade: { modo: 'setores', setoresAbertos: ['Plateia'], contarCortesias: false }
+          }
+        },
+        { db: mockDb }
+      ),
+    /produtoraId.*imutável/i
+  );
+
+  // 3. Recusa trocar localId após ingressos vendidos
+  await assert.rejects(
+    () =>
+      executarSalvarEvento(
+        {
+          auth: authFin,
+          data: {
+            id: 'festival',
+            nome: 'Festival de Inverno',
+            data: '22/11/2026',
+            produtoraId: 'prod_exemplo',
+            localId: 'loc_polaquedo',
+            capacidade: { modo: 'local', contarCortesias: false }
+          }
+        },
+        { db: mockDb }
+      ),
+    /Não é permitido alterar o local do evento/i
+  );
+
+  // 4. Simula corrida: entre a leitura inicial e a transação de escrita, um repasse e novas vendas ocorrem
+  const editEv = await executarSalvarEvento(
+    {
+      auth: authFin,
+      data: {
+        id: 'festival',
+        nome: 'Festival de Inverno — Edição Especial',
+        data: '22/11/2026',
+        produtoraId: 'prod_exemplo',
+        localId: 'loc_teatro',
+        liberadoParaSolicitacao: true,
+        capacidade: {
+          modo: 'setores',
+          setoresAbertos: ['Plateia'],
+          manual: 1200,
+          contarCortesias: false
+        }
+      }
+    },
+    {
+      db: mockDb,
+      onBeforeWriteEvento: async () => {
+        mockDb.store.eventos.festival.jaRepassado = 9500;
+        mockDb.store.eventos.festival.vendas.vendidos = 750;
+        mockDb.store.repasses.rep_concorrente = {
+          id: 'rep_concorrente',
+          produtoraId: 'prod_exemplo',
+          status: 'Aprovado',
+          memoriaCalculo: {
+            rateioAplicado: { festival: 4500 }
+          }
+        };
+      }
+    }
+  );
+  assert.equal(editEv.criado, false);
+  assert.equal(mockDb.store.eventos.festival.nome, 'Festival de Inverno — Edição Especial');
+  assert.equal(mockDb.store.eventos.festival.jaRepassado, 9500);
+  assert.equal(mockDb.store.eventos.festival.vendas.vendidos, 750);
+});
+
+test('Cadastro Mestre — alterarStatusCadastro exige motivo, bloqueia inativação com pendências e desliga liberadoParaSolicitacao', async () => {
+  const mockDb = criarMockRTDB(seedData);
+  const authFin = {
+    uid: 'fin_cad_1',
+    token: { role: 'financeiro', email: 'cadastro@diskingressos.com.br' }
+  };
+
+  // 1. Exige motivo ao inativar
+  await assert.rejects(
+    () =>
+      executarAlterarStatusCadastro(
+        {
+          auth: authFin,
+          data: { tipo: 'evento', id: 'standup', ativo: false, motivo: '' }
+        },
+        { db: mockDb }
+      ),
+    /Informe obrigatoriamente o motivo para inativar/i
+  );
+
+  // 2. Bloqueia inativar produtora que possui eventos ativos ou repasses solicitados
+  await assert.rejects(
+    () =>
+      executarAlterarStatusCadastro(
+        {
+          auth: authFin,
+          data: {
+            tipo: 'produtora',
+            id: 'prod_exemplo',
+            ativo: false,
+            motivo: 'Tentativa de inativar com eventos ativos'
+          }
+        },
+        { db: mockDb }
+      ),
+    /evento\(s\) ativo\(s\)/i
+  );
+
+  // 3. Bloqueia inativar local com eventos ativos
+  await assert.rejects(
+    () =>
+      executarAlterarStatusCadastro(
+        {
+          auth: authFin,
+          data: {
+            tipo: 'local',
+            id: 'loc_comedy',
+            ativo: false,
+            motivo: 'Manutenção predial'
+          }
+        },
+        { db: mockDb }
+      ),
+    /enquanto possuir evento\(s\) ativo\(s\)/i
+  );
+
+  // 4. Inativa evento sem repasses pendentes e verifica que liberadoParaSolicitacao passa a false
+  const inatEv = await executarAlterarStatusCadastro(
+    {
+      auth: authFin,
+      data: {
+        tipo: 'evento',
+        id: 'standup',
+        ativo: false,
+        motivo: 'Sessão encerrada definitivamente'
+      }
+    },
+    { db: mockDb }
+  );
+  assert.equal(inatEv.ativo, false);
+  assert.equal(mockDb.store.eventos.standup.ativo, false);
+  assert.equal(mockDb.store.eventos.standup.liberadoParaSolicitacao, false);
+});
+
+test('Cadastro Mestre — regras do RTDB bloqueiam escrita direta do cliente em /produtoras, /locais, /eventos e /cadastro_cnpj', () => {
+  const rules = JSON.parse(readFileSync(path.resolve('database.rules.json'), 'utf8')).rules;
+  assert.equal(rules.produtoras['.write'], false);
+  assert.equal(rules.locais['.write'], false);
+  assert.equal(rules.eventos['.write'], false);
+  assert.equal(rules.cadastro_cnpj['.write'], false);
+});
+

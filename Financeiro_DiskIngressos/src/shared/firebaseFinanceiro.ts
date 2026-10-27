@@ -149,6 +149,7 @@ export async function encerrarSessaoFinanceiro() {
 export interface EstadoFinanceiroRTDB {
   carregado: boolean;
   produtoras: Record<string, Record<string, unknown>>;
+  locais: Record<string, Record<string, unknown>>;
   eventos: Record<string, Record<string, unknown>>;
   eventosFin: Record<string, Record<string, unknown>>;
   negociacoes: Record<string, Record<string, unknown>>;
@@ -170,6 +171,7 @@ export function criarEstadoFinanceiroVazio(): EstadoFinanceiroRTDB {
   return {
     carregado: false,
     produtoras: {},
+    locais: {},
     eventos: {},
     eventosFin: {},
     negociacoes: {},
@@ -226,6 +228,7 @@ export function assinarDadosFinanceiroRTDB(
 
   const unsubs = [
     bindNode('/produtoras', v => { acumulado.produtoras = v as EstadoFinanceiroRTDB['produtoras']; }),
+    bindNode('/locais', v => { acumulado.locais = v as EstadoFinanceiroRTDB['locais']; }),
     bindNode('/eventos', v => { acumulado.eventos = v as EstadoFinanceiroRTDB['eventos']; }),
     bindNode('/eventos_fin', v => { acumulado.eventosFin = v as EstadoFinanceiroRTDB['eventosFin']; }),
     bindNode('/negociacoes', v => { acumulado.negociacoes = v as EstadoFinanceiroRTDB['negociacoes']; }),
@@ -370,6 +373,76 @@ export async function chamarReabrirCompetencia(payload: { competencia: string; m
   }
   const { functions } = obterServicosFirebase();
   const fn = httpsCallable(functions, 'reabrirCompetencia');
+  const res = await fn(payload);
+  return res.data;
+}
+
+export async function chamarSalvarProdutora(payload: {
+  id?: string;
+  nome: string;
+  cnpj: string;
+  patrocinio?: { ativo: boolean; descricao: string; valor: number };
+}) {
+  if (!firebaseFinanceiroConfigurado) {
+    throw new Error('O simulador local não implementa salvarProdutora. Conecte ao Firebase ou Emulator.');
+  }
+  const { functions } = obterServicosFirebase();
+  const fn = httpsCallable(functions, 'salvarProdutora');
+  const res = await fn(payload);
+  return res.data;
+}
+
+export async function chamarSalvarLocal(payload: {
+  id?: string;
+  nome: string;
+  cidade: string;
+  uf: string;
+  capacidadeTotal?: number;
+  setores: Array<{ nome: string; capacidade: number }>;
+}) {
+  if (!firebaseFinanceiroConfigurado) {
+    throw new Error('O simulador local não implementa salvarLocal. Conecte ao Firebase ou Emulator.');
+  }
+  const { functions } = obterServicosFirebase();
+  const fn = httpsCallable(functions, 'salvarLocal');
+  const res = await fn(payload);
+  return res.data;
+}
+
+export async function chamarSalvarEvento(payload: {
+  id?: string;
+  nome: string;
+  data: string;
+  produtoraId: string;
+  localId: string;
+  liberadoParaSolicitacao?: boolean;
+  capacidade?: {
+    modo: 'local' | 'setores' | 'manual';
+    setoresAbertos?: string[];
+    manual?: number;
+    contarCortesias?: boolean;
+  };
+}) {
+  if (!firebaseFinanceiroConfigurado) {
+    throw new Error('O simulador local não implementa salvarEvento. Conecte ao Firebase ou Emulator.');
+  }
+  const { functions } = obterServicosFirebase();
+  const fn = httpsCallable(functions, 'salvarEvento');
+  const res = await fn(payload);
+  return res.data;
+}
+
+export async function chamarAlterarStatusCadastro(payload: {
+  tipo: 'produtora' | 'local' | 'evento';
+  id: string;
+  ativo: boolean;
+  motivo?: string;
+}) {
+  if (!firebaseFinanceiroConfigurado) {
+    throw new Error('O simulador local não implementa alterarStatusCadastro. Conecte ao Firebase ou Emulator.');
+  }
+  const { functions } = obterServicosFirebase();
+  const fn = httpsCallable(functions, 'alterarStatusCadastro');
   const res = await fn(payload);
   return res.data;
 }

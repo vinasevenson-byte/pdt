@@ -25,9 +25,11 @@ import { saldosModule } from '../modules/saldos';
 import { fluxoCaixaModule } from '../modules/fluxo-caixa';
 import { ledgerModule } from '../modules/ledger';
 import { fechamentoModule } from '../modules/fechamento';
+import { cadastroModule } from '../modules/cadastro';
 import { VERTICAL_FINANCEIRO_MODULES } from './generatedModules';
 
 export const REGISTERED_MODULES: FinancialModulePlugin[] = [
+  cadastroModule,
   eventosModule,
   negociacoesModule,
   repassesModule,
@@ -45,6 +47,10 @@ export const REGISTERED_MODULES: FinancialModulePlugin[] = [
 ];
 
 const MODULE_META: Record<string, { desc: string; icon: 'saldo' | 'repasses' | 'contas' | 'antecipacoes' | 'despesas' }> = {
+  cadastro: {
+    desc: 'Cadastro mestre de produtoras, locais e eventos com CNPJ único e preservação de estado financeiro.',
+    icon: 'contas'
+  },
   eventos: {
     desc: 'Borderô de eventos, bilheteria bruta, cortesias, público vendido e travas de capacidade.',
     icon: 'saldo'
