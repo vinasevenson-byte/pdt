@@ -1,0 +1,35 @@
+{
+  "id": "operacao/vendas",
+  "dominio": "operacao",
+  "modulo": "vendas",
+  "titulo": "Vendas, Lotes e Cortesias",
+  "descricao": "Ingestão idempotente de lotes de vendas e cortesias com trava de capacidade por setor, geração de Contas a Receber e recálculo automático do borderô",
+  "camada": "node",
+  "rolesPermitidas": [
+    "financeiro",
+    "produtor"
+  ],
+  "rtdb": {
+    "no": "vendas_lotes",
+    "leituraProdutor": "dono",
+    "escritaCliente": "nenhuma",
+    "camposObrigatorios": [
+      "produtoraId",
+      "eventoId",
+      "status"
+    ]
+  },
+  "ui": {
+    "financeiro": true,
+    "produtor": true
+  },
+  "dependencias": [
+    "core",
+    "eventos",
+    "contas_receber"
+  ],
+  "eventosEmitidos": [
+    "operacao.vendas.lote_registrado"
+  ],
+  "featureFlag": "ff_operacao_vendas"
+}

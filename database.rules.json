@@ -64,6 +64,14 @@
         ".write": false
       }
     },
+    "contratos_produtor": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": false,
+      "$produtoraId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId))",
+        ".write": false
+      }
+    },
     "config": {
       ".read": "auth != null && auth.token.role === 'financeiro'",
       ".write": "auth != null && auth.token.role === 'financeiro'",
@@ -269,6 +277,17 @@
         ".read": "auth != null && auth.token.role === 'financeiro'",
         ".write": false,
         ".validate": "newData.hasChildren(['produtoraId', 'status'])"
+      }
+    },
+    "vendas_lotes": {
+      ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && query.orderByChild === 'produtoraId' && query.equalTo === auth.token.produtoraId))",
+      ".indexOn": [
+        "produtoraId"
+      ],
+      "$itemId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
+        ".write": false,
+        ".validate": "newData.hasChildren(['produtoraId', 'eventoId', 'status'])"
       }
     }
   }

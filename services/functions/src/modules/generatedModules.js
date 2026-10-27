@@ -8,5 +8,6 @@ module.exports = {
   ...require('../../../../modules/financeiro/chargebacks/functions'),
   ...require('../../../../modules/financeiro/conciliacao/functions'),
   ...require('../../../../modules/financeiro/fiscal/functions'),
-  ...require('../../../../modules/financeiro/remessa/functions')
+  ...require('../../../../modules/financeiro/remessa/functions'),
+  ...require('../../../../modules/operacao/vendas/functions')
 };

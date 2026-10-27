@@ -59,6 +59,15 @@
       }
     },
 
+    "contratos_produtor": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".write": false,
+      "$produtoraId": {
+        ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && auth.token.produtoraId === $produtoraId))",
+        ".write": false
+      }
+    },
+
     "config": {
       ".read": "auth != null && auth.token.role === 'financeiro'",
       ".write": "auth != null && auth.token.role === 'financeiro'",

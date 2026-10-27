@@ -50,6 +50,14 @@ const {
 } = require('../services/functions/src/modules/cadastro_core/index.js');
 
 const {
+  executarPublicarVersaoContratoNegociacao
+} = require('../modules/comercial/contratos/functions/index.js');
+
+const {
+  executarRegistrarLoteVendasBordero
+} = require('../modules/operacao/vendas/functions/index.js');
+
+const {
   validarTransicaoRepasse,
   validarTransicaoAntecipacao,
   executarSolicitarRepasse,
@@ -1546,4 +1554,236 @@ test('Cadastro Mestre — regras do RTDB bloqueiam escrita direta do cliente em 
   assert.equal(rules.eventos['.write'], false);
   assert.equal(rules.cadastro_cnpj['.write'], false);
 });
+
+// ============================================================================
+// FASE 3, MÓDULO 2 — CONTRATOS, NEGOCIAÇÕES E ADITIVOS VERSIONADOS
+// ============================================================================
+
+test('FASE 3 (Módulo 2) — Contratos e Aditivos Versionados: faixas crescentes, selo SHA-256, histórico v1/v2 e projeção limpa sem taxas Disk', async () => {
+  const mockDb = criarMockRTDB(seedData);
+  const authComercial = {
+    uid: 'usr_comercial_1',
+    token: { role: 'comercial', email: 'comercial@diskingressos.com.br' }
+  };
+
+  // 1. Recusa faixas de liberação fora de ordem crescente
+  await assert.rejects(
+    () =>
+      executarPublicarVersaoContratoNegociacao(
+        {
+          auth: authComercial,
+          data: {
+            eventoId: 'polaquedo',
+            eventoFin: {
+              ...seedData.eventos_fin.polaquedo,
+              regra: {
+                ...seedData.eventos_fin.polaquedo.regra,
+                faixas: [
+                  { gatilhoPct: 50, liberaPct: 40 },
+                  { gatilhoPct: 30, liberaPct: 20 }
+                ]
+              }
+            }
+          }
+        },
+        { db: mockDb }
+      ),
+    /estritamente crescente/i
+  );
+
+  // 2. Publica versão inicial (v1) do contrato para 'polaquedo'
+  const v1 = await executarPublicarVersaoContratoNegociacao(
+    {
+      auth: authComercial,
+      data: {
+        eventoId: 'polaquedo',
+        numeroContrato: 'CTR-POL-2026-001',
+        vigenciaInicio: '2026-01-01',
+        vigenciaFim: '2026-12-31',
+        negociacao: seedData.negociacoes.polaquedo,
+        eventoFin: seedData.eventos_fin.polaquedo
+      }
+    },
+    { db: mockDb }
+  );
+
+  assert.equal(v1.versao, 1);
+  assert.equal(v1.ehAditivo, false);
+  assert.equal(v1.hashTermosSha256.length, 64);
+  assert.ok(mockDb.store.contratos.polaquedo.historico.v1);
+
+  // Projeção pública do produtor não pode conter termos internos da Disk
+  const projJson = JSON.stringify(mockDb.store.contratos_produtor.prod_exemplo.polaquedo);
+  for (const proibido of ['taxaAdm', 'taxaOp', 'conveniencia', 'eventos_fin', 'negociacoes']) {
+    assert.equal(projJson.includes(proibido), false, `Projeção do produtor vazou termo proibido: ${proibido}`);
+  }
+
+  // 3. Exige motivoAditivo ao publicar versão 2 (aditivo)
+  await assert.rejects(
+    () =>
+      executarPublicarVersaoContratoNegociacao(
+        {
+          auth: authComercial,
+          data: {
+            eventoId: 'polaquedo',
+            eventoFin: {
+              ...seedData.eventos_fin.polaquedo,
+              patrocinioEvento: { ativo: true, descricao: 'Cota Extra', valor: 500 }
+            }
+          }
+        },
+        { db: mockDb }
+      ),
+    /motivoAditivo/i
+  );
+
+  // 4. Publica aditivo (v2) com motivo e verifica preservação de v1 + v2 e recálculo do borderô
+  const v2 = await executarPublicarVersaoContratoNegociacao(
+    {
+      auth: authComercial,
+      data: {
+        eventoId: 'polaquedo',
+        motivoAditivo: 'Inclusão de patrocínio local de R$ 500,00 no evento',
+        eventoFin: {
+          ...seedData.eventos_fin.polaquedo,
+          patrocinioEvento: { ativo: true, descricao: 'Cota Extra', valor: 500 }
+        }
+      }
+    },
+    { db: mockDb }
+  );
+
+  assert.equal(v2.versao, 2);
+  assert.equal(v2.ehAditivo, true);
+  assert.notEqual(v2.hashTermosSha256, v1.hashTermosSha256);
+  assert.ok(mockDb.store.contratos.polaquedo.historico.v1);
+  assert.ok(mockDb.store.contratos.polaquedo.historico.v2);
+  // Patrocínio de R$ 500,00 limitado ao teto da Taxa Adm líquida de Polaquedo (5% de R$ 6.000 = R$ 300,00)
+  assert.equal(mockDb.store.borderos_produtor.prod_exemplo.polaquedo.patrocinio, 300);
+});
+
+// ============================================================================
+// FASE 3, MÓDULO 3 — OPERAÇÃO DE VENDAS, LOTES E CORTESIAS
+// ============================================================================
+
+test('FASE 3 (Módulo 3) — Ingestão de Vendas e Cortesias: destrava faixa de borderô automaticamente, gera Contas a Receber, garante idempotência e bloqueia excesso de capacidade/setor', async () => {
+  const mockDb = criarMockRTDB(seedData);
+  const authOperador = {
+    uid: 'usr_op_vendas',
+    token: { role: 'operador', email: 'operacao@diskingressos.com.br' }
+  };
+
+  // No seed, 'standup' tem 60 vendidos de 800 (7,5%) -> liberavel = 0
+  assert.equal(mockDb.store.borderos_produtor.prod_exemplo.standup.liberavel, 0);
+
+  // 1. Registra lote de +180 ingressos vendidos a R$ 60,00 (R$ 10.800,00) via PIX -> atinge 240 vendidos (30% da capacidade)
+  const lote1 = await executarRegistrarLoteVendasBordero(
+    {
+      auth: authOperador,
+      data: {
+        loteId: 'lote_standup_01',
+        eventoId: 'standup',
+        setor: 'Plateia',
+        nomeLote: '2º Lote Promocional',
+        quantidadeVendida: 180,
+        quantidadeCortesias: 5,
+        precoUnitario: 60,
+        meioPagamento: 'PIX'
+      }
+    },
+    { db: mockDb }
+  );
+
+  assert.equal(lote1.idempotente, false);
+  assert.equal(lote1.vendasAcumuladas.vendidos, 240);
+  assert.equal(lote1.vendasAcumuladas.cortesias, 5);
+  assert.equal(lote1.vendasAcumuladas.bilheteria, 14400);
+  assert.ok(mockDb.store.contas_receber.cr_vnd_lote_standup_01, 'Deve gerar título em /contas_receber');
+  assert.equal(mockDb.store.contas_receber.cr_vnd_lote_standup_01.valorCents, 1080000);
+  assert.ok(
+    mockDb.store.borderos_produtor.prod_exemplo.standup.liberavel > 0,
+    'Atingir 30% da capacidade deve destravar automaticamente o saldo liberável no borderô'
+  );
+
+  // 2. Reenvio idêntico do mesmo loteId é idempotente (não duplica vendas nem recebíveis)
+  const reenvio = await executarRegistrarLoteVendasBordero(
+    {
+      auth: authOperador,
+      data: {
+        loteId: 'lote_standup_01',
+        eventoId: 'standup',
+        setor: 'Plateia',
+        nomeLote: '2º Lote Promocional',
+        quantidadeVendida: 180,
+        quantidadeCortesias: 5,
+        precoUnitario: 60,
+        meioPagamento: 'PIX'
+      }
+    },
+    { db: mockDb }
+  );
+  assert.equal(reenvio.idempotente, true);
+  assert.equal(mockDb.store.eventos.standup.vendas.vendidos, 240);
+
+  // 3. Reenvio do mesmo loteId com payload divergente gera conflito de idempotência
+  await assert.rejects(
+    () =>
+      executarRegistrarLoteVendasBordero(
+        {
+          auth: authOperador,
+          data: {
+            loteId: 'lote_standup_01',
+            eventoId: 'standup',
+            setor: 'Plateia',
+            nomeLote: '2º Lote Promocional',
+            quantidadeVendida: 200,
+            quantidadeCortesias: 5,
+            precoUnitario: 60,
+            meioPagamento: 'PIX'
+          }
+        },
+        { db: mockDb }
+      ),
+    /Conflito de idempotência/i
+  );
+
+  // 4. Bloqueia venda em setor fechado ('Balcão' não está em setoresAbertos de 'festival')
+  await assert.rejects(
+    () =>
+      executarRegistrarLoteVendasBordero(
+        {
+          auth: authOperador,
+          data: {
+            loteId: 'lote_fest_balcao',
+            eventoId: 'festival',
+            setor: 'Balcão',
+            quantidadeVendida: 10,
+            precoUnitario: 100
+          }
+        },
+        { db: mockDb }
+      ),
+    /não está aberto no evento/i
+  );
+
+  // 5. Bloqueia venda que ultrapassa a capacidade configurada do evento ('festival' tem 720 vendidos de 1200 na Plateia; +500 = 1220 > 1200)
+  await assert.rejects(
+    () =>
+      executarRegistrarLoteVendasBordero(
+        {
+          auth: authOperador,
+          data: {
+            loteId: 'lote_fest_excesso',
+            eventoId: 'festival',
+            setor: 'Plateia',
+            quantidadeVendida: 500,
+            precoUnitario: 100
+          }
+        },
+        { db: mockDb }
+      ),
+    /Ultrapassa o teto de capacidade/i
+  );
+});
+
 

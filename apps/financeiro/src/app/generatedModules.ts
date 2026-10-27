@@ -7,11 +7,13 @@ import { modulePlugin as financeiro_chargebacks_Plugin } from '../../../../modul
 import { modulePlugin as financeiro_conciliacao_Plugin } from '../../../../modules/financeiro/conciliacao/ui';
 import { modulePlugin as financeiro_fiscal_Plugin } from '../../../../modules/financeiro/fiscal/ui';
 import { modulePlugin as financeiro_remessa_Plugin } from '../../../../modules/financeiro/remessa/ui';
+import { modulePlugin as operacao_vendas_Plugin } from '../../../../modules/operacao/vendas/ui';
 
 export const VERTICAL_FINANCEIRO_MODULES: FinancialModulePlugin[] = [
   comercial_contratos_Plugin,
   financeiro_chargebacks_Plugin,
   financeiro_conciliacao_Plugin,
   financeiro_fiscal_Plugin,
-  financeiro_remessa_Plugin
+  financeiro_remessa_Plugin,
+  operacao_vendas_Plugin
 ];
