@@ -48,7 +48,8 @@ const MATRIZ_PERMISSOES = Object.freeze({
     'negociacoes:gerenciar',
     'vendas:gerenciar',
     'conta:validar',
-    'auditoria:ler'
+    'auditoria:ler',
+    'bi:ler'
   ]),
   [ROLES_SISTEMA.OPERADOR]: new Set([
     'painel:ler',
@@ -69,7 +70,8 @@ const MATRIZ_PERMISSOES = Object.freeze({
     'competencia:previa',
     'competencia:fechar',
     'competencia:reabrir',
-    'auditoria:ler'
+    'auditoria:ler',
+    'bi:ler'
   ]),
   [ROLES_SISTEMA.COMERCIAL]: new Set([
     'painel:ler',
@@ -81,7 +83,8 @@ const MATRIZ_PERMISSOES = Object.freeze({
   [ROLES_SISTEMA.AUDITOR]: new Set([
     'painel:ler',
     'competencia:previa',
-    'auditoria:ler'
+    'auditoria:ler',
+    'bi:ler'
   ]),
   [ROLES_SISTEMA.PRODUTOR]: new Set([
     'portal_produtor:ler',

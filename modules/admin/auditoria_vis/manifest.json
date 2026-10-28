@@ -1,0 +1,33 @@
+{
+  "id": "admin/auditoria_vis",
+  "dominio": "admin",
+  "modulo": "auditoria_vis",
+  "titulo": "Visualizador de Auditoria e Assinaturas",
+  "descricao": "Busca consolidada na trilha de auditoria, verificação de integridade de assinaturas eletrônicas de repasses e outbox de eventos de domínio",
+  "camada": "node",
+  "rolesPermitidas": [
+    "financeiro"
+  ],
+  "rtdb": {
+    "no": "auditoria_relatorios",
+    "leituraProdutor": "nenhuma",
+    "escritaCliente": "nenhuma",
+    "camposObrigatorios": [
+      "geradoEm",
+      "status"
+    ]
+  },
+  "ui": {
+    "financeiro": true,
+    "produtor": false
+  },
+  "dependencias": [
+    "core",
+    "auditoria",
+    "eventos_dominio"
+  ],
+  "eventosEmitidos": [
+    "admin.auditoria_vis.relatorio_gerado"
+  ],
+  "featureFlag": "ff_admin_auditoria_vis"
+}

@@ -1,0 +1,35 @@
+{
+  "id": "plataforma/bi_executivo",
+  "dominio": "plataforma",
+  "modulo": "bi_executivo",
+  "titulo": "BI Executivo e DRE Gerencial",
+  "descricao": "Consolidação executiva em centavos de GMV, Take Rate líquido Disk, DRE operacional, passivo retido/liberável e posição de tesouraria",
+  "camada": "node",
+  "rolesPermitidas": [
+    "financeiro"
+  ],
+  "rtdb": {
+    "no": "bi_executivo",
+    "leituraProdutor": "nenhuma",
+    "escritaCliente": "nenhuma",
+    "camposObrigatorios": [
+      "status",
+      "geradoEm"
+    ]
+  },
+  "ui": {
+    "financeiro": true,
+    "produtor": false
+  },
+  "dependencias": [
+    "core",
+    "ledger",
+    "saldos",
+    "contas_pagar",
+    "contas_receber"
+  ],
+  "eventosEmitidos": [
+    "plataforma.bi_executivo.snapshot_gerado"
+  ],
+  "featureFlag": "ff_plataforma_bi_executivo"
+}

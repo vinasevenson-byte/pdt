@@ -1,0 +1,35 @@
+{
+  "id": "admin/usuarios",
+  "dominio": "admin",
+  "modulo": "usuarios",
+  "titulo": "Usuários, Papéis (RBAC) e Alçadas",
+  "descricao": "Gestão auditada de Custom Claims (financeiro, aprovador, operador, fiscal, comercial, auditor, produtor), segregação de funções e configuração de alçada de dupla aprovação",
+  "camada": "node",
+  "rolesPermitidas": [
+    "financeiro"
+  ],
+  "rtdb": {
+    "no": "usuarios_erp",
+    "leituraProdutor": "nenhuma",
+    "escritaCliente": "nenhuma",
+    "camposObrigatorios": [
+      "uid",
+      "email",
+      "papel",
+      "status"
+    ]
+  },
+  "ui": {
+    "financeiro": true,
+    "produtor": false
+  },
+  "dependencias": [
+    "core",
+    "auditoria"
+  ],
+  "eventosEmitidos": [
+    "admin.usuarios.papel_atribuido",
+    "admin.usuarios.alcada_atualizada"
+  ],
+  "featureFlag": "ff_admin_usuarios"
+}

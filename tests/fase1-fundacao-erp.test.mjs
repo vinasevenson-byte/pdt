@@ -58,6 +58,19 @@ const {
 } = require('../modules/operacao/vendas/functions/index.js');
 
 const {
+  executarAtribuirPapelUsuarioERP,
+  executarConfigurarAlcadaERP
+} = require('../modules/admin/usuarios/functions/index.js');
+
+const {
+  executarConsultarAuditoriaConsolidada
+} = require('../modules/admin/auditoria_vis/functions/index.js');
+
+const {
+  executarGerarSnapshotBiExecutivo
+} = require('../modules/plataforma/bi_executivo/functions/index.js');
+
+const {
   validarTransicaoRepasse,
   validarTransicaoAntecipacao,
   executarSolicitarRepasse,
@@ -1785,5 +1798,175 @@ test('FASE 3 (Módulo 3) — Ingestão de Vendas e Cortesias: destrava faixa de 
     /Ultrapassa o teto de capacidade/i
   );
 });
+
+// ============================================================================
+// FASE 4 — ADMIN, NOTIFICAÇÕES E BI EXECUTIVO
+// ============================================================================
+
+test('FASE 4 (Módulo 1) — Usuários, Papéis (RBAC) e Alçadas: Custom Claims, segregação contra auto-alteração, histórico v1/v2 e atualização de alçada', async () => {
+  const mockDb = criarMockRTDB(seedData);
+  const claimsGravadas = {};
+  const mockAuthAdmin = {
+    async setCustomUserClaims(uid, claims) {
+      claimsGravadas[uid] = claims;
+    }
+  };
+
+  const authMaster = {
+    uid: 'uid_admin_master',
+    token: { role: 'financeiro', email: 'master@diskingressos.com.br' }
+  };
+  const authOperador = {
+    uid: 'uid_op_1',
+    token: { role: 'operador', email: 'op@diskingressos.com.br' }
+  };
+
+  // 1. Operador sem permissão 'usuarios:gerenciar' é bloqueado
+  await assert.rejects(
+    () =>
+      executarAtribuirPapelUsuarioERP(
+        {
+          auth: authOperador,
+          data: { uid: 'uid_novo', email: 'novo@disk.com', papel: 'aprovador', motivo: 'Teste' }
+        },
+        { db: mockDb, authAdmin: mockAuthAdmin }
+      ),
+    /usuarios:gerenciar/i
+  );
+
+  // 2. Segregação de funções: mesmo o admin master não pode alterar seu próprio uid
+  await assert.rejects(
+    () =>
+      executarAtribuirPapelUsuarioERP(
+        {
+          auth: authMaster,
+          data: { uid: 'uid_admin_master', email: 'master@diskingressos.com.br', papel: 'aprovador', motivo: 'Auto-alteração' }
+        },
+        { db: mockDb, authAdmin: mockAuthAdmin }
+      ),
+    /Segregação de funções/i
+  );
+
+  // 3. Atribui papel 'aprovador' (v1) e depois promove/altera para 'fiscal' (v2)
+  const u1 = await executarAtribuirPapelUsuarioERP(
+    {
+      auth: authMaster,
+      data: {
+        uid: 'uid_colab_01',
+        email: 'ana@diskingressos.com.br',
+        nome: 'Ana Aprovadora',
+        papel: 'aprovador',
+        motivo: 'Admissão na mesa aprovadora'
+      }
+    },
+    { db: mockDb, authAdmin: mockAuthAdmin }
+  );
+  assert.equal(u1.versao, 1);
+  assert.deepEqual(claimsGravadas.uid_colab_01, { role: 'financeiro', subRole: 'aprovador' });
+
+  const u2 = await executarAtribuirPapelUsuarioERP(
+    {
+      auth: authMaster,
+      data: {
+        uid: 'uid_colab_01',
+        email: 'ana@diskingressos.com.br',
+        nome: 'Ana Fiscal',
+        papel: 'fiscal',
+        motivo: 'Transferência para controladoria fiscal'
+      }
+    },
+    { db: mockDb, authAdmin: mockAuthAdmin }
+  );
+  assert.equal(u2.versao, 2);
+  assert.deepEqual(claimsGravadas.uid_colab_01, { role: 'financeiro', subRole: 'fiscal' });
+  assert.ok(mockDb.store.usuarios_erp.uid_colab_01.historico.v1);
+  assert.ok(mockDb.store.usuarios_erp.uid_colab_01.historico.v2);
+
+  // 4. Atribui papel 'produtor' vinculado a 'prod_exemplo'
+  const uProd = await executarAtribuirPapelUsuarioERP(
+    {
+      auth: authMaster,
+      data: {
+        uid: 'uid_prod_01',
+        email: 'contato@produtoraexemplo.com.br',
+        papel: 'produtor',
+        produtoraId: 'prod_exemplo',
+        motivo: 'Credenciamento do portal do produtor'
+      }
+    },
+    { db: mockDb, authAdmin: mockAuthAdmin }
+  );
+  assert.equal(uProd.produtoraId, 'prod_exemplo');
+  assert.deepEqual(claimsGravadas.uid_prod_01, {
+    role: 'produtor',
+    subRole: 'produtor',
+    produtoraId: 'prod_exemplo'
+  });
+
+  // 5. Atualiza alçada de dupla aprovação (/config/alcada)
+  const alcada = await executarConfigurarAlcadaERP(
+    {
+      auth: authMaster,
+      data: {
+        ativo: true,
+        limiteDuplaAprovacaoReais: 15000,
+        motivo: 'Revisão trimestral do comitê financeiro'
+      }
+    },
+    { db: mockDb }
+  );
+  assert.equal(alcada.limiteDuplaAprovacaoCents, 1500000);
+  assert.equal(mockDb.store.config.alcada.limiteDuplaAprovacaoReais, 15000);
+});
+
+test('FASE 4 (Módulo 2 e Módulo 3) — Visualizador de Auditoria/Assinaturas e BI Executivo/DRE Gerencial', async () => {
+  const mockDb = criarMockRTDB(seedData);
+  const authAuditor = {
+    uid: 'uid_auditor_1',
+    token: { role: 'auditor', email: 'auditor@diskingressos.com.br' }
+  };
+
+  // Adiciona assinatura eletrônica ao repasse histórico para testar verificação
+  mockDb.store.repasses.rep_hist_1.assinaturaEletronica = {
+    aceito: true,
+    ip: '200.150.10.25',
+    userAgent: 'Mozilla/5.0',
+    dataHora: '05/10/2026 14:15:00'
+  };
+
+  // 1. Consulta auditoria consolidada filtrando por módulo 'Repasses'
+  const relAud = await executarConsultarAuditoriaConsolidada(
+    {
+      auth: authAuditor,
+      data: {
+        modulo: 'Repasses',
+        persistirSnapshot: true
+      }
+    },
+    { db: mockDb, nowDate: new Date('2026-10-27T15:00:00-03:00') }
+  );
+
+  assert.equal(relAud.trilha.totalFiltrados, 1);
+  assert.equal(relAud.assinaturas.qtdComAssinaturaCompleta, 1);
+  assert.equal(relAud.assinaturas.seloConformidadeSha256.length, 64);
+
+  // 2. Gera snapshot do BI Executivo e DRE Gerencial
+  const snapBi = await executarGerarSnapshotBiExecutivo(
+    {
+      auth: authAuditor,
+      data: { chaveSnapshot: 'outubro_2026' }
+    },
+    { db: mockDb, nowDate: new Date('2026-10-27T15:05:00-03:00') }
+  );
+
+  assert.equal(snapBi.gmvBilheteriaBruta, 81600);
+  assert.equal(snapBi.totalIngressosVendidos, 930);
+  assert.ok(snapBi.dreDisk.receitaBrutaDiskCents > 0);
+  assert.ok(snapBi.dreDisk.receitaLiquidaDiskCents > 0);
+  assert.equal(snapBi.passivoProdutores.liberavelTotal, 240 + 4816 + 0);
+  assert.equal(snapBi.seloDreSha256.length, 64);
+  assert.ok(mockDb.store.bi_executivo.outubro_2026);
+});
+
 
 

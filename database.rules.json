@@ -224,6 +224,28 @@
         ".validate": "!data.exists() && newData.hasChildren(['dataHora', 'usuario', 'modulo', 'acao', 'resumo'])"
       }
     },
+    "auditoria_relatorios": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".indexOn": [
+        "produtoraId"
+      ],
+      "$itemId": {
+        ".read": "auth != null && auth.token.role === 'financeiro'",
+        ".write": false,
+        ".validate": "newData.hasChildren(['geradoEm', 'status'])"
+      }
+    },
+    "usuarios_erp": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".indexOn": [
+        "produtoraId"
+      ],
+      "$itemId": {
+        ".read": "auth != null && auth.token.role === 'financeiro'",
+        ".write": false,
+        ".validate": "newData.hasChildren(['uid', 'email', 'papel', 'status'])"
+      }
+    },
     "contratos": {
       ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && query.orderByChild === 'produtoraId' && query.equalTo === auth.token.produtoraId))",
       ".indexOn": [
@@ -288,6 +310,17 @@
         ".read": "auth != null && (auth.token.role === 'financeiro' || (auth.token.role === 'produtor' && data.child('produtoraId').val() === auth.token.produtoraId))",
         ".write": false,
         ".validate": "newData.hasChildren(['produtoraId', 'eventoId', 'status'])"
+      }
+    },
+    "bi_executivo": {
+      ".read": "auth != null && auth.token.role === 'financeiro'",
+      ".indexOn": [
+        "produtoraId"
+      ],
+      "$itemId": {
+        ".read": "auth != null && auth.token.role === 'financeiro'",
+        ".write": false,
+        ".validate": "newData.hasChildren(['status', 'geradoEm'])"
       }
     }
   }
