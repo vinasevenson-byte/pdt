@@ -590,3 +590,58 @@ export function chamarConsultarAuditoriaConsolidada(payload: {
 export function chamarGerarSnapshotBiExecutivo(payload: { chaveSnapshot?: string } = {}) {
   return chamarCallableFinanceiro('gerarSnapshotBiExecutivo', payload);
 }
+
+export async function salvarConfiguracaoEventoTravasRTDB(payload: {
+  eventoId: string;
+  eventoPatch?: Record<string, unknown>;
+  eventoFin: Record<string, unknown>;
+  negociacao?: Record<string, unknown>;
+  usuarioEmail: string;
+  resumoAuditoria: string;
+}) {
+  const { eventoId, eventoPatch, eventoFin, negociacao, usuarioEmail, resumoAuditoria } = payload;
+  if (!firebaseFinanceiroConfigurado) {
+    await fetch(`${obterUrlServidorLocal()}/rtdb/salvarEventosTravas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    notificarDadosLocais();
+    return { ok: true, eventoId };
+  }
+  const { db } = obterServicosFirebase();
+  await set(ref(db, `/eventos_fin/${eventoId}`), eventoFin);
+  if (negociacao) {
+    await set(ref(db, `/negociacoes/${eventoId}`), negociacao);
+  }
+  if (eventoPatch && eventoPatch.capacidade && eventoPatch.nome && eventoPatch.produtoraId && eventoPatch.localId) {
+    try {
+      await chamarSalvarEvento({
+        id: eventoId,
+        nome: String(eventoPatch.nome),
+        data: String(eventoPatch.data || ''),
+        produtoraId: String(eventoPatch.produtoraId),
+        localId: String(eventoPatch.localId),
+        liberadoParaSolicitacao: eventoPatch.liberadoParaSolicitacao !== false,
+        capacidade: eventoPatch.capacidade as {
+          modo: 'local' | 'setores' | 'manual';
+          setoresAbertos?: string[];
+          manual?: number;
+          contarCortesias?: boolean;
+        }
+      });
+    } catch {
+      // Se salvarEvento recusar edição por corrida ou regra, preserva /eventos_fin salvo
+    }
+  }
+  const audRef = push(ref(db, '/auditoria'));
+  await set(audRef, {
+    dataHora: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+    usuario: usuarioEmail,
+    modulo: 'Travas e Taxas',
+    eventoId,
+    acao: 'Salvo Configuração do Evento e Travas',
+    resumo: resumoAuditoria
+  });
+  return { ok: true, eventoId };
+}

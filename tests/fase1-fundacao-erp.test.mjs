@@ -2112,6 +2112,15 @@ test('SANEAMENTO v3.0.0 — Telas Administrativas Interativas, Integração Sald
   const appFin = readFileSync(path.resolve('apps/financeiro/src/app/App.tsx'), 'utf8');
   assert.ok(appFin.includes('VITE_PRODUTOR_URL'), 'Painel Financeiro deve suportar VITE_PRODUTOR_URL');
   assert.ok(appFin.includes('/produtor.html'), 'Painel Financeiro deve ter fallback HTTPS /produtor.html fora de localhost');
+
+  // 4. Menu Eventos e Travas com todas as telas (Cascata, Simulador What-If, 7 Seções, Prévia Lateral e Fechamento PDF)
+  const uiEventosTravas = readFileSync(path.resolve('apps/financeiro/src/modules/eventos/index.tsx'), 'utf8');
+  assert.ok(uiEventosTravas.includes('MENU_TELAS_EVENTOS_TRAVAS'), 'Deve expor o menu de telas de Eventos e Travas');
+  for (const telaId of ['todas', 'cascata', 'simulador', 'capacidade', 'bordero', 'taxas_disk', 'retencoes', 'descontos_op', 'creditos', 'regras_faixas', 'pdf']) {
+    assert.ok(uiEventosTravas.includes(`'${telaId}'`), `Menu Eventos e Travas deve conter a tela "${telaId}"`);
+  }
+  assert.ok(uiEventosTravas.includes('salvarConfiguracaoEventoTravasRTDB'), 'Deve persistir alterações com trilha de auditoria');
+  assert.ok(uiEventosTravas.includes('simularVendasEventoUI'), 'Deve integrar o Simulador E se? (What-If) ao vivo');
 });
 
 

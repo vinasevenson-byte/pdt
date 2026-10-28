@@ -476,6 +476,37 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'POST' && url.pathname === '/rtdb/salvarEventosTravas') {
+      const body = await lerJsonBody(req);
+      const { eventoId, eventoPatch, eventoFin, negociacao, usuarioEmail, resumoAuditoria } = body;
+      if (eventoId) {
+        if (eventoPatch && dbState.eventos[eventoId]) {
+          dbState.eventos[eventoId] = { ...dbState.eventos[eventoId], ...eventoPatch };
+        }
+        if (eventoFin) {
+          dbState.eventos_fin = dbState.eventos_fin || {};
+          dbState.eventos_fin[eventoId] = eventoFin;
+        }
+        if (negociacao) {
+          dbState.negociacoes = dbState.negociacoes || {};
+          dbState.negociacoes[eventoId] = negociacao;
+        }
+        dbState.auditoria = dbState.auditoria || {};
+        dbState.auditoria[`aud_${Date.now()}`] = {
+          dataHora: formatarDataHoraBR(),
+          usuario: usuarioEmail || 'financeiro@diskingressos.com.br',
+          modulo: 'Travas e Taxas',
+          eventoId,
+          acao: 'Salvo Configuração do Evento e Travas',
+          resumo: resumoAuditoria || `Configuração de travas e borderô salva para ${eventoId}.`
+        };
+        recalcularTudo();
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, eventoId }));
+      return;
+    }
+
     res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: 'Rota não encontrada' }));
   } catch (err) {
