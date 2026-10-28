@@ -398,13 +398,14 @@ export function executarBuildModulos(rootDir = ROOT_DIR) {
 export function verificarBuildModulos(rootDir = ROOT_DIR) {
   const { arquivosAlvo } = compilarArtefatosModulos(rootDir);
   const desatualizados = [];
+  const normEol = s => String(s || '').replace(/\r\n/g, '\n');
   for (const [absPath, expectedContent] of arquivosAlvo.entries()) {
     if (!fs.existsSync(absPath)) {
       desatualizados.push(`${path.relative(rootDir, absPath)} (ausente)`);
       continue;
     }
     const atual = fs.readFileSync(absPath, 'utf8');
-    if (atual !== expectedContent) {
+    if (normEol(atual) !== normEol(expectedContent)) {
       desatualizados.push(`${path.relative(rootDir, absPath)} (divergente)`);
     }
   }

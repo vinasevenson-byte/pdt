@@ -146,6 +146,7 @@ function ModuleIcon({ kind }: { kind: 'saldo' | 'repasses' | 'contas' | 'antecip
 
 export function App() {
   const [activeId, setActiveId] = useState<string>('inicio');
+  const [filtroProdutoraId, setFiltroProdutoraId] = useState<string>('');
   const [q, setQ] = useState<string>('');
   const [sessao, setSessao] = useState<SessaoFinanceiro | null>(null);
   const [verificandoAuth, setVerificandoAuth] = useState<boolean>(firebaseFinanceiroConfigurado);
@@ -153,6 +154,11 @@ export function App() {
   const [emailLogin, setEmailLogin] = useState('');
   const [senhaLogin, setSenhaLogin] = useState('');
   const [erroLogin, setErroLogin] = useState<string | null>(null);
+
+  function navegarParaModulo(moduloId: string, prodId?: string) {
+    setFiltroProdutoraId(prodId !== undefined ? prodId : '');
+    setActiveId(moduloId);
+  }
 
   useEffect(() => {
     const unsubAuth = observarSessaoFinanceiro(s => {
@@ -184,7 +190,9 @@ export function App() {
   }
 
   const host = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : '127.0.0.1';
-  const urlVisaoProdutor = `http://${host}:5174`;
+  const envUrlProdutor = ((import.meta as unknown as { env?: Record<string, string> }).env || {}).VITE_PRODUTOR_URL;
+  const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+  const urlVisaoProdutor = envUrlProdutor || (isLocalHost ? `http://${host}:5174` : '/produtor.html');
 
   const saldosList = Object.values(dados.saldos || {});
   const saldoDisponivelTotal = saldosList.reduce((a, s) => a + Number(s.saldoDisponivel || 0), 0);
@@ -524,7 +532,13 @@ export function App() {
                 </div>
               </>
             ) : (
-              <main>{activeModule.render(dados, sessao)}</main>
+              <main>
+                {activeModule.render(dados, sessao, {
+                  navegarPara: navegarParaModulo,
+                  filtroProdutoraId,
+                  setFiltroProdutoraId
+                })}
+              </main>
             )}
           </div>
         </>

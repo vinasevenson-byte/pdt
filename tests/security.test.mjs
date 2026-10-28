@@ -61,9 +61,20 @@ test('financeiro independente exige role === financeiro e conecta módulos ao RT
   assert.ok(fbFin.includes('onValue'), 'Financeiro deve assinar nós do RTDB em tempo real');
   assert.ok(fbFin.includes('decidirRepasse'), 'Financeiro deve conectar ao callable decidirRepasse');
 
-  const htmlRef = await readFile(
-    path.join(portalProdutorIndependente, 'referencia-original/Hub de Repasses – Produtor — acesso limitado.html')
-  );
+  const refDir = path.join(portalProdutorIndependente, 'referencia-original');
+  const candidatos = [
+    'Hub de Repasses – Produtor — acesso limitado.html',
+    'Hub de Repasses #U2013 Produtor #U2014 acesso limitado.html',
+    'DiskIngressos – Produtor — acesso limitado.html',
+    'DiskIngressos #U2013 Produtor #U2014 acesso limitado.html',
+    'referencia-original-produtor.html'
+  ];
+  const entries = await readdir(refDir);
+  const escolhido =
+    candidatos.find(c => entries.includes(c)) ||
+    entries.find(e => e.endsWith('.html') && e.includes('acesso limitado'));
+  assert.ok(escolhido, `HTML de referência original não encontrado em ${refDir}`);
+  const htmlRef = await readFile(path.join(refDir, escolhido));
   assert.equal(
     createHash('sha256').update(htmlRef).digest('hex'),
     'd423a4a13ae00048d7d96ea54fd68663a7a98ccc70b5b18c0976b40c98b1f583'

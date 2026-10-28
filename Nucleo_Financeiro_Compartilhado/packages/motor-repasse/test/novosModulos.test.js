@@ -217,10 +217,12 @@ test('SEÇÃO 5.1 & 5.2 — Saldo por Produtora (/saldos) e Projeção Limpa (/e
 test('SEÇÃO 5.4 — SEGURANÇA RTDB: /contas_pagar, /contas_receber, /saldos, /fluxo_caixa restritos ao financeiro; /lancamentos imutável; /extrato_produtor somente leitura', () => {
   const r = rules.rules;
 
-  for (const node of ['contas_pagar', 'contas_receber', 'saldos', 'fluxo_caixa', 'fechamentos']) {
+  for (const node of ['contas_pagar', 'contas_receber', 'saldos', 'fluxo_caixa']) {
     assert.equal(r[node]['.read'], "auth != null && auth.token.role === 'financeiro'");
     assert.equal(r[node]['.write'], "auth != null && auth.token.role === 'financeiro'");
   }
+  assert.equal(r.fechamentos['.read'], "auth != null && auth.token.role === 'financeiro'");
+  assert.equal(r.fechamentos['.write'], false, '/fechamentos só pode ser escrito pelo servidor via callables');
 
   // Ledger imutável e bloqueado quando competência fechada
   assert.ok(r.lancamentos.$lancamentoId['.write'].includes('!data.exists()'));

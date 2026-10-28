@@ -77,7 +77,9 @@ export function App() {
   }
 
   const host = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : '127.0.0.1';
-  const urlVisaoFinanceiro = `http://${host}:5173`;
+  const envUrlFinanceiro = ((import.meta as unknown as { env?: Record<string, string> }).env || {}).VITE_FINANCEIRO_URL;
+  const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+  const urlVisaoFinanceiro = envUrlFinanceiro || (isLocalHost ? `http://${host}:5173` : '/financeiro.html');
 
   return (
     <div style={{ fontFamily: "'Manrope', sans-serif", color: '#0f1b3d', minHeight: '100vh', boxSizing: 'border-box' }}>

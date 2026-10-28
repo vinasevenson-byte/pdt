@@ -1,3 +1,4 @@
+* text=auto eol=lf
 legacy/produtor-original/*.html -text binary
 Portal_Produtor_DiskIngressos/referencia-original/*.html -text binary
 Financeiro_Disk/*.html -text binary

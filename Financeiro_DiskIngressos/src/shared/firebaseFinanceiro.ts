@@ -165,6 +165,21 @@ export interface EstadoFinanceiroRTDB {
   lancamentos: Record<string, Record<string, unknown>>;
   fechamentos: Record<string, Record<string, unknown>>;
   auditoria: Record<string, Record<string, unknown>>;
+  usuarios_erp?: Record<string, Record<string, unknown>>;
+  config?: Record<string, Record<string, unknown>>;
+  auditoria_relatorios?: Record<string, Record<string, unknown>>;
+  eventos_dominio?: Record<string, Record<string, unknown>>;
+  bi_executivo?: Record<string, Record<string, unknown>>;
+  contratos?: Record<string, Record<string, unknown>>;
+  vendas_lotes?: Record<string, Record<string, unknown>>;
+  recebiveis_agenda?: Record<string, Record<string, unknown>>;
+  cobrancas_devedores?: Record<string, Record<string, unknown>>;
+  fornecedores_op?: Record<string, Record<string, unknown>>;
+  notificacoes_central?: Record<string, Record<string, unknown>>;
+  conciliacoes?: Record<string, Record<string, unknown>>;
+  remessas?: Record<string, Record<string, unknown>>;
+  apuracoes_fiscais?: Record<string, Record<string, unknown>>;
+  chargebacks?: Record<string, Record<string, unknown>>;
 }
 
 export function criarEstadoFinanceiroVazio(): EstadoFinanceiroRTDB {
@@ -186,7 +201,22 @@ export function criarEstadoFinanceiroVazio(): EstadoFinanceiroRTDB {
     fluxoCaixa: {},
     lancamentos: {},
     fechamentos: {},
-    auditoria: {}
+    auditoria: {},
+    usuarios_erp: {},
+    config: {},
+    auditoria_relatorios: {},
+    eventos_dominio: {},
+    bi_executivo: {},
+    contratos: {},
+    vendas_lotes: {},
+    recebiveis_agenda: {},
+    cobrancas_devedores: {},
+    fornecedores_op: {},
+    notificacoes_central: {},
+    conciliacoes: {},
+    remessas: {},
+    apuracoes_fiscais: {},
+    chargebacks: {}
   };
 }
 
@@ -243,7 +273,22 @@ export function assinarDadosFinanceiroRTDB(
     bindNode('/fluxo_caixa', v => { acumulado.fluxoCaixa = v; }),
     bindNode('/lancamentos', v => { acumulado.lancamentos = v as EstadoFinanceiroRTDB['lancamentos']; }),
     bindNode('/fechamentos', v => { acumulado.fechamentos = v as EstadoFinanceiroRTDB['fechamentos']; }),
-    bindNode('/auditoria', v => { acumulado.auditoria = v as EstadoFinanceiroRTDB['auditoria']; })
+    bindNode('/auditoria', v => { acumulado.auditoria = v as EstadoFinanceiroRTDB['auditoria']; }),
+    bindNode('/usuarios_erp', v => { acumulado.usuarios_erp = v as EstadoFinanceiroRTDB['usuarios_erp']; }),
+    bindNode('/config', v => { acumulado.config = v as EstadoFinanceiroRTDB['config']; }),
+    bindNode('/auditoria_relatorios', v => { acumulado.auditoria_relatorios = v as EstadoFinanceiroRTDB['auditoria_relatorios']; }),
+    bindNode('/eventos_dominio', v => { acumulado.eventos_dominio = v as EstadoFinanceiroRTDB['eventos_dominio']; }),
+    bindNode('/bi_executivo', v => { acumulado.bi_executivo = v as EstadoFinanceiroRTDB['bi_executivo']; }),
+    bindNode('/contratos', v => { acumulado.contratos = v as EstadoFinanceiroRTDB['contratos']; }),
+    bindNode('/vendas_lotes', v => { acumulado.vendas_lotes = v as EstadoFinanceiroRTDB['vendas_lotes']; }),
+    bindNode('/recebiveis_agenda', v => { acumulado.recebiveis_agenda = v as EstadoFinanceiroRTDB['recebiveis_agenda']; }),
+    bindNode('/cobrancas_devedores', v => { acumulado.cobrancas_devedores = v as EstadoFinanceiroRTDB['cobrancas_devedores']; }),
+    bindNode('/fornecedores_op', v => { acumulado.fornecedores_op = v as EstadoFinanceiroRTDB['fornecedores_op']; }),
+    bindNode('/notificacoes_central', v => { acumulado.notificacoes_central = v as EstadoFinanceiroRTDB['notificacoes_central']; }),
+    bindNode('/conciliacoes', v => { acumulado.conciliacoes = v as EstadoFinanceiroRTDB['conciliacoes']; }),
+    bindNode('/remessas', v => { acumulado.remessas = v as EstadoFinanceiroRTDB['remessas']; }),
+    bindNode('/apuracoes_fiscais', v => { acumulado.apuracoes_fiscais = v as EstadoFinanceiroRTDB['apuracoes_fiscais']; }),
+    bindNode('/chargebacks', v => { acumulado.chargebacks = v as EstadoFinanceiroRTDB['chargebacks']; })
   ];
 
   return () => {
@@ -445,4 +490,103 @@ export async function chamarAlterarStatusCadastro(payload: {
   const fn = httpsCallable(functions, 'alterarStatusCadastro');
   const res = await fn(payload);
   return res.data;
+}
+
+export async function cadastrarContaBancariaRTDB(
+  produtoraId: string,
+  dadosConta: {
+    banco: string;
+    agencia: string;
+    conta: string;
+    titular: string;
+    cnpj: string;
+    pix: string;
+  },
+  usuarioEmail: string
+) {
+  const contaId = `cta_${Date.now()}`;
+  const registro = {
+    ...dadosConta,
+    status: 'Validada',
+    homologadoPor: usuarioEmail,
+    homologadoEm: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+  };
+  if (!firebaseFinanceiroConfigurado) {
+    await fetch(`${obterUrlServidorLocal()}/rtdb/validarConta`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ produtoraId, contaId, status: 'Validada', usuarioEmail, ...dadosConta })
+    });
+    notificarDadosLocais();
+    return { contaId, ...registro };
+  }
+  const { db } = obterServicosFirebase();
+  await set(ref(db, `/contas/${produtoraId}/${contaId}`), registro);
+  const audRef = push(ref(db, '/auditoria'));
+  await set(audRef, {
+    dataHora: registro.homologadoEm,
+    usuario: usuarioEmail,
+    modulo: 'Contas Bancarias',
+    eventoId: produtoraId,
+    acao: 'Cadastro e Homologação de Conta',
+    resumo: `Nova conta ${contaId} (${dadosConta.banco} Ag ${dadosConta.agencia} CC ${dadosConta.conta}) cadastrada e validada para ${produtoraId}`
+  });
+  return { contaId, ...registro };
+}
+
+export async function chamarCallableFinanceiro<T = Record<string, unknown>>(
+  nomeCallable: string,
+  payload: Record<string, unknown> = {}
+): Promise<T> {
+  if (!firebaseFinanceiroConfigurado) {
+    const resp = await fetch(`${obterUrlServidorLocal()}/callable/${nomeCallable}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) {
+      throw new Error(`Callable ${nomeCallable} indisponível no simulador local. Conecte ao Firebase ou Emulator.`);
+    }
+    const data = (await resp.json()) as T;
+    notificarDadosLocais();
+    return data;
+  }
+  const { functions } = obterServicosFirebase();
+  const fn = httpsCallable<Record<string, unknown>, T>(functions, nomeCallable);
+  const res = await fn(payload);
+  return res.data;
+}
+
+export function chamarAtribuirPapelUsuarioERP(payload: {
+  uid: string;
+  email: string;
+  nome: string;
+  papel: string;
+  produtoraId?: string;
+  ativo?: boolean;
+  motivo: string;
+}) {
+  return chamarCallableFinanceiro('atribuirPapelUsuarioERP', payload);
+}
+
+export function chamarConfigurarAlcadaERP(payload: {
+  ativo: boolean;
+  limiteDuplaAprovacaoReais: number;
+  motivo: string;
+}) {
+  return chamarCallableFinanceiro('configurarAlcadaERP', payload);
+}
+
+export function chamarConsultarAuditoriaConsolidada(payload: {
+  modulo?: string;
+  usuario?: string;
+  eventoId?: string;
+  textoBusca?: string;
+  persistirSnapshot?: boolean;
+}) {
+  return chamarCallableFinanceiro('consultarAuditoriaConsolidada', payload);
+}
+
+export function chamarGerarSnapshotBiExecutivo(payload: { chaveSnapshot?: string } = {}) {
+  return chamarCallableFinanceiro('gerarSnapshotBiExecutivo', payload);
 }

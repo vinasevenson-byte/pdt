@@ -883,7 +883,8 @@ if (typeof module === 'object' && module.exports && typeof require === 'function
       require(path.join(baseDir, 'saldos')),
       require(path.join(baseDir, 'rebate')),
       require(path.join(baseDir, 'spread')),
-      require(path.join(baseDir, 'fluxoCaixa'))
+      require(path.join(baseDir, 'fluxoCaixa')),
+      require(path.join(baseDir, 'cadastro'))
     );
   }
 }

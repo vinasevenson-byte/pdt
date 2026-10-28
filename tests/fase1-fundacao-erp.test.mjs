@@ -2084,6 +2084,37 @@ test('FASE 5 — Recebíveis Adquirente (MDR + Ledger), Fornecedores/Despesas de
   }
 });
 
+test('SANEAMENTO v3.0.0 — Telas Administrativas Interativas, Integração Saldos <-> Contas Bancárias e URLs Vercel', () => {
+  // 1. Telas administrativas possuem formulários e chamada às callables (Problema 3)
+  const uiUsuarios = readFileSync(path.resolve('modules/admin/usuarios/ui/index.tsx'), 'utf8');
+  assert.ok(uiUsuarios.includes('chamarAtribuirPapelUsuarioERP'), 'UI de usuários deve acionar atribuirPapelUsuarioERP');
+  assert.ok(uiUsuarios.includes('chamarConfigurarAlcadaERP'), 'UI de usuários deve acionar configurarAlcadaERP');
+
+  const uiAuditoria = readFileSync(path.resolve('modules/admin/auditoria_vis/ui/index.tsx'), 'utf8');
+  assert.ok(uiAuditoria.includes('chamarConsultarAuditoriaConsolidada'), 'UI de auditoria deve acionar consultarAuditoriaConsolidada');
+  assert.ok(uiAuditoria.includes('persistirSnapshot'), 'UI de auditoria deve permitir filtro e snapshot');
+
+  const uiBi = readFileSync(path.resolve('modules/plataforma/bi_executivo/ui/index.tsx'), 'utf8');
+  assert.ok(uiBi.includes('chamarGerarSnapshotBiExecutivo'), 'UI de BI deve acionar gerarSnapshotBiExecutivo');
+
+  // 2. Navegação integrada entre Saldos e Contas Bancárias (Problema 4)
+  const uiSaldos = readFileSync(path.resolve('apps/financeiro/src/modules/saldos/index.tsx'), 'utf8');
+  assert.ok(uiSaldos.includes("navegarPara('contas', prodId)"), 'Saldos deve navegar para Contas Bancárias da produtora');
+  const uiContas = readFileSync(path.resolve('apps/financeiro/src/modules/contas/index.tsx'), 'utf8');
+  assert.ok(uiContas.includes("navegarPara('saldos'"), 'Contas Bancárias deve navegar de volta para Saldos');
+  assert.ok(uiContas.includes('cadastrarContaBancariaRTDB'), 'Contas Bancárias deve permitir homologar nova conta');
+
+  // 3. Navegação entre portais compatível com Vercel/HTTPS (Problema 5)
+  const appProd = readFileSync(path.resolve('apps/produtor/src/app/App.tsx'), 'utf8');
+  assert.ok(appProd.includes('VITE_FINANCEIRO_URL'), 'Portal Produtor deve suportar VITE_FINANCEIRO_URL');
+  assert.ok(appProd.includes('/financeiro.html'), 'Portal Produtor deve ter fallback HTTPS /financeiro.html fora de localhost');
+
+  const appFin = readFileSync(path.resolve('apps/financeiro/src/app/App.tsx'), 'utf8');
+  assert.ok(appFin.includes('VITE_PRODUTOR_URL'), 'Painel Financeiro deve suportar VITE_PRODUTOR_URL');
+  assert.ok(appFin.includes('/produtor.html'), 'Painel Financeiro deve ter fallback HTTPS /produtor.html fora de localhost');
+});
+
+
 
 
 

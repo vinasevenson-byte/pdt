@@ -6,7 +6,17 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
-const legacyHtmlPath = path.join(rootDir, 'legacy/produtor-original/Hub de Repasses – Produtor — acesso limitado.html');
+const legacyDir = path.join(rootDir, 'legacy/produtor-original');
+const legacyCandidates = [
+  'Hub de Repasses – Produtor — acesso limitado.html',
+  'Hub de Repasses #U2013 Produtor #U2014 acesso limitado.html',
+  'DiskIngressos – Produtor — acesso limitado.html',
+  'DiskIngressos #U2013 Produtor #U2014 acesso limitado.html',
+  'referencia-original-produtor.html'
+];
+const legacyHtmlPath =
+  legacyCandidates.map(n => path.join(legacyDir, n)).find(p => existsSync(p)) ||
+  path.join(legacyDir, 'Hub de Repasses – Produtor — acesso limitado.html');
 const port = Number(process.env.PORT || 5185);
 
 const ALLOWED_STATIC = {
