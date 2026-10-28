@@ -1,0 +1,35 @@
+{
+  "id": "plataforma/notificacoes",
+  "dominio": "plataforma",
+  "modulo": "notificacoes",
+  "titulo": "Notificações, Alertas e Jobs",
+  "descricao": "Processador do outbox de eventos de domínio (/eventos_dominio), alertas de repasse/liberação para produtoras e monitoramento de vencimentos",
+  "camada": "node",
+  "rolesPermitidas": [
+    "financeiro",
+    "produtor"
+  ],
+  "rtdb": {
+    "no": "notificacoes_central",
+    "leituraProdutor": "dono",
+    "escritaCliente": "nenhuma",
+    "camposObrigatorios": [
+      "produtoraId",
+      "status"
+    ]
+  },
+  "ui": {
+    "financeiro": true,
+    "produtor": true
+  },
+  "dependencias": [
+    "core",
+    "eventos_dominio",
+    "repasses",
+    "contas_pagar"
+  ],
+  "eventosEmitidos": [
+    "plataforma.notificacoes.lote_despachado"
+  ],
+  "featureFlag": "ff_plataforma_notificacoes"
+}

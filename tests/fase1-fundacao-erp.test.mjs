@@ -71,6 +71,22 @@ const {
 } = require('../modules/plataforma/bi_executivo/functions/index.js');
 
 const {
+  executarLiquidarAgendaAdquirente
+} = require('../modules/financeiro/recebiveis/functions/index.js');
+
+const {
+  executarApurarCobrancaProdutora
+} = require('../modules/financeiro/cobranca/functions/index.js');
+
+const {
+  executarLancarDespesaOperacionalEvento
+} = require('../modules/admin/fornecedores/functions/index.js');
+
+const {
+  executarProcessarFilaNotificacoesOutbox
+} = require('../modules/plataforma/notificacoes/functions/index.js');
+
+const {
   validarTransicaoRepasse,
   validarTransicaoAntecipacao,
   executarSolicitarRepasse,
@@ -1967,6 +1983,107 @@ test('FASE 4 (Módulo 2 e Módulo 3) — Visualizador de Auditoria/Assinaturas e
   assert.equal(snapBi.seloDreSha256.length, 64);
   assert.ok(mockDb.store.bi_executivo.outubro_2026);
 });
+
+// ============================================================================
+// FASE 5 — FECHAMENTO INTEGRAL DO CATÁLOGO ERP (RECEBÍVEIS, COBRANÇA, FORNECEDORES E NOTIFICAÇÕES)
+// ============================================================================
+
+test('FASE 5 — Recebíveis Adquirente (MDR + Ledger), Fornecedores/Despesas de Borderô, Cobrança/Devedores e Outbox de Notificações', async () => {
+  const mockDb = criarMockRTDB(seedData);
+  const authFin = {
+    uid: 'uid_fin_f5',
+    token: { role: 'financeiro', email: 'financeiro@diskingressos.com.br' }
+  };
+
+  // 1. Registra lote de vendas no cartão de crédito para gerar título em /contas_receber
+  const loteCartao = await executarRegistrarLoteVendasBordero(
+    {
+      auth: authFin,
+      data: {
+        loteId: 'lote_cartao_pol_01',
+        eventoId: 'polaquedo',
+        setor: 'Pista',
+        nomeLote: 'Lote Cartão',
+        quantidadeVendida: 50,
+        precoUnitario: 100,
+        meioPagamento: 'CARTAO_CREDITO'
+      }
+    },
+    { db: mockDb }
+  );
+  assert.equal(loteCartao.tituloReceberId, 'cr_vnd_lote_cartao_pol_01');
+  assert.equal(mockDb.store.contas_receber.cr_vnd_lote_cartao_pol_01.status, 'Previsto');
+
+  // 2. Liquida a agenda do adquirente com MDR de 3% (R$ 5.000,00 -> MDR R$ 150,00, Líquido R$ 4.850,00)
+  const liq = await executarLiquidarAgendaAdquirente(
+    {
+      auth: authFin,
+      data: {
+        tituloReceberId: 'cr_vnd_lote_cartao_pol_01',
+        adquirente: 'Stone Pagamentos',
+        protocoloAdquirente: 'STONE-LIQ-20261027',
+        taxaMdrPct: 3.0,
+        taxaAntecipacaoPct: 0
+      }
+    },
+    { db: mockDb, nowDate: new Date('2026-10-27T16:00:00-03:00') }
+  );
+  assert.equal(liq.valorBrutoCents, 500000);
+  assert.equal(liq.descontoMdrCents, 15000);
+  assert.equal(liq.valorLiquidoCents, 485000);
+  assert.equal(mockDb.store.contas_receber.cr_vnd_lote_cartao_pol_01.status, 'LiquidadoAdquirente');
+  assert.ok(mockDb.store.lancamentos.lnc_rcb_ag_rcb_cr_vnd_lote_cartao_pol_01);
+  assert.ok(mockDb.store.lancamentos.lnc_mdr_ag_rcb_cr_vnd_lote_cartao_pol_01);
+
+  // 3. Lança despesa operacional elevada em 'standup' via Fornecedores para torná-lo deficitário (saldoDevedor > 0)
+  const desp = await executarLancarDespesaOperacionalEvento(
+    {
+      auth: authFin,
+      data: {
+        despesaId: 'desp_som_standup',
+        eventoId: 'standup',
+        fornecedorNome: 'AudioSul Sonorização Ltda',
+        cnpjFornecedor: '11.222.333/0001-81',
+        descricao: 'Locação de PA e iluminação extra',
+        valor: 5000,
+        status: 'Pago',
+        comNota: true,
+        numeroNota: 'NF-5501'
+      }
+    },
+    { db: mockDb }
+  );
+  assert.equal(desp.valorCents, 500000);
+  assert.ok(mockDb.store.fornecedores_op[desp.fornecedorId]);
+  assert.ok(mockDb.store.contas_pagar.cp_desp_desp_som_standup);
+
+  // 4. Apura cobrança/inadimplência da produtora (verifica compensação cruzada com Festival/Polaquedo)
+  const cob = await executarApurarCobrancaProdutora(
+    {
+      auth: authFin,
+      data: { produtoraId: 'prod_exemplo' }
+    },
+    { db: mockDb }
+  );
+  assert.equal(cob.produtoraId, 'prod_exemplo');
+  assert.ok(mockDb.store.cobrancas_devedores.prod_exemplo);
+
+  // 5. Processa o outbox /eventos_dominio gerando notificações limpas em /notificacoes_central
+  const outboxRes = await executarProcessarFilaNotificacoesOutbox(
+    {
+      auth: authFin,
+      data: {}
+    },
+    { db: mockDb }
+  );
+  assert.ok(outboxRes.quantidadeEventosProcessados >= 4);
+  assert.ok(outboxRes.quantidadeNotificacoesGeradas >= 4);
+  const ntfJson = JSON.stringify(mockDb.store.notificacoes_central);
+  for (const proibido of ['taxaAdm', 'taxaOp', 'conveniencia', 'eventos_fin', 'negociacoes']) {
+    assert.equal(ntfJson.includes(proibido), false);
+  }
+});
+
 
 
 

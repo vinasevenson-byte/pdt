@@ -1,0 +1,34 @@
+{
+  "id": "admin/fornecedores",
+  "dominio": "admin",
+  "modulo": "fornecedores",
+  "titulo": "Fornecedores e Compras Operacionais",
+  "descricao": "Cadastro de fornecedores (CNPJ/PIX), lançamento governado de despesas operacionais no borderô (/despesas), provisão em Contas a Pagar e recálculo imediato da produtora",
+  "camada": "node",
+  "rolesPermitidas": [
+    "financeiro"
+  ],
+  "rtdb": {
+    "no": "fornecedores_op",
+    "leituraProdutor": "nenhuma",
+    "escritaCliente": "nenhuma",
+    "camposObrigatorios": [
+      "nome",
+      "documento",
+      "status"
+    ]
+  },
+  "ui": {
+    "financeiro": true,
+    "produtor": false
+  },
+  "dependencias": [
+    "core",
+    "eventos",
+    "contas_pagar"
+  ],
+  "eventosEmitidos": [
+    "admin.fornecedores.despesa_lancada"
+  ],
+  "featureFlag": "ff_admin_fornecedores"
+}

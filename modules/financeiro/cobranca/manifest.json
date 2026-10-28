@@ -1,0 +1,34 @@
+{
+  "id": "financeiro/cobranca",
+  "dominio": "financeiro",
+  "modulo": "cobranca",
+  "titulo": "Cobrança, Inadimplência e Devedores",
+  "descricao": "Apuração de eventos devedores, compensação automática entre eventos superavitários da mesma produtora e acordos de recomposição de saldo",
+  "camada": "node",
+  "rolesPermitidas": [
+    "financeiro",
+    "produtor"
+  ],
+  "rtdb": {
+    "no": "cobrancas_devedores",
+    "leituraProdutor": "dono",
+    "escritaCliente": "nenhuma",
+    "camposObrigatorios": [
+      "produtoraId",
+      "status"
+    ]
+  },
+  "ui": {
+    "financeiro": true,
+    "produtor": true
+  },
+  "dependencias": [
+    "core",
+    "saldos",
+    "contas_receber"
+  ],
+  "eventosEmitidos": [
+    "financeiro.cobranca.apurada"
+  ],
+  "featureFlag": "ff_financeiro_cobranca"
+}

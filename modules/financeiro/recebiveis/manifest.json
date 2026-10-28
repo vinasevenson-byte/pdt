@@ -1,0 +1,34 @@
+{
+  "id": "financeiro/recebiveis",
+  "dominio": "financeiro",
+  "modulo": "recebiveis",
+  "titulo": "Recebíveis de Gateway e Adquirente",
+  "descricao": "Agenda de liquidação de adquirentes e PIX, cálculo de MDR em centavos, baixa de Contas a Receber e contabilização automática no Ledger",
+  "camada": "node",
+  "rolesPermitidas": [
+    "financeiro"
+  ],
+  "rtdb": {
+    "no": "recebiveis_agenda",
+    "leituraProdutor": "nenhuma",
+    "escritaCliente": "nenhuma",
+    "camposObrigatorios": [
+      "produtoraId",
+      "eventoId",
+      "status"
+    ]
+  },
+  "ui": {
+    "financeiro": true,
+    "produtor": false
+  },
+  "dependencias": [
+    "core",
+    "ledger",
+    "contas_receber"
+  ],
+  "eventosEmitidos": [
+    "financeiro.recebiveis.liquidado"
+  ],
+  "featureFlag": "ff_financeiro_recebiveis"
+}
