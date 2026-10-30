@@ -386,21 +386,51 @@ export function executarBuildModulos(rootDir = ROOT_DIR) {
   }
   const mirrorFinGen = path.join(rootDir, 'Financeiro_DiskIngressos/src/app/generatedModules.ts');
   if (fs.existsSync(path.dirname(mirrorFinGen))) {
+    for (const { pastaDominio, pastaModulo, dirAbs, manifest } of itens) {
+      if (manifest.ui?.financeiro === false) continue;
+      const uiFile = path.join(dirAbs, 'ui/index.tsx');
+      if (fs.existsSync(uiFile)) {
+        const destFile = path.join(
+          rootDir,
+          `Financeiro_DiskIngressos/src/verticals/${pastaDominio}/${pastaModulo}/ui/index.tsx`
+        );
+        fs.mkdirSync(path.dirname(destFile), { recursive: true });
+        const rawUi = fs.readFileSync(uiFile, 'utf8');
+        fs.writeFileSync(
+          destFile,
+          rawUi.replaceAll('../../../../apps/financeiro/src/', '../../../../'),
+          'utf8'
+        );
+      }
+    }
     fs.writeFileSync(
       mirrorFinGen,
       arquivosAlvo
         .get(path.join(rootDir, 'apps/financeiro/src/app/generatedModules.ts'))
-        .replaceAll('../../../../modules/', '../../../modules/'),
+        .replaceAll('../../../../modules/', '../verticals/'),
       'utf8'
     );
   }
   const mirrorProdGen = path.join(rootDir, 'Portal_Produtor_DiskIngressos/src/app/generatedProdutorModules.ts');
   if (fs.existsSync(path.dirname(mirrorProdGen))) {
+    for (const { pastaDominio, pastaModulo, dirAbs, manifest } of itens) {
+      if (!manifest.ui?.produtor) continue;
+      const uiProdFile = path.join(dirAbs, 'ui-produtor/index.tsx');
+      if (fs.existsSync(uiProdFile)) {
+        const destFile = path.join(
+          rootDir,
+          `Portal_Produtor_DiskIngressos/src/verticals/${pastaDominio}/${pastaModulo}/ui-produtor/index.tsx`
+        );
+        fs.mkdirSync(path.dirname(destFile), { recursive: true });
+        const rawProdUi = fs.readFileSync(uiProdFile, 'utf8');
+        fs.writeFileSync(destFile, rawProdUi, 'utf8');
+      }
+    }
     fs.writeFileSync(
       mirrorProdGen,
       arquivosAlvo
         .get(path.join(rootDir, 'apps/produtor/src/app/generatedProdutorModules.ts'))
-        .replaceAll('../../../../modules/', '../../../modules/'),
+        .replaceAll('../../../../modules/', '../verticals/'),
       'utf8'
     );
   }

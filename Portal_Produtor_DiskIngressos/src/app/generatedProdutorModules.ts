@@ -2,10 +2,10 @@
  * ARQUIVO GERADO AUTOMATICAMENTE POR `npm run module:build` — NÃO EDITE MANUALMENTE.
  */
 import type React from 'react';
-import { ProdutorModuleView as comercial_contratos_Produtor } from '../../../modules/comercial/contratos/ui-produtor';
-import { ProdutorModuleView as financeiro_cobranca_Produtor } from '../../../modules/financeiro/cobranca/ui-produtor';
-import { ProdutorModuleView as operacao_vendas_Produtor } from '../../../modules/operacao/vendas/ui-produtor';
-import { ProdutorModuleView as plataforma_notificacoes_Produtor } from '../../../modules/plataforma/notificacoes/ui-produtor';
+import { ProdutorModuleView as comercial_contratos_Produtor } from '../verticals/comercial/contratos/ui-produtor';
+import { ProdutorModuleView as financeiro_cobranca_Produtor } from '../verticals/financeiro/cobranca/ui-produtor';
+import { ProdutorModuleView as operacao_vendas_Produtor } from '../verticals/operacao/vendas/ui-produtor';
+import { ProdutorModuleView as plataforma_notificacoes_Produtor } from '../verticals/plataforma/notificacoes/ui-produtor';
 
 export interface VerticalProdutorModuleEntry {
   id: string;
