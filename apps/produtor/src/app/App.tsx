@@ -217,7 +217,7 @@ export function App() {
             {activeTab === 'contas' && <ContasProdutorModule dados={dados} />}
             {activeTab === 'antecipacoes' && <AntecipacoesProdutorModule dados={dados} />}
             {activeTab === 'despesas' && <DespesasProdutorModule dados={dados} initialEventoId={despesaEventoId} />}
-            {activeTab === 'bordero' && <BorderoProdutorModule dados={dados} />}
+            {activeTab === 'bordero' && <BorderoProdutorModule dados={dados} initialEventoId={despesaEventoId} />}
             {activeTab === 'extrato' && <ExtratoProdutorModule dados={dados} />}
             {VERTICAL_PRODUTOR_MODULES.map(mod =>
               activeTab === mod.id ? <mod.Component key={mod.id} dados={dados as unknown as Record<string, unknown>} /> : null

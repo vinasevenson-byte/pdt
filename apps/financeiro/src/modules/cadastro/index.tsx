@@ -29,6 +29,7 @@ function ModuloCadastroPainel({
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState<string | null>(null);
   const [modalDecisao, setModalDecisao] = useState<ConfigModalDecisao | null>(null);
+  const [valoresModal, setValoresModal] = useState({ motivo: '', protocolo: '' });
 
   // Estado Produtora
   const [prodId, setProdId] = useState<string>('');
@@ -115,7 +116,11 @@ function ModuloCadastroPainel({
     limparMensagens();
     setEvId(id);
     setEvNome(String(ev.nome || ''));
-    setEvData(String(ev.data || ''));
+    const rawData = String(ev.data || '').trim();
+    const dataIso = /^\d{2}\/\d{2}\/\d{4}$/.test(rawData)
+      ? `${rawData.slice(6, 10)}-${rawData.slice(3, 5)}-${rawData.slice(0, 2)}`
+      : rawData;
+    setEvData(dataIso);
     setEvProdutoraId(String(ev.produtoraId || ''));
     setEvLocalId(String(ev.localId || ''));
     setEvLiberado(Boolean(ev.liberadoParaSolicitacao));
@@ -192,10 +197,14 @@ function ModuloCadastroPainel({
     limparMensagens();
     setProcessando(true);
     try {
+      const rawData = evData.trim();
+      const dataBR = /^\d{4}-\d{2}-\d{2}$/.test(rawData)
+        ? `${rawData.slice(8, 10)}/${rawData.slice(5, 7)}/${rawData.slice(0, 4)}`
+        : rawData;
       const res = (await chamarSalvarEvento({
         id: evId || undefined,
         nome: evNome,
-        data: evData,
+        data: dataBR,
         produtoraId: evProdutoraId,
         localId: evLocalId,
         liberadoParaSolicitacao: evLiberado,
@@ -229,6 +238,7 @@ function ModuloCadastroPainel({
       return;
     }
 
+    setValoresModal({ motivo: '', protocolo: '' });
     setModalDecisao({
       titulo: `Inativar ${tipo} ${nome} (${id})`,
       subtitulo:
@@ -267,7 +277,7 @@ function ModuloCadastroPainel({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      {renderizarPainelDecisaoInline(modalDecisao, () => setModalDecisao(null))}
+      {renderizarPainelDecisaoInline(modalDecisao, valoresModal, setValoresModal, () => setModalDecisao(null))}
 
       <div
         style={{
@@ -318,15 +328,14 @@ function ModuloCadastroPainel({
           style={{
             padding: '0.75rem 1rem',
             borderRadius: '0.5rem',
-            background: 'rgba(245, 158, 11, 0.12)',
-            border: '1px solid rgba(245, 158, 11, 0.35)',
-            color: '#fcd34d',
+            background: 'rgba(59, 130, 246, 0.12)',
+            border: '1px solid rgba(59, 130, 246, 0.35)',
+            color: '#93c5fd',
             fontSize: '0.82rem'
           }}
         >
-          Modo simulador local detectado: os dados carregados do seed são exibidos abaixo. Para executar as Cloud Functions{' '}
-          <code>salvarProdutora</code>, <code>salvarLocal</code>, <code>salvarEvento</code> e{' '}
-          <code>alterarStatusCadastro</code>, conecte ao Firebase ou Emulator.
+          Simulador Local RTDB ativo: os callables <code>salvarProdutora</code>, <code>salvarLocal</code>,{' '}
+          <code>salvarEvento</code> e <code>alterarStatusCadastro</code> validam CNPJ Módulo 11, reserva atômica e preservação transacional em tempo real.
         </div>
       )}
 

@@ -2123,6 +2123,94 @@ test('SANEAMENTO v3.0.0 — Telas Administrativas Interativas, Integração Sald
   assert.ok(uiEventosTravas.includes('simularVendasEventoUI'), 'Deve integrar o Simulador E se? (What-If) ao vivo');
 });
 
+test('AVANÇOS ERP COMPLETO — Todos os módulos de núcleo (Negociações, Advanced, Despesas, CP, CR, Fluxo de Caixa, Ledger), módulos verticais financeiros e visões do Produtor interativos', () => {
+  const uiNeg = readFileSync(path.resolve('apps/financeiro/src/modules/negociacoes/index.tsx'), 'utf8');
+  assert.ok(uiNeg.includes('salvarNegociacaoEventoRTDB'), 'Negociações deve persistir parâmetros comerciais no RTDB com auditoria');
+  assert.ok(uiNeg.includes('calcularEventoUI'), 'Negociações deve calcular Taxa Operacional e Receita Disk ao vivo');
+
+  const uiAdv = readFileSync(path.resolve('apps/financeiro/src/modules/advanced/index.tsx'), 'utf8');
+  assert.ok(uiAdv.includes('salvarAdvancedRTDB'), 'Advanced deve permitir incluir e editar adiantamentos');
+  assert.ok(uiAdv.includes('removerAdvancedRTDB'), 'Advanced deve permitir remover adiantamentos');
+
+  const uiDesp = readFileSync(path.resolve('apps/financeiro/src/modules/despesas/index.tsx'), 'utf8');
+  assert.ok(uiDesp.includes('salvarDespesaEventoRTDB'), 'Despesas deve permitir lançar e editar despesas e NFs');
+  assert.ok(uiDesp.includes('removerDespesaEventoRTDB'), 'Despesas deve permitir remover despesas');
+
+  const uiCp = readFileSync(path.resolve('apps/financeiro/src/modules/contas-pagar/index.tsx'), 'utf8');
+  assert.ok(uiCp.includes('chamarRegistrarBaixaTitulo'), 'Contas a Pagar deve acionar registrarBaixaTitulo');
+  assert.ok(uiCp.includes('criarTituloFinanceiroRTDB'), 'Contas a Pagar deve permitir incluir novo título');
+
+  const uiCr = readFileSync(path.resolve('apps/financeiro/src/modules/contas-receber/index.tsx'), 'utf8');
+  assert.ok(uiCr.includes('chamarRegistrarBaixaTitulo'), 'Contas a Receber deve acionar registrarBaixaTitulo');
+  assert.ok(uiCr.includes('criarTituloFinanceiroRTDB'), 'Contas a Receber deve permitir incluir novo recebível');
+
+  const uiFc = readFileSync(path.resolve('apps/financeiro/src/modules/fluxo-caixa/index.tsx'), 'utf8');
+  assert.ok(uiFc.includes('recalcularFluxoCaixaRTDB'), 'Fluxo de Caixa deve permitir recalcular projeção 30/60/90 dias');
+
+  const uiLedger = readFileSync(path.resolve('apps/financeiro/src/modules/ledger/index.tsx'), 'utf8');
+  assert.ok(uiLedger.includes('chamarEstornarLancamento'), 'Ledger deve permitir estornar lançamento com partida dobrada inversa');
+  assert.ok(uiLedger.includes('CATALOGO_PLANO_CONTAS'), 'Ledger deve exibir o catálogo oficial do Plano de Contas');
+
+  const uiConc = readFileSync(path.resolve('modules/financeiro/conciliacao/ui/index.tsx'), 'utf8');
+  assert.ok(uiConc.includes('importarExtratoOFX'), 'Conciliação OFX deve acionar importarExtratoOFX');
+  assert.ok(uiConc.includes('vincularItemConciliacao'), 'Conciliação OFX deve acionar vincularItemConciliacao');
+
+  const uiRem = readFileSync(path.resolve('modules/financeiro/remessa/ui/index.tsx'), 'utf8');
+  assert.ok(uiRem.includes('gerarRemessaPagamento'), 'Remessa CNAB deve acionar gerarRemessaPagamento');
+  assert.ok(uiRem.includes('processarRetornoRemessa'), 'Remessa CNAB deve acionar processarRetornoRemessa');
+
+  const uiFisc = readFileSync(path.resolve('modules/financeiro/fiscal/ui/index.tsx'), 'utf8');
+  assert.ok(uiFisc.includes('apurarImpostosCompetencia'), 'Fiscal deve acionar apurarImpostosCompetencia');
+  assert.ok(uiFisc.includes('recolherGuiaFiscal'), 'Fiscal deve acionar recolherGuiaFiscal');
+
+  const uiCbk = readFileSync(path.resolve('modules/financeiro/chargebacks/ui/index.tsx'), 'utf8');
+  assert.ok(uiCbk.includes('processar_financeiro_chargebacks'), 'Chargebacks deve acionar processar_financeiro_chargebacks');
+
+  for (const prodViewPath of [
+    'modules/comercial/contratos/ui-produtor/index.tsx',
+    'modules/operacao/vendas/ui-produtor/index.tsx',
+    'modules/financeiro/cobranca/ui-produtor/index.tsx',
+    'modules/plataforma/notificacoes/ui-produtor/index.tsx'
+  ]) {
+    const code = readFileSync(path.resolve(prodViewPath), 'utf8');
+    for (const proibido of ['taxaAdm', 'taxaOp', 'conveniencia', 'eventos_fin', 'negociacoes']) {
+      assert.equal(code.includes(proibido), false, `Identificador interno proibido "${proibido}" em ${prodViewPath}`);
+    }
+  }
+
+  // Simulador Local RTDB suporta Fechamento Mensal e Cadastro Mestre
+  const serverLocalCode = readFileSync(path.resolve('scripts/local-rtdb-server.mjs'), 'utf8');
+  for (const rota of [
+    '/callable/previaFechamento',
+    '/callable/fecharCompetencia',
+    '/callable/reabrirCompetencia',
+    '/callable/salvarProdutora',
+    '/callable/salvarLocal',
+    '/callable/salvarEvento',
+    '/callable/alterarStatusCadastro',
+    '/rtdb/contaPadrao'
+  ]) {
+    assert.ok(serverLocalCode.includes(rota), `Servidor local RTDB deve implementar a rota ${rota}`);
+  }
+
+  // Portal do Produtor completo (Início com todos os módulos, CSV real, Conta Padrão e assinaturas RTDB)
+  const uiInicioProd = readFileSync(path.resolve('apps/produtor/src/modules/inicio/index.tsx'), 'utf8');
+  for (const modId of ['saldo', 'repasses', 'bordero', 'extrato', 'contas', 'antecipacoes', 'despesas', 'comercial-contratos', 'operacao-vendas', 'financeiro-cobranca', 'plataforma-notificacoes']) {
+    assert.ok(uiInicioProd.includes(`'${modId}'`), `Início do Produtor deve expor o cartão do módulo ${modId}`);
+  }
+
+  const uiSaldoProd = readFileSync(path.resolve('apps/produtor/src/modules/saldo/index.tsx'), 'utf8');
+  assert.ok(uiSaldoProd.includes('exportarExtratoCsv'), 'Saldo do Produtor deve gerar download CSV real');
+
+  const uiContasProd = readFileSync(path.resolve('apps/produtor/src/modules/contas/index.tsx'), 'utf8');
+  assert.ok(uiContasProd.includes('definirContaPadraoProdutorRTDB'), 'Contas do Produtor deve permitir definir conta padrão');
+
+  const fbProd = readFileSync(path.resolve('apps/produtor/src/shared/firebaseProdutor.ts'), 'utf8');
+  for (const node of ['/contratos', '/vendas_lotes', '/cobrancas_devedores', '/notificacoes_central']) {
+    assert.ok(fbProd.includes(`'${node}'`), `firebaseProdutor.ts deve assinar ${node} em tempo real`);
+  }
+});
+
 
 
 

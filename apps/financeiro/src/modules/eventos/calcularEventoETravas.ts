@@ -101,10 +101,15 @@ export interface EventoFinUI {
 }
 
 export interface NegociacaoUI {
+  status: 'Ativa' | 'Em revisão' | 'Encerrada';
   taxaOp: {
     tipo: 'porIngresso' | 'percentual' | 'fixo';
     valor: number;
   };
+  conveniencia: {
+    percentual: number;
+  };
+  observacoes: string;
 }
 
 function toNum(v: unknown): number {
@@ -338,11 +343,20 @@ export function normalizarEventoFinUI(raw?: Record<string, unknown>): EventoFinU
 
 export function normalizarNegociacaoUI(raw?: Record<string, unknown>): NegociacaoUI {
   const opRaw = (raw?.taxaOp || {}) as Record<string, unknown>;
+  const convRaw = (raw?.conveniencia || {}) as Record<string, unknown>;
+  const stRaw = String(raw?.status || 'Ativa');
+  const status: 'Ativa' | 'Em revisão' | 'Encerrada' =
+    stRaw === 'Em revisão' || stRaw === 'Encerrada' ? stRaw : 'Ativa';
   return {
+    status,
     taxaOp: {
       tipo: (opRaw.tipo as NegociacaoUI['taxaOp']['tipo']) || (raw?.taxaOpTipo as NegociacaoUI['taxaOp']['tipo']) || 'porIngresso',
       valor: toNum(opRaw.valor ?? raw?.taxaOpValor ?? 0)
-    }
+    },
+    conveniencia: {
+      percentual: toNum(convRaw.percentual ?? raw?.convenienciaPct ?? 15)
+    },
+    observacoes: String(raw?.observacoes || '')
   };
 }
 
@@ -567,15 +581,16 @@ export function simularVendasEventoUI(
   };
   const simulacao = calcularEventoUI(evSim, fin, neg, despesasEvento, advancedEvento, antecipacoesEvento, local);
 
-  let meta: {
+  type MetaSimulacao = {
     atingivel: boolean;
     vendidosNecessarios: number;
     ingressosFaltantes: number;
     pctCapacidadeNecessaria: number;
-  } | null = null;
+  };
+  let meta: MetaSimulacao | null = null;
 
   if (valorAlvoLiberavel > 0) {
-    let achou: typeof meta = null;
+    let achou: MetaSimulacao | null = null;
     for (let ing = atual.vendidos; ing <= cap; ing++) {
       const cTeste = calcularEventoUI(
         {

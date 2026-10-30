@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { EstadoProdutorRTDB } from '../../shared/dadosProdutor';
-import { cadastrarContaBancariaRTDB } from '../../shared/firebaseProdutor';
+import { cadastrarContaBancariaRTDB, definirContaPadraoProdutorRTDB } from '../../shared/firebaseProdutor';
 
 export interface ContasProdutorProps {
   dados: EstadoProdutorRTDB;
@@ -13,12 +13,14 @@ export function ContasProdutorModule({ dados }: ContasProdutorProps) {
   const [conta, setConta] = useState('');
   const [pix, setPix] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
 
   const bloq = !banco.trim() || !agencia.trim() || !conta.trim() || !pix.trim() || salvando;
 
   async function adicionarConta() {
     if (bloq) return;
     setSalvando(true);
+    setMsg(null);
     try {
       await cadastrarContaBancariaRTDB(produtoraId, produtoraNome, {
         banco,
@@ -30,15 +32,23 @@ export function ContasProdutorModule({ dados }: ContasProdutorProps) {
       setAgencia('');
       setConta('');
       setPix('');
+      setMsg('Conta bancária enviada para homologação do Financeiro.');
     } finally {
       setSalvando(false);
     }
+  }
+
+  async function handleDefinirPadrao(contaId: string) {
+    setMsg(null);
+    await definirContaPadraoProdutorRTDB(produtoraId, contaId);
+    setMsg('Conta padrão de repasse atualizada.');
   }
 
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
       <section className="card" style={{ flex: '999 1 640px', minWidth: 0 }}>
         <h2 className="h2">Minhas contas</h2>
+        {msg && <div style={{ fontSize: '13px', fontWeight: 700, color: '#065f46' }}>{msg}</div>}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
           {contas.map(ct => {
             const isValidada = ct.status === 'Validada';
@@ -61,7 +71,18 @@ export function ContasProdutorModule({ dados }: ContasProdutorProps) {
                 </div>
                 <div className="num" style={{ fontSize: '13px', color: '#5a6584' }}>Ag {ct.agencia} · CC {ct.conta}</div>
                 <div style={{ fontSize: '13px', color: '#3d4766' }}>PIX: {ct.pix}</div>
-                {ct.padrao && <div style={{ fontSize: '13px', fontWeight: 800, color: '#065f46' }}>Conta padrão de repasse</div>}
+                {ct.padrao ? (
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#065f46' }}>Conta padrão de repasse</div>
+                ) : isValidada ? (
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ alignSelf: 'flex-start', background: '#eef2ff', color: '#1e3a8a', padding: '5px 10px', minHeight: '32px', fontSize: '12px' }}
+                    onClick={() => handleDefinirPadrao(ct.id)}
+                  >
+                    Definir como padrão
+                  </button>
+                ) : null}
                 {!isValidada && <div style={{ fontSize: '13px', color: '#9a3412' }}>Aguardando validação do Financeiro. Ainda não recebe repasses.</div>}
               </div>
             );

@@ -123,6 +123,10 @@ export interface EstadoProdutorRTDB {
   repasses: RepasseHistoricoProdutor[];
   antecipacoes: AntecipacaoProdutor[];
   despesas: DespesaEventoProdutor[];
+  contratos?: Record<string, Record<string, unknown>>;
+  vendas_lotes?: Record<string, Record<string, unknown>>;
+  cobrancas_devedores?: Record<string, Record<string, unknown>>;
+  notificacoes_central?: Record<string, Record<string, unknown>>;
 }
 
 export function criarEstadoProdutorVazio(produtoraId = ''): EstadoProdutorRTDB {
@@ -150,6 +154,10 @@ export function criarEstadoProdutorVazio(produtoraId = ''): EstadoProdutorRTDB {
     contas: [],
     repasses: [],
     antecipacoes: [],
-    despesas: []
+    despesas: [],
+    contratos: {},
+    vendas_lotes: {},
+    cobrancas_devedores: {},
+    notificacoes_central: {}
   };
 }

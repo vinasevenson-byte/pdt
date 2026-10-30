@@ -181,5 +181,5 @@ export const repassesModule: FinancialModulePlugin = {
   title: 'Saldo Consolidado & Repasses',
   description: 'Aprovação, recusa, registro de protocolo (PIX/TED), estorno com segregação e rateio proporcional ou manual.',
   rtdbNode: 'repasses',
-  render: (dados) => <RepassesModuleView dados={dados} />
+  render: (dados) => <RepassesModuleView dados={(dados || {}) as Record<string, Record<string, unknown>>} />
 };

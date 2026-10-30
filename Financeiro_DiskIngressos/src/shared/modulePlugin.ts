@@ -7,6 +7,8 @@ export interface FinancialModuleNavContext {
   setFiltroProdutoraId?: (produtoraId: string) => void;
 }
 
+export type ModuloNavegacaoProps = FinancialModuleNavContext;
+
 export interface FinancialModulePlugin {
   id: string;
   title: string;

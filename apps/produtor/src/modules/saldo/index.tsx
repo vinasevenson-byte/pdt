@@ -10,10 +10,59 @@ export interface SaldoProdutorProps {
 
 export function SaldoProdutorModule({ dados, onSolicitarRepasse }: SaldoProdutorProps) {
   const [exportMsg, setExportMsg] = useState(false);
-  const { consolidado, eventos } = dados;
+  const { consolidado, eventos, repasses, produtoraId } = dados;
 
   const retidoTotal = eventos.reduce((acc, e) => acc + e.retido, 0);
   const jaRepassadoTotal = eventos.reduce((acc, e) => acc + e.jaRepassado, 0);
+
+  function exportarExtratoCsv() {
+    setExportMsg(true);
+    try {
+      const linhasCsv = [
+        ['Secao', 'ID', 'Descricao', 'Data', 'PctVendido', 'Resultado', 'Liberavel', 'Retido', 'JaRepassado'],
+        ...eventos.map(e => [
+          'EVENTO',
+          e.id,
+          e.nome,
+          e.data,
+          `${e.pctVendido.toFixed(1)}%`,
+          e.resultado.toFixed(2),
+          e.liberavel.toFixed(2),
+          e.retido.toFixed(2),
+          e.jaRepassado.toFixed(2)
+        ]),
+        ...repasses.map(r => [
+          'REPASSE',
+          r.id,
+          `Eventos: ${r.eventoIds.join('+')}`,
+          r.solicitadoEm,
+          r.forma,
+          r.valorSolicitado.toFixed(2),
+          r.valorLiquido.toFixed(2),
+          '0.00',
+          r.status
+        ])
+      ];
+      const csvContent =
+        '\uFEFF' +
+        linhasCsv
+          .map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(';'))
+          .join('\r\n');
+      if (typeof window !== 'undefined' && typeof Blob !== 'undefined' && typeof URL.createObjectURL === 'function') {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `extrato-saldo-${produtoraId || 'produtora'}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      // Preserva mensagem visual mesmo em ambiente sem DOM completo
+    }
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -48,7 +97,7 @@ export function SaldoProdutorModule({ dados, onSolicitarRepasse }: SaldoProdutor
             <button
               className="btn"
               style={{ background: '#fff', color: '#1e3a8a', border: '1px solid #1e3a8a', minHeight: '44px', fontSize: '14px' }}
-              onClick={() => setExportMsg(true)}
+              onClick={exportarExtratoCsv}
             >
               Exportar extrato (CSV)
             </button>

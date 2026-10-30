@@ -8,7 +8,7 @@ function AntecipacoesModuleView({ dados }: { dados: Record<string, Record<string
   const [modal, setModal] = useState<ConfigModalDecisao | null>(null);
   const [valoresModal, setValoresModal] = useState({ motivo: '', protocolo: '' });
 
-  const lista = Object.entries(dados?.antecipacoes || {});
+  const lista = Object.entries((dados?.antecipacoes || {}) as Record<string, Record<string, unknown>>);
 
   function abrirModal(cfg: ConfigModalDecisao, defaults = { motivo: '', protocolo: '' }) {
     setValoresModal(defaults);
@@ -162,5 +162,5 @@ export const antecipacoesModule: FinancialModulePlugin = {
   title: 'Antecipações',
   description: 'Gestão de solicitações de antecipação sobre saldo retido com máquina de estados e estorno.',
   rtdbNode: 'antecipacoes',
-  render: (dados) => <AntecipacoesModuleView dados={dados} />
+  render: (dados) => <AntecipacoesModuleView dados={(dados || {}) as Record<string, Record<string, unknown>>} />
 };

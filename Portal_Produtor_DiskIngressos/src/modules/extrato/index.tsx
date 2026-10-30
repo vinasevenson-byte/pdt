@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { EstadoProdutorRTDB } from '../../shared/dadosProdutor';
 import { formatBRL } from '../../shared/formatters';
 
@@ -10,6 +11,8 @@ export function ExtratoProdutorModule({ dados }: ExtratoProdutorProps) {
   const repasses = dados?.repasses || [];
   const antecipacoes = dados?.antecipacoes || [];
   const consolidado = dados?.consolidado;
+  const [filtroStatus, setFiltroStatus] = useState<string>('');
+  const [busca, setBusca] = useState<string>('');
 
   const totalRetido = eventos.reduce((acc, ev) => acc + Number(ev.retido || 0), 0);
   const totalLiberavel = Number(consolidado?.liberavelEventos || 0);
@@ -19,13 +22,46 @@ export function ExtratoProdutorModule({ dados }: ExtratoProdutorProps) {
     .reduce((acc, a) => acc + Number(a.valor || 0), 0);
   const totalAdiantamentoConsolidado = Number(consolidado?.advConsolidado || 0);
 
+  const repassesFiltrados = repasses.filter(r => {
+    if (filtroStatus && r.status !== filtroStatus) return false;
+    if (busca.trim()) {
+      const q = busca.trim().toLowerCase();
+      const texto = `${r.id} ${r.eventoIds.join(' ')} ${r.protocoloBancario || ''} ${r.forma}`.toLowerCase();
+      if (!texto.includes(q)) return false;
+    }
+    return true;
+  });
+
   return (
     <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div>
-        <h2 className="h2">Extrato Consolidado da Produtora</h2>
-        <p className="sub">
-          Leitura exclusiva da projeção limpa em <code>/extrato_produtor/&#123;produtoraId&#125;</code> e <code>/borderos_produtor/&#123;produtoraId&#125;</code> (retido, liberável, repassado, em antecipação e adiantamentos em aberto).
-        </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+        <div>
+          <h2 className="h2">Extrato Consolidado da Produtora</h2>
+          <p className="sub">
+            Leitura exclusiva da projeção limpa em <code>/extrato_produtor/&#123;produtoraId&#125;</code> e <code>/borderos_produtor/&#123;produtoraId&#125;</code> (retido, liberável, repassado, em antecipação e adiantamentos em aberto).
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+          <input
+            type="text"
+            value={busca}
+            onChange={e => setBusca(e.target.value)}
+            placeholder="Buscar protocolo, evento..."
+            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+          />
+          <select
+            aria-label="Filtrar status de repasse"
+            value={filtroStatus}
+            onChange={e => setFiltroStatus(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+          >
+            <option value="">Todos os status</option>
+            <option value="Solicitado">Solicitado</option>
+            <option value="Aprovado">Aprovado</option>
+            <option value="Pago">Pago</option>
+            <option value="Recusado">Recusado</option>
+          </select>
+        </div>
       </div>
 
       <div
@@ -72,14 +108,15 @@ export function ExtratoProdutorModule({ dados }: ExtratoProdutorProps) {
       </div>
 
       <div>
-        <h3 style={{ margin: '0 0 10px', fontSize: '16px' }}>Histórico de Movimentações de Repasse ({repasses.length})</h3>
-        {repasses.length === 0 ? (
-          <p className="sub">Nenhuma movimentação de repasse registrada para esta produtora.</p>
+        <h3 style={{ margin: '0 0 10px', fontSize: '16px' }}>Histórico de Movimentações de Repasse ({repassesFiltrados.length})</h3>
+        {repassesFiltrados.length === 0 ? (
+          <p className="sub">Nenhuma movimentação de repasse encontrada para o filtro selecionado.</p>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <thead>
               <tr style={{ textAlign: 'left', borderBottom: '2px solid #cbd5e1' }}>
                 <th style={{ padding: '8px' }}>Protocolo / ID</th>
+                <th style={{ padding: '8px' }}>Eventos</th>
                 <th style={{ padding: '8px' }}>Solicitado em</th>
                 <th style={{ padding: '8px' }}>Forma</th>
                 <th style={{ padding: '8px', textAlign: 'right' }}>Valor Bruto</th>
@@ -88,7 +125,7 @@ export function ExtratoProdutorModule({ dados }: ExtratoProdutorProps) {
               </tr>
             </thead>
             <tbody>
-              {repasses.map(r => (
+              {repassesFiltrados.map(r => (
                 <tr key={r.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '8px' }}>
                     <strong>{r.id}</strong>
@@ -96,6 +133,7 @@ export function ExtratoProdutorModule({ dados }: ExtratoProdutorProps) {
                       <div style={{ fontSize: '12px', color: '#64748b' }}>Ref: {r.protocoloBancario}</div>
                     )}
                   </td>
+                  <td style={{ padding: '8px' }}>{r.eventoIds.join(', ') || '—'}</td>
                   <td style={{ padding: '8px' }}>{r.solicitadoEm || '—'}</td>
                   <td style={{ padding: '8px' }}>{r.forma}</td>
                   <td style={{ padding: '8px', textAlign: 'right' }}>{formatBRL(Number(r.valorSolicitado || 0))}</td>

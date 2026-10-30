@@ -386,40 +386,16 @@ export async function decidirAntecipacaoRTDB(
   });
 }
 
-export async function chamarPreviaFechamento(payload: { competencia: string }) {
-  if (!firebaseFinanceiroConfigurado) {
-    throw new Error(
-      'O simulador local não implementa previaFechamento. Conecte ao Firebase ou Emulator para consultar a prévia oficial do servidor.'
-    );
-  }
-  const { functions } = obterServicosFirebase();
-  const fn = httpsCallable(functions, 'previaFechamento');
-  const res = await fn(payload);
-  return res.data;
+export async function chamarPreviaFechamento(payload: { competencia: string }): Promise<unknown> {
+  return chamarCallableFinanceiro('previaFechamento', payload);
 }
 
-export async function chamarFecharCompetencia(payload: { competencia: string; observacoes?: string }) {
-  if (!firebaseFinanceiroConfigurado) {
-    throw new Error(
-      'O simulador local não implementa fecharCompetencia. Conecte ao Firebase ou Emulator para selar e fechar a competência.'
-    );
-  }
-  const { functions } = obterServicosFirebase();
-  const fn = httpsCallable(functions, 'fecharCompetencia');
-  const res = await fn(payload);
-  return res.data;
+export async function chamarFecharCompetencia(payload: { competencia: string; observacoes?: string }): Promise<unknown> {
+  return chamarCallableFinanceiro('fecharCompetencia', payload);
 }
 
-export async function chamarReabrirCompetencia(payload: { competencia: string; motivo: string }) {
-  if (!firebaseFinanceiroConfigurado) {
-    throw new Error(
-      'O simulador local não implementa reabrirCompetencia. Conecte ao Firebase ou Emulator para reabrir a competência.'
-    );
-  }
-  const { functions } = obterServicosFirebase();
-  const fn = httpsCallable(functions, 'reabrirCompetencia');
-  const res = await fn(payload);
-  return res.data;
+export async function chamarReabrirCompetencia(payload: { competencia: string; motivo: string }): Promise<unknown> {
+  return chamarCallableFinanceiro('reabrirCompetencia', payload);
 }
 
 export async function chamarSalvarProdutora(payload: {
@@ -427,14 +403,8 @@ export async function chamarSalvarProdutora(payload: {
   nome: string;
   cnpj: string;
   patrocinio?: { ativo: boolean; descricao: string; valor: number };
-}) {
-  if (!firebaseFinanceiroConfigurado) {
-    throw new Error('O simulador local não implementa salvarProdutora. Conecte ao Firebase ou Emulator.');
-  }
-  const { functions } = obterServicosFirebase();
-  const fn = httpsCallable(functions, 'salvarProdutora');
-  const res = await fn(payload);
-  return res.data;
+}): Promise<unknown> {
+  return chamarCallableFinanceiro('salvarProdutora', payload);
 }
 
 export async function chamarSalvarLocal(payload: {
@@ -444,14 +414,8 @@ export async function chamarSalvarLocal(payload: {
   uf: string;
   capacidadeTotal?: number;
   setores: Array<{ nome: string; capacidade: number }>;
-}) {
-  if (!firebaseFinanceiroConfigurado) {
-    throw new Error('O simulador local não implementa salvarLocal. Conecte ao Firebase ou Emulator.');
-  }
-  const { functions } = obterServicosFirebase();
-  const fn = httpsCallable(functions, 'salvarLocal');
-  const res = await fn(payload);
-  return res.data;
+}): Promise<unknown> {
+  return chamarCallableFinanceiro('salvarLocal', payload);
 }
 
 export async function chamarSalvarEvento(payload: {
@@ -467,14 +431,8 @@ export async function chamarSalvarEvento(payload: {
     manual?: number;
     contarCortesias?: boolean;
   };
-}) {
-  if (!firebaseFinanceiroConfigurado) {
-    throw new Error('O simulador local não implementa salvarEvento. Conecte ao Firebase ou Emulator.');
-  }
-  const { functions } = obterServicosFirebase();
-  const fn = httpsCallable(functions, 'salvarEvento');
-  const res = await fn(payload);
-  return res.data;
+}): Promise<unknown> {
+  return chamarCallableFinanceiro('salvarEvento', payload);
 }
 
 export async function chamarAlterarStatusCadastro(payload: {
@@ -482,14 +440,8 @@ export async function chamarAlterarStatusCadastro(payload: {
   id: string;
   ativo: boolean;
   motivo?: string;
-}) {
-  if (!firebaseFinanceiroConfigurado) {
-    throw new Error('O simulador local não implementa alterarStatusCadastro. Conecte ao Firebase ou Emulator.');
-  }
-  const { functions } = obterServicosFirebase();
-  const fn = httpsCallable(functions, 'alterarStatusCadastro');
-  const res = await fn(payload);
-  return res.data;
+}): Promise<unknown> {
+  return chamarCallableFinanceiro('alterarStatusCadastro', payload);
 }
 
 export async function cadastrarContaBancariaRTDB(
@@ -545,7 +497,16 @@ export async function chamarCallableFinanceiro<T = Record<string, unknown>>(
       body: JSON.stringify(payload)
     });
     if (!resp.ok) {
-      throw new Error(`Callable ${nomeCallable} indisponível no simulador local. Conecte ao Firebase ou Emulator.`);
+      let msgErro = `Callable ${nomeCallable} indisponível no simulador local. Conecte ao Firebase ou Emulator.`;
+      try {
+        const errBody = (await resp.json()) as { error?: string };
+        if (errBody && errBody.error) {
+          msgErro = errBody.error;
+        }
+      } catch {
+        // Ignora erro de parse JSON
+      }
+      throw new Error(msgErro);
     }
     const data = (await resp.json()) as T;
     notificarDadosLocais();
@@ -645,3 +606,276 @@ export async function salvarConfiguracaoEventoTravasRTDB(payload: {
   });
   return { ok: true, eventoId };
 }
+
+export async function salvarNegociacaoEventoRTDB(payload: {
+  eventoId: string;
+  negociacao: {
+    status: string;
+    taxaOp: { tipo: 'porIngresso' | 'percentual' | 'fixo'; valor: number };
+    conveniencia?: { percentual: number };
+    observacoes?: string;
+  };
+  usuarioEmail: string;
+  resumoAuditoria: string;
+}) {
+  const { eventoId, negociacao, usuarioEmail, resumoAuditoria } = payload;
+  if (!firebaseFinanceiroConfigurado) {
+    await fetch(`${obterUrlServidorLocal()}/rtdb/salvarNegociacao`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    notificarDadosLocais();
+    return { ok: true, eventoId };
+  }
+  const { db } = obterServicosFirebase();
+  await set(ref(db, `/negociacoes/${eventoId}`), negociacao);
+  const audRef = push(ref(db, '/auditoria'));
+  await set(audRef, {
+    dataHora: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+    usuario: usuarioEmail,
+    modulo: 'Negociações',
+    eventoId,
+    acao: 'Salvo Negociação Comercial',
+    resumo: resumoAuditoria
+  });
+  return { ok: true, eventoId };
+}
+
+export async function salvarAdvancedRTDB(payload: {
+  id?: string;
+  produtoraId: string;
+  data: string;
+  descricao: string;
+  valor: number;
+  escopo: string;
+  abaterNoProximo: boolean;
+  usuarioEmail: string;
+}) {
+  const advId = payload.id || `adv_${Date.now()}`;
+  const registro = {
+    produtoraId: payload.produtoraId,
+    data: payload.data,
+    descricao: payload.descricao,
+    valor: Number(payload.valor || 0),
+    escopo: payload.escopo || 'consolidado',
+    abaterNoProximo: Boolean(payload.abaterNoProximo)
+  };
+  if (!firebaseFinanceiroConfigurado) {
+    await fetch(`${obterUrlServidorLocal()}/rtdb/salvarAdvanced`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: advId, ...registro, usuarioEmail: payload.usuarioEmail })
+    });
+    notificarDadosLocais();
+    return { id: advId, ...registro };
+  }
+  const { db } = obterServicosFirebase();
+  await set(ref(db, `/advanced/${advId}`), registro);
+  const audRef = push(ref(db, '/auditoria'));
+  await set(audRef, {
+    dataHora: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+    usuario: payload.usuarioEmail,
+    modulo: 'Advanced',
+    eventoId: registro.escopo,
+    acao: payload.id ? 'Atualização de Adiantamento' : 'Inclusão de Adiantamento',
+    resumo: `${registro.descricao} (${advId}) · R$ ${registro.valor.toFixed(2)} · Escopo: ${registro.escopo} · Abater: ${registro.abaterNoProximo ? 'Sim' : 'Compensado'}`
+  });
+  return { id: advId, ...registro };
+}
+
+export async function removerAdvancedRTDB(payload: { id: string; usuarioEmail: string }) {
+  if (!firebaseFinanceiroConfigurado) {
+    await fetch(`${obterUrlServidorLocal()}/rtdb/removerAdvanced`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    notificarDadosLocais();
+    return { ok: true, id: payload.id };
+  }
+  const { db } = obterServicosFirebase();
+  await set(ref(db, `/advanced/${payload.id}`), null);
+  const audRef = push(ref(db, '/auditoria'));
+  await set(audRef, {
+    dataHora: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+    usuario: payload.usuarioEmail,
+    modulo: 'Advanced',
+    eventoId: 'consolidado',
+    acao: 'Remoção de Adiantamento',
+    resumo: `Adiantamento ${payload.id} removido pelo Financeiro.`
+  });
+  return { ok: true, id: payload.id };
+}
+
+export async function salvarDespesaEventoRTDB(payload: {
+  id?: string;
+  eventoId: string;
+  produtoraId: string;
+  data: string;
+  categoria: string;
+  fornecedor: string;
+  nfCodigo: string;
+  comprovanteUrl: string;
+  valor: number;
+  status: 'Pago' | 'A pagar';
+  usuarioEmail: string;
+}) {
+  const despId = payload.id || `desp_${Date.now()}`;
+  const registro = {
+    eventoId: payload.eventoId,
+    produtoraId: payload.produtoraId,
+    data: payload.data,
+    categoria: payload.categoria,
+    fornecedor: payload.fornecedor,
+    nfCodigo: payload.nfCodigo || '',
+    comprovanteUrl: payload.comprovanteUrl || '',
+    valor: Number(payload.valor || 0),
+    status: payload.status || 'Pago'
+  };
+  if (!firebaseFinanceiroConfigurado) {
+    await fetch(`${obterUrlServidorLocal()}/rtdb/salvarDespesa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: despId, ...registro, usuarioEmail: payload.usuarioEmail })
+    });
+    notificarDadosLocais();
+    return { id: despId, ...registro };
+  }
+  const { db } = obterServicosFirebase();
+  await set(ref(db, `/despesas/${despId}`), registro);
+  const audRef = push(ref(db, '/auditoria'));
+  await set(audRef, {
+    dataHora: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+    usuario: payload.usuarioEmail,
+    modulo: 'Despesas',
+    eventoId: registro.eventoId,
+    acao: payload.id ? 'Atualização de Despesa' : 'Lançamento de Despesa',
+    resumo: `${registro.categoria} (${registro.fornecedor}) · R$ ${registro.valor.toFixed(2)} · NF: ${registro.nfCodigo || 's/NF'} · Status: ${registro.status}`
+  });
+  return { id: despId, ...registro };
+}
+
+export async function removerDespesaEventoRTDB(payload: { id: string; eventoId?: string; usuarioEmail: string }) {
+  if (!firebaseFinanceiroConfigurado) {
+    await fetch(`${obterUrlServidorLocal()}/rtdb/removerDespesa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    notificarDadosLocais();
+    return { ok: true, id: payload.id };
+  }
+  const { db } = obterServicosFirebase();
+  await set(ref(db, `/despesas/${payload.id}`), null);
+  const audRef = push(ref(db, '/auditoria'));
+  await set(audRef, {
+    dataHora: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+    usuario: payload.usuarioEmail,
+    modulo: 'Despesas',
+    eventoId: payload.eventoId || 'Geral',
+    acao: 'Remoção de Despesa',
+    resumo: `Despesa ${payload.id} removida pelo Financeiro.`
+  });
+  return { ok: true, id: payload.id };
+}
+
+export async function chamarRegistrarBaixaTitulo(payload: {
+  natureza: 'pagar' | 'receber';
+  tituloId: string;
+  dataBaixa?: string;
+  contaBanco?: string;
+  historico?: string;
+}) {
+  return chamarCallableFinanceiro('registrarBaixaTitulo', payload);
+}
+
+export async function criarTituloFinanceiroRTDB(payload: {
+  natureza: 'pagar' | 'receber';
+  id?: string;
+  produtoraId: string;
+  eventoId: string;
+  categoria: string;
+  fornecedorOuOrigem: string;
+  vencimento: string;
+  valorOriginal: number;
+  usuarioEmail: string;
+}) {
+  if (!firebaseFinanceiroConfigurado) {
+    const resp = await fetch(`${obterUrlServidorLocal()}/rtdb/criarTitulo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    notificarDadosLocais();
+    return data;
+  }
+  const { db } = obterServicosFirebase();
+  const prefix = payload.natureza === 'pagar' ? 'cp_man' : 'cr_man';
+  const id = payload.id || `${prefix}_${Date.now()}`;
+  const colecao = payload.natureza === 'pagar' ? 'contas_pagar' : 'contas_receber';
+  const registro =
+    payload.natureza === 'pagar'
+      ? {
+          id,
+          produtoraId: payload.produtoraId,
+          eventoId: payload.eventoId,
+          categoria: payload.categoria,
+          fornecedor: payload.fornecedorOuOrigem,
+          vencimento: payload.vencimento,
+          valorOriginal: Number(payload.valorOriginal || 0),
+          valorPago: 0,
+          status: 'Aprovada',
+          criadoEm: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        }
+      : {
+          id,
+          produtoraId: payload.produtoraId,
+          eventoId: payload.eventoId,
+          categoria: payload.categoria,
+          adquirente: payload.fornecedorOuOrigem,
+          vencimento: payload.vencimento,
+          valorOriginal: Number(payload.valorOriginal || 0),
+          valorRecebido: 0,
+          status: 'Prevista',
+          criadoEm: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        };
+  await set(ref(db, `/${colecao}/${id}`), registro);
+  const audRef = push(ref(db, '/auditoria'));
+  await set(audRef, {
+    dataHora: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+    usuario: payload.usuarioEmail,
+    modulo: payload.natureza === 'pagar' ? 'Contas a Pagar' : 'Contas a Receber',
+    eventoId: payload.eventoId || payload.produtoraId,
+    acao: `Inclusão de Título (${id})`,
+    resumo: `${payload.categoria} · ${payload.fornecedorOuOrigem} · R$ ${Number(payload.valorOriginal || 0).toFixed(2)} · Venc: ${payload.vencimento}`
+  });
+  return registro;
+}
+
+export async function chamarEstornarLancamento(payload: {
+  lancamentoId: string;
+  motivo: string;
+  dataEstorno?: string;
+}) {
+  return chamarCallableFinanceiro('estornarLancamento', payload);
+}
+
+export async function recalcularFluxoCaixaRTDB(payload: {
+  saldoInicialBancario: number;
+  dataBase?: string;
+}) {
+  if (!firebaseFinanceiroConfigurado) {
+    const resp = await fetch(`${obterUrlServidorLocal()}/rtdb/recalcularFluxoCaixa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    notificarDadosLocais();
+    return data;
+  }
+  return chamarCallableFinanceiro('recalcularFluxoCaixa', payload);
+}
+

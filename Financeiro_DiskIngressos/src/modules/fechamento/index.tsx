@@ -148,14 +148,14 @@ function FechamentoMensalView({ dados }: { dados: Record<string, Record<string, 
           style={{
             padding: '12px 16px',
             borderRadius: '10px',
-            background: '#fffbeb',
-            border: '1px solid #f59e0b',
-            color: '#92400e',
+            background: '#eff6ff',
+            border: '1px solid #93c5fd',
+            color: '#1e3a8a',
             fontSize: '13px',
             fontWeight: 600
           }}
         >
-          Aviso: O simulador local não executa as Cloud Functions de Fechamento Mensal (<code>previaFechamento</code>, <code>fecharCompetencia</code>, <code>reabrirCompetencia</code>). Conecte ao Firebase ou Emulator para calcular o selo SHA-256 e gravar em <code>/fechamentos</code>.
+          Simulador Local RTDB ativo: os callables <code>previaFechamento</code>, <code>fecharCompetencia</code> e <code>reabrirCompetencia</code> executam o motor oficial de balancete e selo SHA-256 em tempo real.
         </div>
       )}
 

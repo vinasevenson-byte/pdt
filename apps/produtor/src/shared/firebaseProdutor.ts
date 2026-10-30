@@ -24,6 +24,8 @@ import {
   equalTo,
   push,
   set,
+  update,
+  get,
   connectDatabaseEmulator
 } from 'firebase/database';
 import {
@@ -343,6 +345,22 @@ export function assinarDadosProdutorRTDB(
         };
       });
       onUpdate({ ...acumulado });
+    }),
+    onValue(query(ref(db, '/contratos'), orderByChild('produtoraId'), equalTo(produtoraId)), snap => {
+      acumulado.contratos = snap.val() || {};
+      onUpdate({ ...acumulado });
+    }),
+    onValue(query(ref(db, '/vendas_lotes'), orderByChild('produtoraId'), equalTo(produtoraId)), snap => {
+      acumulado.vendas_lotes = snap.val() || {};
+      onUpdate({ ...acumulado });
+    }),
+    onValue(query(ref(db, '/cobrancas_devedores'), orderByChild('produtoraId'), equalTo(produtoraId)), snap => {
+      acumulado.cobrancas_devedores = snap.val() || {};
+      onUpdate({ ...acumulado });
+    }),
+    onValue(query(ref(db, '/notificacoes_central'), orderByChild('produtoraId'), equalTo(produtoraId)), snap => {
+      acumulado.notificacoes_central = snap.val() || {};
+      onUpdate({ ...acumulado });
     })
   ];
 
@@ -417,4 +435,28 @@ export async function cadastrarContaBancariaRTDB(
     status: 'Pendente',
     padrao: false
   });
+}
+
+export async function definirContaPadraoProdutorRTDB(produtoraId: string, contaId: string) {
+  if (!firebaseConfigurado) {
+    const resp = await fetch(`${obterUrlServidorLocal()}/rtdb/contaPadrao`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ produtoraId, contaId })
+    });
+    if (!resp.ok) {
+      const err = (await resp.json().catch(() => ({}))) as { error?: string };
+      throw new Error(err.error || 'Falha ao definir conta padrão.');
+    }
+    notificarDadosLocais();
+    return;
+  }
+  const { db } = obterServicosFirebase();
+  const snap = await get(ref(db, `/contas/${produtoraId}`));
+  const map = (snap.val() || {}) as Record<string, Record<string, unknown>>;
+  const updates: Record<string, unknown> = {};
+  for (const cId of Object.keys(map)) {
+    updates[`/contas/${produtoraId}/${cId}/padrao`] = cId === contaId;
+  }
+  await update(ref(db), updates);
 }

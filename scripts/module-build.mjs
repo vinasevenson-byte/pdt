@@ -386,11 +386,23 @@ export function executarBuildModulos(rootDir = ROOT_DIR) {
   }
   const mirrorFinGen = path.join(rootDir, 'Financeiro_DiskIngressos/src/app/generatedModules.ts');
   if (fs.existsSync(path.dirname(mirrorFinGen))) {
-    fs.writeFileSync(mirrorFinGen, arquivosAlvo.get(path.join(rootDir, 'apps/financeiro/src/app/generatedModules.ts')), 'utf8');
+    fs.writeFileSync(
+      mirrorFinGen,
+      arquivosAlvo
+        .get(path.join(rootDir, 'apps/financeiro/src/app/generatedModules.ts'))
+        .replaceAll('../../../../modules/', '../../../modules/'),
+      'utf8'
+    );
   }
   const mirrorProdGen = path.join(rootDir, 'Portal_Produtor_DiskIngressos/src/app/generatedProdutorModules.ts');
   if (fs.existsSync(path.dirname(mirrorProdGen))) {
-    fs.writeFileSync(mirrorProdGen, arquivosAlvo.get(path.join(rootDir, 'apps/produtor/src/app/generatedProdutorModules.ts')), 'utf8');
+    fs.writeFileSync(
+      mirrorProdGen,
+      arquivosAlvo
+        .get(path.join(rootDir, 'apps/produtor/src/app/generatedProdutorModules.ts'))
+        .replaceAll('../../../../modules/', '../../../modules/'),
+      'utf8'
+    );
   }
   return { totalModulos: itens.length, arquivosGerados: Array.from(arquivosAlvo.keys()) };
 }
