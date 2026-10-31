@@ -20,7 +20,7 @@
     "set-role": "node scripts/setRole.js",
     "dev:financeiro": "npm --workspace=@diskingressos/app-financeiro run dev",
     "dev:produtor": "npm --workspace=@diskingressos/app-produtor run dev",
-    "build": "npm run build:financeiro && npm run build:produtor",
+    "build": "npm run build:financeiro && npm run build:produtor && node scripts/build-vercel-root.mjs",
     "build:financeiro": "npm --workspace=@diskingressos/app-financeiro run build",
     "build:produtor": "npm --workspace=@diskingressos/app-produtor run build"
   }
