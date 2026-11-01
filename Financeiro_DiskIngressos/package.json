@@ -6,7 +6,7 @@
   "description": "Painel do Financeiro (Acesso Total) — Hub de Repasses DiskIngressos",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node ../scripts/bundle-companion-views.mjs financeiro",
     "preview": "vite preview --host 0.0.0.0 --port 5173"
   },
   "dependencies": {
