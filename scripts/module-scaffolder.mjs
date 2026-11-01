@@ -123,7 +123,9 @@ export function criarModuloVertical(opcoes, rootDir = ROOT_DIR) {
     },
     ui: {
       financeiro: true,
-      produtor: Boolean(temUiProdutor)
+      produtor: Boolean(temUiProdutor),
+      grupo: dominio === 'comercial' || dominio === 'operacao' ? 'comercial' : dominio === 'financeiro' ? 'tesouraria' : 'gestao',
+      ordem: 50
     },
     dependencias: dependencias.length > 0 ? dependencias : ['core'],
     eventosEmitidos: [`${dominio}.${modulo}.processado`],
@@ -275,6 +277,8 @@ exports.processar_${dominio}_${modulo} = onCall(async (request) => {
 export const modulePlugin: FinancialModulePlugin = {
   id: '${modulo}',
   title: '${pascal}',
+  group: '${dominio === 'comercial' || dominio === 'operacao' ? 'comercial' : dominio === 'financeiro' ? 'tesouraria' : 'gestao'}',
+  order: 50,
   description: 'Módulo vertical ${pascal} (${dominio}/${modulo}) conectado a /${noRtdb}.',
   rtdbNode: '${noRtdb}',
   requiresJavaService: ${Boolean(usarJava)},
