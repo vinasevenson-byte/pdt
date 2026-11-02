@@ -472,7 +472,12 @@ function ModuleIcon({ kind }: { kind: 'saldo' | 'repasses' | 'contas' | 'antecip
 
 export function App() {
   // activeId pode ser 'inicio', 'grupo:<CompreoGroupId>' (Dashboard independente de cada grupo) ou '<moduloId>'
-  const [activeId, setActiveId] = useState<string>('inicio');
+  const [activeId, setActiveId] = useState<string>(() => {
+    const hash = typeof window === 'undefined' ? '' : decodeURIComponent(window.location.hash.slice(1));
+    const id = hash.startsWith('modulo/') ? hash.slice(7) : hash.startsWith('area/') ? `grupo:${hash.slice(5)}` : 'inicio';
+    return id === 'inicio' || REGISTERED_MODULES.some(m => m.id === id) ||
+      (id.startsWith('grupo:') && COMPREO_GROUPS.some(g => g.id === id.slice(6))) ? id : 'inicio';
+  });
   const [abaContabilInicial, setAbaContabilInicial] = useState<'razao' | 'fechamento'>('razao');
   const [filtroProdutoraId, setFiltroProdutoraId] = useState<string>('');
   const [q, setQ] = useState<string>('');
@@ -484,7 +489,9 @@ export function App() {
   const [erroLogin, setErroLogin] = useState<string | null>(null);
 
   // Estado da Sidebar COMPREO (recolhível: aberto mostra ícones e nomes; fechado mostra apenas os ícones)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() =>
+    typeof window !== 'undefined' && window.localStorage.getItem('disk-compreo-sidebar') === 'recolhida'
+  );
   const [gruposAbertos, setGruposAbertos] = useState<Record<string, boolean>>({
     cadastros: false,
     saldos_repasses: true,
@@ -502,6 +509,7 @@ export function App() {
   const [notifOpen, setNotifOpen] = useState<boolean>(false);
 
   function navegarParaModulo(moduloId: string, prodId?: string) {
+    if (moduloId !== 'inicio' && !REGISTERED_MODULES.some(m => m.id === moduloId)) return;
     setFiltroProdutoraId(prodId !== undefined ? prodId : '');
     setMobileMenuOpen(false);
     setCmdPaletteOpen(false);
@@ -528,7 +536,36 @@ export function App() {
       setGruposAbertos(prev => ({ ...prev, [groupId]: !prev[groupId] }));
     }
     setActiveId(`grupo:${groupId}`);
+    setMobileMenuOpen(false);
   }
+
+  // Rotas compartilháveis: preservam a tela ao atualizar e respeitam Voltar/Avançar.
+  useEffect(() => {
+    const hash = activeId === 'inicio' ? '#inicio' : activeId.startsWith('grupo:')
+      ? `#area/${encodeURIComponent(activeId.slice(6))}` : `#modulo/${encodeURIComponent(activeId)}`;
+    if (window.location.hash !== hash) window.history.pushState({ financeiroView: activeId }, '', hash);
+  }, [activeId]);
+
+  useEffect(() => {
+    const syncRoute = () => {
+      const hash = decodeURIComponent(window.location.hash.slice(1));
+      const target = hash.startsWith('modulo/') ? hash.slice(7) : hash.startsWith('area/')
+        ? `grupo:${hash.slice(5)}` : 'inicio';
+      if (target === 'inicio' || REGISTERED_MODULES.some(m => m.id === target) ||
+        (target.startsWith('grupo:') && COMPREO_GROUPS.some(g => g.id === target.slice(6)))) {
+        setActiveId(target);
+        const group = MODULE_META[target]?.group || (target.startsWith('grupo:') ? target.slice(6) : '');
+        if (group) setGruposAbertos(prev => ({ ...prev, [group]: true }));
+      }
+    };
+    window.addEventListener('popstate', syncRoute);
+    window.addEventListener('hashchange', syncRoute);
+    return () => { window.removeEventListener('popstate', syncRoute); window.removeEventListener('hashchange', syncRoute); };
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem('disk-compreo-sidebar', sidebarCollapsed ? 'recolhida' : 'expandida');
+  }, [sidebarCollapsed]);
 
   // Atalho global Ctrl+K / Cmd+K para Busca Global
   useEffect(() => {
@@ -804,11 +841,11 @@ export function App() {
             <span className="sub">Liberável: {formatBRL(liberavelTotal)}</span>
           </div>
           <div className="kpi">
-            <span>Pendências na Área</span>
+            <span>Registros / alertas da área</span>
             <span className="num" style={{ fontSize: '20px', color: contadoresPorGrupo[group.id] > 0 ? '#d97706' : '#0f766e' }}>
               {contadoresPorGrupo[group.id] || 0}
             </span>
-            <span className="sub">Monitoramento em tempo real RTDB</span>
+            <span className="sub">Indicador vinculado aos dados do RTDB</span>
           </div>
         </div>
 
@@ -1744,6 +1781,7 @@ export function App() {
                     </section>
                   </div>
 
+                  <details className="erp-catalog"><summary>Explorar todos os módulos financeiros <span>27 módulos · 9 áreas</span></summary>
                   {/* Filtro rápido do catálogo completo nos 9 grupos */}
                   <label style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
                     <span style={{ width: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0d9488' }}>
@@ -1775,7 +1813,7 @@ export function App() {
                           </div>
                           <button
                             type="button"
-                            onClick={() => setActiveId(`grupo:${grp.id}`)}
+                            onClick={() => clicarGrupoSidebar(grp.id)}
                             style={{
                               border: 0,
                               background: 'transparent',
@@ -1820,6 +1858,7 @@ export function App() {
                       </div>
                     );
                   })}
+                  </details>
                 </>
               ) : (
                 <main>

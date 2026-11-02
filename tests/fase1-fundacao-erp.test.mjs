@@ -2211,6 +2211,38 @@ test('AVANÇOS ERP COMPLETO — Todos os módulos de núcleo (Negociações, Adv
   }
 });
 
+test('COMPREO v3.3.0 — 9 grupos expansíveis, 27 módulos catalogados, rotas #inicio/#area/#modulo, histórico e catálogo recolhível', () => {
+  for (const appPath of [
+    'apps/financeiro/src/app/App.tsx',
+    'Financeiro_DiskIngressos/src/app/App.tsx'
+  ]) {
+    const src = readFileSync(path.resolve(appPath), 'utf8');
+    const section = src.split('const MODULE_META:')[1].split('interface CompreoSidebarGroup')[0];
+    const keys = [...section.matchAll(/^  (?:(['"])([^'"]+)\1|([a-z_]+)): \{/gm)].map(m => m[2] || m[3]);
+    assert.equal(new Set(keys).size, 27, `Esperados 27 módulos catalogados em ${appPath}`);
+
+    for (const grp of [
+      'cadastros',
+      'saldos_repasses',
+      'contas_tesouraria',
+      'vendas_recebiveis',
+      'operacoes_financeiras',
+      'compras_fornecedores',
+      'fechamento_fiscal',
+      'relatorios_inteligencia',
+      'governanca_auditoria'
+    ]) {
+      assert.ok(src.includes(`id: '${grp}'`), `Grupo COMPREO "${grp}" ausente em ${appPath}`);
+    }
+
+    assert.ok(src.includes('window.history.pushState'), `Suporte a history.pushState ausente em ${appPath}`);
+    assert.ok(src.includes("window.addEventListener('popstate'"), `Suporte a Voltar/Avançar (popstate) ausente em ${appPath}`);
+    assert.ok(src.includes('disk-compreo-sidebar'), `Persistência da sidebar recolhida/expandida ausente em ${appPath}`);
+    assert.ok(src.includes('<details className="erp-catalog">'), `Catálogo recolhível ausente em ${appPath}`);
+  }
+});
+
+
 
 
 
